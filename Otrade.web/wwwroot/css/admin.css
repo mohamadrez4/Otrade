@@ -1,0 +1,338 @@
+﻿.admin-page {
+    display: grid;
+    gap: 24px;
+}
+
+.admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+.admin-kpi-card {
+    display: grid;
+    gap: 8px;
+}
+
+    .admin-kpi-card span {
+        color: #94A3B8;
+        font-size: 14px;
+    }
+
+    .admin-kpi-card strong {
+        color: #FFFFFF;
+        font-size: 26px;
+        font-weight: 700;
+    }
+
+    .admin-kpi-card .admin-kpi-highlight {
+        color: #11E9A1;
+    }
+
+.admin-section-header {
+    margin-bottom: 20px;
+}
+
+    .admin-section-header h3 {
+        color: #FFFFFF;
+        margin-bottom: 6px;
+    }
+
+    .admin-section-header p {
+        color: #94A3B8;
+        margin: 0;
+        line-height: 1.7;
+    }
+
+.admin-message {
+    color: #94A3B8;
+    font-size: 14px;
+}
+
+@media (max-width: 1200px) {
+    .admin-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .admin-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/*Deposit*/
+.admin-table-wrapper {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .admin-table th {
+        color: #94A3B8;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 12px;
+        border-bottom: 1px solid #1C2532;
+    }
+
+    .admin-table td {
+        color: #FFFFFF;
+        padding: 12px;
+        border-bottom: 1px solid #1C2532;
+        font-size: 14px;
+    }
+
+.btn-reject {
+    background: #ff6b6b;
+    border-color: #ff6b6b;
+    margin-left: 8px;
+}
+/*Withdrawal*/
+.admin-table-wrapper {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .admin-table th {
+        color: #94A3B8;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 14px 12px;
+        border-bottom: 1px solid #1C2532;
+    }
+
+    .admin-table td {
+        color: #FFFFFF;
+        padding: 16px 12px;
+        border-bottom: 1px solid #1C2532;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+.admin-action-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 6px;
+}
+
+    .admin-action-btn.approve {
+        color: #0B0F14;
+        background: #11E9A1;
+    }
+
+    .admin-action-btn.reject {
+        color: #FFFFFF;
+        background: #ff6b6b;
+    }
+
+.admin-status {
+    display: inline-flex;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+    .admin-status.neutral {
+        color: #94A3B8;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid #1C2532;
+    }
+
+.admin-wallet-address {
+    max-width: 320px;
+    word-break: break-all;
+}
+/*KYC*/
+.admin-status.pending {
+    color: #facc15;
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.25);
+}
+
+.admin-status.approved {
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.08);
+    border: 1px solid rgba(17, 233, 161, 0.25);
+}
+
+.admin-status.rejected {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.08);
+    border: 1px solid rgba(255, 107, 107, 0.25);
+}
+
+.admin-action-btn.approve {
+    color: #0B0F14;
+    background: #11E9A1;
+    margin-right: 6px;
+}
+
+.admin-action-btn.reject {
+    color: #FFFFFF;
+    background: #ff6b6b;
+}
+/*Tickets*/
+.admin-filter-row {
+    display: grid;
+    grid-template-columns: 220px 1fr auto;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.admin-tickets-list {
+    display: grid;
+    gap: 18px;
+}
+
+.admin-ticket-card {
+    background: #0B0F14;
+    border: 1px solid #1C2532;
+    border-radius: 18px;
+    padding: 18px;
+}
+
+.admin-ticket-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+    .admin-ticket-header h4 {
+        color: #FFFFFF;
+        margin: 0 0 6px 0;
+        font-size: 18px;
+    }
+
+    .admin-ticket-header p {
+        color: #94A3B8;
+        margin: 0;
+        font-size: 13px;
+    }
+
+.admin-ticket-messages {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.admin-ticket-message {
+    background: #121821;
+    border: 1px solid #1C2532;
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.admin-ticket-message-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+    .admin-ticket-message-meta strong {
+        color: #11E9A1;
+        font-size: 13px;
+    }
+
+    .admin-ticket-message-meta span {
+        color: #94A3B8;
+        font-size: 12px;
+    }
+
+.admin-ticket-message p {
+    color: #FFFFFF;
+    margin: 0;
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+.admin-ticket-reply-form {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-ticket-reply-input {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.admin-ticket-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.admin-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+    .admin-pagination span {
+        color: #94A3B8;
+        font-size: 14px;
+    }
+
+.admin-action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .admin-filter-row {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-ticket-header,
+    .admin-ticket-message-meta {
+        flex-direction: column;
+    }
+}
+/*Users*/
+.admin-filter-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+/*Reports*/
+.reports-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.report-tab {
+    border: 1px solid #1C2532;
+    background: #0B0F14;
+    color: #94A3B8;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+    .report-tab:hover,
+    .report-tab.active {
+        color: #11E9A1;
+        border-color: rgba(17, 233, 161, 0.45);
+        background: rgba(17, 233, 161, 0.08);
+    }

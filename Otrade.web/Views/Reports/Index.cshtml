@@ -1,0 +1,237 @@
+﻿@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="reports-page">
+
+    <div class="reports-grid">
+        <div class="panel-card report-summary-card">
+            <span>Total Deposits</span>
+            <strong id="totalDeposits">$0.00</strong>
+        </div>
+
+        <div class="panel-card report-summary-card">
+            <span>Total Withdrawals</span>
+            <strong id="totalWithdrawals">$0.00</strong>
+        </div>
+
+        <div class="panel-card report-summary-card">
+            <span>Total Profits</span>
+            <strong id="totalProfits">$0.00</strong>
+        </div>
+
+        <div class="panel-card report-summary-card">
+            <span>Total Bonuses</span>
+            <strong id="totalBonuses">$0.00</strong>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="reports-header">
+            <div>
+                <h3>User Reports</h3>
+                <p>Review your deposits, withdrawals, transfers, profits, and bonuses.</p>
+            </div>
+        </div>
+
+        <div class="reports-tabs">
+            <button class="report-tab active" data-target="deposits">Deposits</button>
+            <button class="report-tab" data-target="withdrawals">Withdrawals</button>
+            <button class="report-tab" data-target="transfers">Transfers</button>
+            <button class="report-tab" data-target="investmentProfits">Investment Profits</button>
+            <button class="report-tab" data-target="referralProfits">Referral Profits</button>
+            <button class="report-tab" data-target="mainInvestBonuses">Main → Invest Bonuses</button>
+        </div>
+
+        <div id="reportsMessage" class="reports-message">
+            Loading reports...
+        </div>
+
+        <div id="reportsTableWrapper" class="reports-table-wrapper" style="display:none;">
+            <table class="reports-table">
+                <thead id="reportsTableHead"></thead>
+                <tbody id="reportsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const totalDeposits = document.getElementById("totalDeposits");
+        const totalWithdrawals = document.getElementById("totalWithdrawals");
+        const totalProfits = document.getElementById("totalProfits");
+        const totalBonuses = document.getElementById("totalBonuses");
+
+        const reportsMessage = document.getElementById("reportsMessage");
+        const reportsTableWrapper = document.getElementById("reportsTableWrapper");
+        const reportsTableHead = document.getElementById("reportsTableHead");
+        const reportsTableBody = document.getElementById("reportsTableBody");
+
+        const tabs = document.querySelectorAll(".report-tab");
+
+        let reportData = null;
+        let currentTab = "deposits";
+
+        async function loadReports() {
+            try {
+                const result = await api("/api/reports/user");
+                reportData = result.data;
+
+                fillSummary(reportData);
+                renderTable(currentTab);
+
+                reportsMessage.style.display = "none";
+                reportsTableWrapper.style.display = "block";
+            } catch (error) {
+                reportsMessage.innerText = error.message || "Could not load reports.";
+                reportsMessage.style.display = "block";
+                reportsTableWrapper.style.display = "none";
+            }
+        }
+
+        function fillSummary(data) {
+            const depositsSum = data.deposits
+                    .filter(x => x.status === 'Approved')
+                    .reduce((total, x) => total + x.amount, 0);
+
+            const withdrawalsSum = data.withdrawals
+                    .filter(x => x.status === 'Approved')
+                    .reduce((total, x) => total + x.amount, 0);
+            const investmentProfitSum = sum(data.investmentProfits);
+            const referralProfitSum = sum(data.referralProfits);
+            const bonusSum = sum(data.mainInvestBonuses);
+
+            totalDeposits.innerText = formatMoney(depositsSum);
+            totalWithdrawals.innerText = formatMoney(withdrawalsSum);
+            totalProfits.innerText = formatMoney(investmentProfitSum + referralProfitSum);
+            totalBonuses.innerText = formatMoney(bonusSum);
+        }
+
+        function renderTable(type) {
+            if (!reportData) return;
+
+            reportsTableHead.innerHTML = "";
+            reportsTableBody.innerHTML = "";
+
+            let items = reportData[type] || [];
+
+            if (!items.length) {
+                reportsMessage.innerText = "No records found.";
+                reportsMessage.style.display = "block";
+                reportsTableWrapper.style.display = "none";
+                return;
+            }
+
+            reportsMessage.style.display = "none";
+            reportsTableWrapper.style.display = "block";
+
+            if (type === "deposits" || type === "withdrawals") {
+                reportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td><span class="report-status ${item.status.toLowerCase()}">${item.status}</span></td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            if (type === "transfers") {
+                reportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Date</th>
+                        <th>Wallet</th>
+                        <th>Type</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td>${item.walletType || "-"}</td>
+                        <td><span class="report-status neutral">${item.type || "-"}</span></td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            reportsTableHead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
+
+            items.forEach(item => {
+                appendRow(`
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td><span class="report-status success">${getReadableType(type)}</span></td>
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+        }
+
+        function appendRow(html) {
+            const row = document.createElement("tr");
+            row.innerHTML = html;
+            reportsTableBody.appendChild(row);
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", function () {
+                tabs.forEach(x => x.classList.remove("active"));
+                this.classList.add("active");
+
+                currentTab = this.dataset.target;
+                renderTable(currentTab);
+            });
+        });
+
+        function sum(items) {
+            return (items || []).reduce((total, item) => total + Number(item.amount || 0), 0);
+        }
+
+        function getReadableType(type) {
+            if (type === "investmentProfits") return "Investment Profit";
+            if (type === "referralProfits") return "Referral Profit";
+            if (type === "mainInvestBonuses") return "Main → Invest Bonus";
+            return type;
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        loadReports();
+    </script>
+}

@@ -1,0 +1,194 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Pending KYC";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Pending KYC Documents</h3>
+            <p>Approve or reject user KYC documents individually.</p>
+        </div>
+
+        <div id="kycMessage" class="admin-message">
+            Loading pending KYC documents...
+        </div>
+
+        <div id="kycTableWrapper" class="admin-table-wrapper" style="display:none;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>User Email</th>
+                        <th>Document Type</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>View</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="kycTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const kycMessage = document.getElementById("kycMessage");
+        const kycTableWrapper = document.getElementById("kycTableWrapper");
+        const kycTableBody = document.getElementById("kycTableBody");
+
+        async function loadPendingKycs() {
+            kycMessage.style.display = "block";
+            kycMessage.innerText = "Loading pending KYC documents...";
+            kycTableWrapper.style.display = "none";
+            kycTableBody.innerHTML = "";
+
+            try {
+                const result = await api("/api/admin/kyc/pending");
+
+                if (!result.success || !result.data.length) {
+                    kycMessage.innerText = "No pending KYC documents.";
+                    return;
+                }
+
+                result.data.forEach(doc => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${doc.userEmail || "-"}</td>
+                        <td>${doc.documentType || "-"}</td>
+                        <td>
+                            <span class="admin-status ${doc.status.toLowerCase()}">
+                                ${doc.status}
+                            </span>
+                        </td>
+                        <td>${formatDate(doc.createdAt)}</td>
+                        <td>
+                                   <button class="admin-action-btn approve"
+                                     onclick="viewKycFile(${doc.documentId})">
+                                     View
+                                   </button>
+                        </td>
+                        <td class="text-end">
+                            <button class="admin-action-btn approve"
+                                onclick="approveKyc(${doc.documentId})">Approve</button>
+                            <button class="admin-action-btn reject"
+                                onclick="rejectKyc(${doc.documentId})">Reject</button>
+                        </td>
+                    `;
+
+                    kycTableBody.appendChild(row);
+                });
+
+                kycMessage.style.display = "none";
+                kycTableWrapper.style.display = "block";
+
+            } catch (error) {
+                kycMessage.innerText = error.message || "Could not load pending KYC documents.";
+            }
+        }
+
+        async function approveKyc(documentId) {
+            const confirmed = await showConfirm(
+            "Approve this document?",
+            "Approve Document"
+        );
+            if (!confirmed) return;
+
+            try {
+                const result = await api(`/api/admin/kyc/document/${documentId}/approve`, { method: "POST" });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not approve document.","error");
+                    
+                    return;
+                }
+                showNotification("Document approved successfully.","success");
+                
+                loadPendingKycs();
+            } catch (error) {
+                showNotification(error.message || "Could not approve document.","error");
+                
+            }
+        }
+
+        async function rejectKyc(documentId) {
+            const reason = prompt("Enter reason for rejection:");
+
+            if (reason === null || reason.trim() === "") return;
+
+            try {
+                const result = await api(`/api/admin/kyc/document/${documentId}/reject`, {
+                    method: "POST",
+                    body: JSON.stringify({ reason })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not reject document.","error");
+                  
+                    return;
+                }
+                showNotification("Document rejected successfully.","success");
+                
+                loadPendingKycs();
+            } catch (error) {
+                showNotification(error.message || "Could not reject document.","error");
+                
+            }
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+                async function viewKycFile(documentId) {
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                window.location.href = "/auth/login";
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/kyc/document/${documentId}/file`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem("token");
+                    window.location.href = "/auth/login";
+                    return;
+                }
+
+                if (!response.ok) 
+                {
+                    showNotification("Could not load document.","error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+
+                window.open(url, "_blank");
+
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 60000);
+            } catch (error) {
+                showNotification("Could not load document.","error");
+               
+            }
+        }
+        loadPendingKycs();
+    </script>
+}

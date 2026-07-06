@@ -1,0 +1,431 @@
+﻿@{
+    ViewData["Title"] = "Profile";
+}
+
+<div class="profile-page">
+
+    <!-- Profile Info -->
+    <div class="panel-card">
+        <div class="profile-header">
+            <div>
+                <h3>Profile Information</h3>
+                <p>View your account information and verification status.</p>
+            </div>
+        </div>
+
+        <div id="profileMessage" class="profile-message">
+            Loading profile...
+        </div>
+
+        <div id="profileContent" class="profile-grid" style="display:none;">
+            <div class="profile-info-item">
+                <span>First Name</span>
+                <strong id="firstName">-</strong>
+            </div>
+            <div class="profile-info-item">
+                <span>Last Name</span>
+                <strong id="lastName">-</strong>
+            </div>
+            <div class="profile-info-item">
+                <span>Email</span>
+                <strong id="email">-</strong>
+            </div>
+            <div class="profile-info-item">
+                <span>Referral Code</span>
+                <strong id="referralCode">-</strong>
+            </div>
+            <div class="profile-info-item">
+                <span>KYC Status</span>
+                <strong id="kycStatus" class="profile-status">-</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet Address -->
+    <div class="panel-card">
+        <div class="profile-header">
+            <div>
+                <h3>Withdrawal Wallet Address</h3>
+                <p>This address will be used for your withdrawal requests.</p>
+            </div>
+        </div>
+
+        <div id="walletAddressMessage" class="profile-alert" style="display:none;"></div>
+
+        <form id="walletAddressForm" class="profile-form">
+            <div class="profile-form-group">
+                <label for="network">Network</label>
+                <select id="network" class="panel-input" required>
+                    <option value="">Select network</option>
+                    <option value="TRC20">TRC20</option>
+                    <option value="BEP20">BEP20</option>
+                </select>
+            </div>
+
+            <div class="profile-form-group">
+                <label for="walletAddress">Wallet Address</label>
+                <input id="walletAddress"
+                       class="panel-input"
+                       type="text"
+                       placeholder="Enter your wallet address"
+                       required />
+            </div>
+
+            <button id="saveWalletBtn" type="submit" class="panel-primary-btn">
+                Save Wallet Address
+            </button>
+        </form>
+    </div>
+
+    <!-- KYC -->
+    <div class="panel-card">
+        <div class="profile-header">
+            <div>
+                <h3>KYC Verification</h3>
+                <p>Upload the documents that are rejected or missing for verification.</p>
+            </div>
+        </div>
+
+        <div id="kycMessage" class="profile-alert" style="display:none;"></div>
+
+        <form id="kycForm" class="profile-form">
+            <!-- National ID -->
+            <div id="nationalIdGroup" class="profile-form-group">
+                <label for="nationalIdImage">National ID Image</label>
+                <input id="nationalIdImage"
+                       class="panel-input"
+                       type="file"
+                       accept="image/*" />
+                <span id="nationalIdStatus" class="profile-status"></span>
+            </div>
+
+            <!-- Selfie -->
+            <div id="selfieGroup" class="profile-form-group">
+                <label for="selfieImage">Selfie Image</label>
+                <input id="selfieImage"
+                       class="panel-input"
+                       type="file"
+                       accept="image/*" />
+                <span id="selfieStatus" class="profile-status"></span>
+            </div>
+
+            <button id="submitKycBtn" type="submit" class="panel-primary-btn">
+                Submit KYC
+            </button>
+        </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="panel-card">
+        <div class="profile-header">
+            <div>
+                <h3>Change Password</h3>
+                <p>Update your account password.</p>
+            </div>
+        </div>
+
+        <div id="passwordMessage" class="profile-alert" style="display:none;"></div>
+
+        <form id="passwordForm" class="profile-form">
+            <div class="profile-form-group">
+                <label for="currentPassword">Current Password</label>
+                <input id="currentPassword"
+                       class="panel-input"
+                       type="password"
+                       placeholder="Enter current password"
+                       required />
+            </div>
+
+            <div class="profile-form-group">
+                <label for="newPassword">New Password</label>
+                <input id="newPassword"
+                       class="panel-input"
+                       type="password"
+                       placeholder="Enter new password"
+                       required />
+            </div>
+
+            <button id="changePasswordBtn" type="submit" class="panel-primary-btn">
+                Change Password
+            </button>
+        </form>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        // ---------------------
+        // Elements
+        // ---------------------
+        const profileMessage = document.getElementById("profileMessage");
+        const profileContent = document.getElementById("profileContent");
+
+        const firstName = document.getElementById("firstName");
+        const lastName = document.getElementById("lastName");
+        const email = document.getElementById("email");
+        const referralCode = document.getElementById("referralCode");
+        const kycStatus = document.getElementById("kycStatus");
+
+        const walletAddressForm = document.getElementById("walletAddressForm");
+        const networkInput = document.getElementById("network");
+        const walletAddressInput = document.getElementById("walletAddress");
+        const saveWalletBtn = document.getElementById("saveWalletBtn");
+        const walletAddressMessage = document.getElementById("walletAddressMessage");
+
+        const kycForm = document.getElementById("kycForm");
+        const nationalIdImage = document.getElementById("nationalIdImage");
+        const selfieImage = document.getElementById("selfieImage");
+        const submitKycBtn = document.getElementById("submitKycBtn");
+        const kycMessage = document.getElementById("kycMessage");
+
+        const nationalIdGroup = document.getElementById("nationalIdGroup");
+        const selfieGroup = document.getElementById("selfieGroup");
+        const nationalIdStatus = document.getElementById("nationalIdStatus");
+        const selfieStatus = document.getElementById("selfieStatus");
+
+        const passwordForm = document.getElementById("passwordForm");
+        const currentPassword = document.getElementById("currentPassword");
+        const newPassword = document.getElementById("newPassword");
+        const changePasswordBtn = document.getElementById("changePasswordBtn");
+        const passwordMessage = document.getElementById("passwordMessage");
+
+        // ---------------------
+        // Load Profile
+        // ---------------------
+        function setupKycDocument(doc, group, input, statusElement, label) {
+            input.value = "";
+
+            if (!doc) {
+                group.style.display = "grid";
+                input.style.display = "block";
+                input.disabled = false;
+                input.required = true;
+
+                statusElement.innerText = `${label} Missing or Rejected`;
+                statusElement.className = "profile-status rejected";
+                return;
+            }
+
+            statusElement.className = `profile-status ${doc.status.toLowerCase()}`;
+
+            if (doc.status === "Approved") {
+                group.style.display = "grid";
+                input.style.display = "none";
+                input.disabled = true;
+                input.required = false;
+
+                statusElement.innerText = `${label} Approved`;
+                return;
+            }
+
+            if (doc.status === "Pending") {
+                group.style.display = "grid";
+                input.style.display = "none";
+                input.disabled = true;
+                input.required = false;
+
+                statusElement.innerText = `${label} Pending Review`;
+                return;
+            }
+
+            if (doc.status === "Rejected") {
+                group.style.display = "grid";
+                input.style.display = "block";
+                input.disabled = false;
+                input.required = true;
+
+                statusElement.innerText = `${label} Rejected`;
+                statusElement.className = "profile-status rejected";
+                return;
+            }
+        }
+        async function loadProfile() {
+            try {
+                const result = await api("/api/profile");
+                const data = result.data;
+
+                firstName.innerText = data.firstName || "-";
+                lastName.innerText = data.lastName || "-";
+                email.innerText = data.email || "-";
+                referralCode.innerText = data.referralCode || "-";
+
+                kycStatus.innerText = data.kycStatus || "-";
+                kycStatus.className = `profile-status ${String(data.kycStatus || "").toLowerCase()}`;
+
+                if (data.walletAddress) {
+                    networkInput.value = data.walletAddress.network || "";
+                    walletAddressInput.value = data.walletAddress.address || "";
+                }
+
+                const kycDocs = data.kycDocuments || [];
+
+                const nationalDoc = kycDocs.find(d => d.documentType === "NationalId");
+                const selfieDoc = kycDocs.find(d => d.documentType === "Selfie");
+
+                setupKycDocument(
+                    nationalDoc,
+                    nationalIdGroup,
+                    nationalIdImage,
+                    nationalIdStatus,
+                    "National ID"
+                );
+
+                setupKycDocument(
+                    selfieDoc,
+                    selfieGroup,
+                    selfieImage,
+                    selfieStatus,
+                    "Selfie"
+                );
+                        const nationalCanUpload = !nationalDoc || nationalDoc.status === "Rejected" || nationalDoc.status === "Missing";
+        const selfieCanUpload = !selfieDoc || selfieDoc.status === "Rejected" || selfieDoc.status === "Missing";
+
+        if (nationalCanUpload || selfieCanUpload) {
+            submitKycBtn.style.display = "inline-flex";
+        } else {
+            submitKycBtn.style.display = "none";
+        }
+
+
+                if (!nationalCanUpload && !selfieCanUpload) {
+                    submitKycBtn.style.display = "none";
+                } else {
+                    submitKycBtn.style.display = "inline-flex";
+                }
+
+                profileMessage.style.display = "none";
+                profileContent.style.display = "grid";
+            } catch (error) {
+                profileMessage.innerText = error.message || "Could not load profile.";
+                profileMessage.style.display = "block";
+            }
+        }
+        // ---------------------
+        // Wallet Address
+        // ---------------------
+        walletAddressForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const network = networkInput.value.trim();
+            const address = walletAddressInput.value.trim();
+
+            if (!network || !address) {
+                showAlert(walletAddressMessage, "Please enter network and wallet address.", false);
+                return;
+            }
+
+            saveWalletBtn.disabled = true;
+            saveWalletBtn.innerText = "Saving...";
+
+            try {
+                const result = await api("/api/wallet/address/save", {
+                    method: "POST",
+                    body: JSON.stringify({ network, address })
+                });
+
+                if (!result.success) {
+                    showAlert(walletAddressMessage, result.message || "Could not save wallet address.", false);
+                    return;
+                }
+
+                showAlert(walletAddressMessage, result.message || "Wallet address saved successfully.", true);
+            } catch (error) {
+                showAlert(walletAddressMessage, error.message || "Could not save wallet address.", false);
+            } finally {
+                saveWalletBtn.disabled = false;
+                saveWalletBtn.innerText = "Save Wallet Address";
+            }
+        });
+
+        // ---------------------
+        // KYC Upload
+        // ---------------------
+        kycForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            if (nationalIdImage.files[0]) formData.append("NationalIdImage", nationalIdImage.files[0]);
+            if (selfieImage.files[0]) formData.append("SelfieImage", selfieImage.files[0]);
+
+            if (formData.keys().next().done) {
+                showAlert(kycMessage, "Please upload at least one document.", false);
+                return;
+            }
+
+            submitKycBtn.disabled = true;
+            submitKycBtn.innerText = "Submitting...";
+
+            try {
+                const result = await api("/api/kyc/upload", { method: "POST", body: formData });
+                if (!result.success) {
+                    showAlert(kycMessage, result.message || "Could not submit KYC.", false);
+                    return;
+                }
+                showAlert(kycMessage, result.message || "KYC submitted successfully.", true);
+
+                nationalIdImage.value = "";
+                selfieImage.value = "";
+
+                await loadProfile();
+            } catch (error) {
+                showAlert(kycMessage, error.message || "Could not submit KYC.", false);
+            } finally {
+                submitKycBtn.disabled = false;
+                submitKycBtn.innerText = "Submit KYC";
+            }
+        });
+
+        // ---------------------
+        // Change Password
+        // ---------------------
+        passwordForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const current = currentPassword.value.trim();
+            const next = newPassword.value.trim();
+
+            if (!current || !next) {
+                showAlert(passwordMessage, "Please enter current and new password.", false);
+                return;
+            }
+
+            if (next.length < 6) {
+                showAlert(passwordMessage, "New password must be at least 6 characters.", false);
+                return;
+            }
+
+            changePasswordBtn.disabled = true;
+            changePasswordBtn.innerText = "Changing...";
+
+            try {
+                const result = await api("/api/profile/change-password", {
+                    method: "POST",
+                    body: JSON.stringify({ currentPassword: current, newPassword: next })
+                });
+
+                if (!result.success) {
+                    showAlert(passwordMessage, result.message || "Could not change password.", false);
+                    return;
+                }
+
+                showAlert(passwordMessage, result.message || "Password changed successfully.", true);
+                currentPassword.value = "";
+                newPassword.value = "";
+            } catch (error) {
+                showAlert(passwordMessage, error.message || "Could not change password.", false);
+            } finally {
+                changePasswordBtn.disabled = false;
+                changePasswordBtn.innerText = "Change Password";
+            }
+        });
+
+        function showAlert(element, message, isSuccess) {
+            element.innerText = message;
+            element.className = isSuccess ? "profile-alert success" : "profile-alert error";
+            element.style.display = "block";
+        }
+
+        loadProfile();
+    </script>
+}

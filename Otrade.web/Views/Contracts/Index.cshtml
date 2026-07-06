@@ -1,0 +1,176 @@
+﻿@{
+    Layout = "_PanelLayout";
+    ViewData["Title"] = "Contracts";
+}
+
+<div class="panel-card">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h3 class="mb-1">Contracts</h3>
+            <p class="text-muted mb-0">
+                Manage your investment contract status.
+            </p>
+        </div>
+    </div>
+
+    <div id="loadingBox" class="contract-message">
+        Loading contract information...
+    </div>
+
+    <div id="contractContent" style="display:none;">
+
+        <div id="activeContractBox" style="display:none;">
+            <div class="contract-status active">
+                Contract Active
+            </div>
+
+            <p class="contract-description">
+                You can transfer funds from Main Wallet to Invest Wallet.
+            </p>
+
+            <div class="contract-grid">
+                <div class="contract-info-item">
+                    <span>Start Date</span>
+                    <strong id="startDate">-</strong>
+                </div>
+
+                <div class="contract-info-item">
+                    <span>End Date</span>
+                    <strong id="endDate">-</strong>
+                </div>
+
+                <div class="contract-info-item">
+                    <span>Status</span>
+                    <strong id="status">-</strong>
+                </div>
+
+                <div class="contract-info-item">
+                    <span>Remaining Days</span>
+                    <strong id="remainingDays">-</strong>
+                </div>
+            </div>
+        </div>
+
+        <div id="noContractBox" style="display:none;">
+            <div class="contract-status inactive">
+                No Active Contract
+            </div>
+
+            <p class="contract-description">
+                You must create a contract before transferring funds from Main Wallet to Invest Wallet.
+            </p>
+
+            <div class="contract-agreement-box">
+                <p>
+                    This contract is valid for 6 months. During this period, you will not be able to withdraw funds from your Invest Wallet until the contract expires.
+                </p>
+
+                <label class="contract-agreement-check">
+                    <input type="checkbox" id="agreementCheckbox" />
+                    <span>I have read and agree to the contract terms.</span>
+                </label>
+            </div>
+
+            <button id="createContractBtn" class="panel-primary-btn mt-3" disabled>
+                Create Contract
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const loadingBox = document.getElementById("loadingBox");
+        const contractContent = document.getElementById("contractContent");
+        const activeContractBox = document.getElementById("activeContractBox");
+        const noContractBox = document.getElementById("noContractBox");
+
+        const startDate = document.getElementById("startDate");
+        const endDate = document.getElementById("endDate");
+        const status = document.getElementById("status");
+        const remainingDays = document.getElementById("remainingDays");
+
+        const agreementCheckbox = document.getElementById("agreementCheckbox");
+        const createContractBtn = document.getElementById("createContractBtn");
+
+        agreementCheckbox.addEventListener("change", function () {
+            createContractBtn.disabled = !agreementCheckbox.checked;
+        });
+
+        async function loadContract() {
+            loadingBox.style.display = "block";
+            contractContent.style.display = "none";
+            activeContractBox.style.display = "none";
+            noContractBox.style.display = "none";
+
+            try {
+                const result = await api("/api/contract/current");
+                const data = result.data;
+
+                loadingBox.style.display = "none";
+                contractContent.style.display = "block";
+
+                if (data.hasActiveContract) {
+                    const contract = data.contract;
+
+                    startDate.innerText = formatDate(contract.startDate);
+                    endDate.innerText = formatDate(contract.endDate);
+                    status.innerText = contract.status;
+                    remainingDays.innerText = contract.remainingDays;
+
+                    activeContractBox.style.display = "block";
+                    noContractBox.style.display = "none";
+                } else {
+                    agreementCheckbox.checked = false;
+                    createContractBtn.disabled = true;
+
+                    activeContractBox.style.display = "none";
+                    noContractBox.style.display = "block";
+                }
+            } catch (error) {
+                loadingBox.innerText = error.message || "Could not load contract information.";
+            }
+        }
+
+        createContractBtn.addEventListener("click", async function () {
+            if (!agreementCheckbox.checked) {
+                return;
+            }
+
+            createContractBtn.disabled = true;
+            createContractBtn.innerText = "Creating...";
+
+            try {
+                const result = await api("/api/contract/create", {
+                    method: "POST"
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not create contract.","error");
+                    
+                    return;
+                }
+
+                await loadContract();
+            } catch (error) {
+                showNotification(error.message || "Could not create contract.","error");
+               
+            } finally {
+                createContractBtn.innerText = "Create Contract";
+            }
+        });
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        loadContract();
+    </script>
+}

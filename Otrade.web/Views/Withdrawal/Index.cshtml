@@ -1,0 +1,246 @@
+﻿@{
+    ViewData["Title"] = "Withdrawal";
+}
+
+<div class="panel-card">
+    <div class="withdrawal-header">
+        <div>
+            <h3>Withdrawal Request</h3>
+            <p>
+                Submit a withdrawal request from your Main Wallet. Your KYC must be approved and your wallet address must be registered.
+            </p>
+        </div>
+    </div>
+
+    <div class="withdraw-balance-box">
+        <span>Available Main Wallet Balance</span>
+        <div class="withdraw-balance-right">
+            <strong id="mainWalletBalance">0.00 USDT</strong>
+        </div>
+    </div>
+
+    <form id="withdrawalForm" class="withdrawal-form">
+        <div class="withdrawal-form-group">
+            <label for="amount">Amount</label>
+            <input id="amount"
+                   name="amount"
+                   type="number"
+                   min="1"
+                   step="0.01"
+                   class="panel-input"
+                   placeholder="Enter withdrawal amount"
+                   required />
+        </div>
+
+        <button id="submitWithdrawalBtn" type="submit" class="panel-primary-btn">
+            Submit Withdrawal Request
+        </button>
+    </form>
+</div>
+
+<div class="panel-card mt-4">
+    <div class="withdrawal-header">
+        <div>
+            <h3>Pending Withdrawals</h3>
+            <p>You can cancel your pending withdrawal requests before admin approval.</p>
+        </div>
+    </div>
+
+    <div id="pendingWithdrawalsMessage" class="withdrawal-message">
+        Loading pending withdrawals...
+    </div>
+
+    <div id="pendingWithdrawalsWrapper" class="withdrawal-table-wrapper" style="display:none;">
+        <table class="withdrawal-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Network</th>
+                    <th>Wallet Address</th>
+                    <th>Amount</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody id="pendingWithdrawalsBody"></tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let mainWalletBalance = 0;
+
+        const withdrawalForm = document.getElementById("withdrawalForm");
+        const amountInput = document.getElementById("amount");
+        const submitWithdrawalBtn = document.getElementById("submitWithdrawalBtn");
+
+        const pendingWithdrawalsMessage = document.getElementById("pendingWithdrawalsMessage");
+        const pendingWithdrawalsWrapper = document.getElementById("pendingWithdrawalsWrapper");
+        const pendingWithdrawalsBody = document.getElementById("pendingWithdrawalsBody");
+
+        withdrawalForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const amount = parseFloat(amountInput.value);
+
+            if (!amount || amount <= 0) {
+                showNotification("Please enter a valid amount.", "warning");
+                return;
+            }
+
+            submitWithdrawalBtn.disabled = true;
+            submitWithdrawalBtn.innerText = "Submitting...";
+
+            try {
+                const result = await api("/api/wallet/withdrawal/request", {
+                    method: "POST",
+                    body: JSON.stringify({ amount })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not submit withdrawal request.", "error");
+                    return;
+                }
+
+                showNotification(result.message || "Withdrawal request submitted successfully.", "success");
+
+                amountInput.value = "";
+
+                await loadWalletBalance();
+                await loadPendingWithdrawals();
+
+            } catch (error) {
+                showNotification(error.message || "Could not submit withdrawal request.", "error");
+            } finally {
+                submitWithdrawalBtn.disabled = false;
+                submitWithdrawalBtn.innerText = "Submit Withdrawal Request";
+            }
+        });
+
+        async function loadWalletBalance() {
+            try {
+                const result = await api("/api/dashboard");
+
+                if (!result.success) return;
+
+                const wallet = result.data.wallets.find(x => x.walletType === "Main");
+
+                if (!wallet) return;
+
+                mainWalletBalance = Number(wallet.balance || 0);
+
+                document.getElementById("mainWalletBalance").innerText =
+                    formatMoney(mainWalletBalance) + " USDT";
+
+            } catch {
+                showNotification("Could not load wallet balance.", "error");
+            }
+        }
+
+        async function loadPendingWithdrawals() {
+            pendingWithdrawalsMessage.style.display = "block";
+            pendingWithdrawalsMessage.innerText = "Loading pending withdrawals...";
+            pendingWithdrawalsWrapper.style.display = "none";
+            pendingWithdrawalsBody.innerHTML = "";
+
+            try {
+                const result = await api("/api/wallet/withdrawals/my-pending");
+
+                if (!result.success) {
+                    pendingWithdrawalsMessage.innerText =
+                        result.message || "Could not load pending withdrawals.";
+                    return;
+                }
+
+                const items = result.data || [];
+
+                if (!items.length) {
+                    pendingWithdrawalsMessage.innerText = "No pending withdrawals found.";
+                    return;
+                }
+
+                items.forEach(item => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td><span class="withdraw-network">${escapeHtml(item.network || "-")}</span></td>
+                        <td class="withdraw-wallet-address">${escapeHtml(item.walletAddress || "-")}</td>
+                        <td class="withdraw-amount">${formatMoney(item.amount)} USDT</td>
+                        <td class="text-end">
+                            <button class="withdraw-cancel-btn"
+                                    onclick="cancelWithdrawal(${item.withdrawalId})">
+                                Cancel
+                            </button>
+                        </td>
+                    `;
+
+                    pendingWithdrawalsBody.appendChild(row);
+                });
+
+                pendingWithdrawalsMessage.style.display = "none";
+                pendingWithdrawalsWrapper.style.display = "block";
+
+            } catch {
+                pendingWithdrawalsMessage.innerText = "Could not load pending withdrawals.";
+            }
+        }
+
+        async function cancelWithdrawal(withdrawalId) {
+            const confirmed = await showConfirm(
+                "Are you sure you want to cancel this withdrawal request?",
+                "Cancel Withdrawal"
+            );
+
+            if (!confirmed) return;
+
+            try {
+                const result = await api(`/api/wallet/withdrawals/cancel/${withdrawalId}`, {
+                    method: "POST"
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not cancel withdrawal.", "error");
+                    return;
+                }
+
+                showNotification(result.message || "Withdrawal canceled successfully.", "success");
+
+                await loadWalletBalance();
+                await loadPendingWithdrawals();
+
+            } catch {
+                showNotification("Could not cancel withdrawal.", "error");
+            }
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        loadWalletBalance();
+        loadPendingWithdrawals();
+    </script>
+}

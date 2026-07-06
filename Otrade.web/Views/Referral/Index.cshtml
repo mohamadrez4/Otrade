@@ -1,0 +1,272 @@
+﻿@{ 
+    ViewData["Title"] = "Referral";
+}
+
+<div class="referral-page">
+
+    <div class="panel-card">
+        <div class="referral-header">
+            <div>
+                <h3>Referral Program</h3>
+                <p>Invite users and earn referral bonuses based on your rank.</p>
+            </div>
+        </div>
+
+        <div id="referralMessage" class="referral-message">
+            Loading referral information...
+        </div>
+
+        <div id="referralContent" style="display:none;">
+
+            <div class="referral-code-box">
+                <div>
+                    <span>Your Referral Code</span>
+                    <strong id="referralCode">-</strong>
+                </div>
+
+                <button id="copyReferralBtn" class="panel-primary-btn">
+                    Copy Referral Link
+                </button>
+            </div>
+
+            <div class="referral-summary-grid">
+                <div class="referral-summary-item">
+                    <span>Current Rank</span>
+                    <strong id="currentRank">-</strong>
+                </div>
+
+                <div class="referral-summary-item">
+                    <span>Total Referrals</span>
+                    <strong id="totalReferrals">0</strong>
+                </div>
+
+                <div class="referral-summary-item">
+                    <span>Total Bonus</span>
+                    <strong id="totalBonus">$0.00</strong>
+                </div>
+
+                <div class="referral-summary-item">
+                    <span>Referral Wallet</span>
+                    <strong id="referralWalletBalance">$0.00</strong>
+                </div>
+            </div>
+
+            <div class="referral-percent-box">
+                <div>
+                    <span>Referral Profit Percent</span>
+                    <strong id="referralProfitPercent">0%</strong>
+                </div>
+
+                <div>
+                    <span>Main → Invest Bonus Percent</span>
+                    <strong id="mainToInvestPercent">0%</strong>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="referral-section-header">
+            <h3>Direct Referrals</h3>
+            <p>Users registered with your referral code.</p>
+        </div>
+
+        <div id="referralsEmpty" class="referral-message" style="display:none;">
+            No referrals found.
+        </div>
+
+        <div id="referralsTableWrapper" class="referral-table-wrapper" style="display:none;">
+            <table class="referral-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Referral Code</th>
+                        <th>Joined At</th>
+                    </tr>
+                </thead>
+                <tbody id="referralsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="referral-section-header">
+            <h3>Bonus History</h3>
+            <p>Your received referral bonuses.</p>
+        </div>
+
+        <div id="bonusesEmpty" class="referral-message" style="display:none;">
+            No bonus records found.
+        </div>
+
+        <div id="bonusesTableWrapper" class="referral-table-wrapper" style="display:none;">
+            <table class="referral-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>From User</th>
+                        <th>Type</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="bonusesTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const referralMessage = document.getElementById("referralMessage");
+        const referralContent = document.getElementById("referralContent");
+
+        const referralCode = document.getElementById("referralCode");
+        const currentRank = document.getElementById("currentRank");
+        const totalReferrals = document.getElementById("totalReferrals");
+        const totalBonus = document.getElementById("totalBonus");
+        const referralWalletBalance = document.getElementById("referralWalletBalance");
+        const referralProfitPercent = document.getElementById("referralProfitPercent");
+        const mainToInvestPercent = document.getElementById("mainToInvestPercent");
+
+        const copyReferralBtn = document.getElementById("copyReferralBtn");
+
+        const referralsEmpty = document.getElementById("referralsEmpty");
+        const referralsTableWrapper = document.getElementById("referralsTableWrapper");
+        const referralsTableBody = document.getElementById("referralsTableBody");
+
+        const bonusesEmpty = document.getElementById("bonusesEmpty");
+        const bonusesTableWrapper = document.getElementById("bonusesTableWrapper");
+        const bonusesTableBody = document.getElementById("bonusesTableBody");
+
+        let referralLink = "";
+
+        async function loadReferral() {
+            try {
+                const result = await api("/api/wallet/referral");
+                const data = result.data;
+
+                referralCode.innerText = data.referralCode || "-";
+                currentRank.innerText = data.currentRank || "-";
+                totalReferrals.innerText = data.totalReferrals || 0;
+                totalBonus.innerText = formatMoney(data.totalBonus);
+                referralWalletBalance.innerText = formatMoney(data.referralWalletBalance);
+                referralProfitPercent.innerText = `${data.referralProfitPercent || 0}%`;
+                mainToInvestPercent.innerText = `${data.mainToInvestPercent || 0}%`;
+
+                referralLink = `${window.location.origin}/auth/register?ref=${data.referralCode || ""}`;
+
+                renderReferrals(data.referrals || []);
+                renderBonuses(data.bonuses || []);
+
+                referralMessage.style.display = "none";
+                referralContent.style.display = "block";
+
+            } catch (error) {
+                referralMessage.innerText = error.message || "Could not load referral information.";
+                referralMessage.style.display = "block";
+            }
+        }
+
+        function renderReferrals(items) {
+            referralsTableBody.innerHTML = "";
+
+            if (!items.length) {
+                referralsEmpty.style.display = "block";
+                referralsTableWrapper.style.display = "none";
+                return;
+            }
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>${item.fullName || "-"}</td>
+                    <td>${item.email || "-"}</td>
+                    <td>${item.referralCode || "-"}</td>
+                    <td>${formatDate(item.createdAt)}</td>
+                `;
+
+                referralsTableBody.appendChild(row);
+            });
+
+            referralsEmpty.style.display = "none";
+            referralsTableWrapper.style.display = "block";
+        }
+
+        function renderBonuses(items) {
+            bonusesTableBody.innerHTML = "";
+
+            if (!items.length) {
+                bonusesEmpty.style.display = "block";
+                bonusesTableWrapper.style.display = "none";
+                return;
+            }
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+                debugger;
+                row.innerHTML = `
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td>#${item.email || "-"}</td>
+                    <td>
+                        <span class="referral-bonus-type">${item.type || "-"}</span>
+                    </td>
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `;
+
+                bonusesTableBody.appendChild(row);
+            });
+
+            bonusesEmpty.style.display = "none";
+            bonusesTableWrapper.style.display = "block";
+        }
+
+        copyReferralBtn.addEventListener("click", async function () {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(referralLink);
+                } else {
+                    const textarea = document.createElement("textarea");
+                    textarea.value = referralLink;
+
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(textarea);
+                }
+
+                copyReferralBtn.innerText = "Copied!";
+
+                setTimeout(() => {
+                    copyReferralBtn.innerText = "Copy Referral Link";
+                }, 1000);
+            } catch {
+                   showNotification("Could not copy referral link.","error");
+               
+            }
+        });
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        loadReferral();
+    </script>
+}

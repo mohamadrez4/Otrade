@@ -1,0 +1,142 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Pending Deposits";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Pending Deposits</h3>
+            <p>Approve or reject pending deposit requests from users.</p>
+        </div>
+
+        <div id="depositsMessage" class="admin-message">
+            Loading pending deposits...
+        </div>
+
+        <div id="depositsTableWrapper" class="admin-table-wrapper" style="display:none;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>User Email</th>
+                        <th>Amount</th>
+                        <th>TxId</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="depositsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const depositsMessage = document.getElementById("depositsMessage");
+        const depositsTableWrapper = document.getElementById("depositsTableWrapper");
+        const depositsTableBody = document.getElementById("depositsTableBody");
+
+        async function loadPendingDeposits() {
+            depositsMessage.style.display = "block";
+            depositsMessage.innerText = "Loading pending deposits...";
+            depositsTableWrapper.style.display = "none";
+            depositsTableBody.innerHTML = "";
+
+            try {
+                const result = await api("/api/admin/deposits/pending");
+
+                if (!result.success || !result.data || !result.data.length) {
+                    depositsMessage.innerText = "No pending deposits found.";
+                    return;
+                }
+
+                result.data.forEach(deposit => {
+                    const row = document.createElement("tr");
+                    debugger;
+                    row.innerHTML = `
+                        <td>${deposit.email || "-"}</td>
+                        <td>${formatMoney(deposit.amount)}</td>
+                        <td>${deposit.txId || "-"}</td>
+                        <td>${formatDate(deposit.createdAt)}</td>
+                        <td>
+                            <button class="panel-primary-btn btn-sm" onclick="approveDeposit(${deposit.depositId})">Approve</button>
+                            <button class="panel-primary-btn btn-sm btn-reject" onclick="rejectDeposit(${deposit.depositId})">Reject</button>
+                        </td>
+                    `;
+
+                    depositsTableBody.appendChild(row);
+                });
+
+                depositsMessage.style.display = "none";
+                depositsTableWrapper.style.display = "block";
+            } catch (error) {
+                depositsMessage.innerText = error.message || "Could not load pending deposits.";
+            }
+        }
+
+        async function approveDeposit(depositId) {
+
+             const confirmed = await showConfirm(
+            "Are you sure you want to approve this deposit?",
+            "Approve Deposit"
+        );
+            if (!confirmed) return;
+
+            try {
+                const result = await api(`/api/admin/deposits/approve/${depositId}`, { method: "POST" });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not approve deposit.","error");
+                    
+                    return;
+                }
+                showNotification("Deposit approved successfully.","success");
+               
+                loadPendingDeposits();
+            } catch (error) {
+                showNotification(error.message || "Could not approve deposit.","error");
+                
+            }
+        }
+
+        async function rejectDeposit(depositId) {
+            const reason = prompt("Enter reason for rejection:");
+
+            if (reason === null || reason.trim() === "") return;
+
+            try {
+                const result = await api(`/api/admin/deposits/reject/${depositId}`, {
+                    method: "POST",
+                    body: JSON.stringify({ reason })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not reject deposit.","error");
+                   
+                    return;
+                }
+                showNotification("Deposit rejected successfully.","success");
+               
+                loadPendingDeposits();
+            } catch (error) {
+                 showNotification(error.message || "Could not reject deposit.","error");
+                
+            }
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+            return "$" + number.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+            return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
+        }
+
+        loadPendingDeposits();
+    </script>
+}

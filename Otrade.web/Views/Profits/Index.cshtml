@@ -1,0 +1,129 @@
+﻿@{
+    ViewData["Title"] = "Profits";
+}
+
+<div class="profits-page">
+
+    <div class="profits-grid">
+        <div class="panel-card profit-summary-card">
+            <span>Total Profit</span>
+            <strong id="totalProfit">$0.00</strong>
+        </div>
+
+        <div class="panel-card profit-summary-card">
+            <span>Investment Profit</span>
+            <strong id="investmentProfit">$0.00</strong>
+        </div>
+
+        <div class="panel-card profit-summary-card">
+            <span>Referral Profit</span>
+            <strong id="referralProfit">$0.00</strong>
+        </div>
+    </div>
+
+    <div class="panel-card mt-4">
+        <div class="profits-header">
+            <div>
+                <h3>Profit History</h3>
+                <p>Your investment and referral profit records.</p>
+            </div>
+        </div>
+
+        <div id="profitsMessage" class="profits-message">
+            Loading profits...
+        </div>
+
+        <div class="profits-table-wrapper" id="profitsTableWrapper" style="display:none;">
+            <table class="profits-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody id="profitsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const totalProfit = document.getElementById("totalProfit");
+        const investmentProfit = document.getElementById("investmentProfit");
+        const referralProfit = document.getElementById("referralProfit");
+
+        const profitsMessage = document.getElementById("profitsMessage");
+        const profitsTableWrapper = document.getElementById("profitsTableWrapper");
+        const profitsTableBody = document.getElementById("profitsTableBody");
+
+        async function loadProfits() {
+            try {
+                const result = await api("/api/wallet/profits");
+                const data = result.data;
+
+                totalProfit.innerText = formatMoney(data.totalProfit);
+                investmentProfit.innerText = formatMoney(data.investmentProfit);
+                referralProfit.innerText = formatMoney(data.referralProfit);
+
+                profitsTableBody.innerHTML = "";
+
+                if (!data.history || data.history.length === 0) {
+                    profitsMessage.innerText = "No profit records found.";
+                    profitsMessage.style.display = "block";
+                    profitsTableWrapper.style.display = "none";
+                    return;
+                }
+
+                data.history.forEach(item => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td>
+                            <span class="profit-type ${item.type.toLowerCase()}">
+                                ${item.type}
+                            </span>
+                        </td>
+                        <td>${item.referenceId || "-"}</td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `;
+
+                    profitsTableBody.appendChild(row);
+                });
+
+                profitsMessage.style.display = "none";
+                profitsTableWrapper.style.display = "block";
+
+            } catch (error) {
+                profitsMessage.innerText = error.message || "Could not load profits.";
+                profitsMessage.style.display = "block";
+                profitsTableWrapper.style.display = "none";
+            }
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        loadProfits();
+    </script>
+}

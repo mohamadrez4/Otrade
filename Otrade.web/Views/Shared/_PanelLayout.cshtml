@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] | Otrade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/panel.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
+    <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
+</head>
+<body class="panel-body">
+
+    <div class="panel-layout">
+        <div id="notificationContainer"
+             class="notification-container">
+        </div>
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="~/images/logo.png" />
+            </div>
+
+            <nav class="sidebar-nav">
+
+                <a href="/dashboard" class="nav-item">
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="/wallets" class="nav-item">
+                    <span>Wallets</span>
+                </a>
+                <a href="/contracts" class="nav-item">
+                    <span>Contracts</span>
+                </a>
+                <a href="/deposit" class="nav-item">
+                    <span>Deposit</span>
+                </a>
+
+                <a href="/withdrawal" class="nav-item">
+                    <span>Withdrawal</span>
+                </a>
+
+                <a href="/profits" class="nav-item">
+                    <span>Profits</span>
+                </a>
+
+                <a href="/referral" class="nav-item">
+                    <span>Referral</span>
+                </a>
+
+                <a href="/rank" class="nav-item">
+                    <span>Rank</span>
+                </a>
+
+                <a href="/reports" class="nav-item">
+                    <span>Reports</span>
+                </a>
+
+                <a href="/tickets" class="nav-item">
+                    <span>Tickets</span>
+                </a>
+
+                <a href="/profile" class="nav-item">
+                    <span>Profile</span>
+                </a>
+
+            </nav>
+
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </aside>
+
+        <main class="panel-main">
+            <header class="topbar">
+                <div>
+                    <h4>@ViewData["Title"]</h4>
+                </div>
+            </header>
+
+            <section class="content">
+                @RenderBody()
+            </section>
+        </main>
+
+    </div>
+
+    <script src="~/js/common.js"></script>
+    <script src="~/js/auth.js"></script>
+    <script>
+        checkAuth();
+    </script>
+    <script src="~/js/api.js"></script>
+    <script>
+        const currentPath = window.location.pathname.toLowerCase();
+
+        document.querySelectorAll(".sidebar-nav a").forEach(link => {
+            const href = link.getAttribute("href").toLowerCase();
+
+            if (currentPath === href || currentPath.startsWith(href + "/")) {
+                link.classList.add("active");
+            }
+        });
+    </script>
+    @RenderSection("Scripts", required: false)
+
+</body>
+</html>

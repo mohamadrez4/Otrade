@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36109.1 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otrade.web", "Otrade.web\Otrade.web.csproj", "{593C0FD8-0860-469D-8AE5-ED9E57A02B71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otrade.Domain", "Otrade.Domain\Otrade.Domain.csproj", "{BEF7D1BB-6D17-4F53-BC38-4A20F4A029CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otrade.Application", "Otrade.Application\Otrade.Application.csproj", "{73506C2F-8167-46DC-803B-52FF6CBB9675}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otrade.Infrastructure", "Otrade.Infrastructure\Otrade.Infrastructure.csproj", "{BF80F5D1-293F-45BE-9FDE-732FDAB9BF5F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otrade.Persistence", "Otrade.Persistence\Otrade.Persistence.csproj", "{BF678F2F-601E-4B32-A638-BAE77EE3216B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Otrade.BackgroundJobs", "Otrade.BackgroundJobs\Otrade.BackgroundJobs.csproj", "{5F3F3A25-47EE-4E6C-84A9-BDA1AA479A3B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{593C0FD8-0860-469D-8AE5-ED9E57A02B71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{593C0FD8-0860-469D-8AE5-ED9E57A02B71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{593C0FD8-0860-469D-8AE5-ED9E57A02B71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{593C0FD8-0860-469D-8AE5-ED9E57A02B71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BEF7D1BB-6D17-4F53-BC38-4A20F4A029CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BEF7D1BB-6D17-4F53-BC38-4A20F4A029CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BEF7D1BB-6D17-4F53-BC38-4A20F4A029CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BEF7D1BB-6D17-4F53-BC38-4A20F4A029CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73506C2F-8167-46DC-803B-52FF6CBB9675}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73506C2F-8167-46DC-803B-52FF6CBB9675}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73506C2F-8167-46DC-803B-52FF6CBB9675}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73506C2F-8167-46DC-803B-52FF6CBB9675}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF80F5D1-293F-45BE-9FDE-732FDAB9BF5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF80F5D1-293F-45BE-9FDE-732FDAB9BF5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF80F5D1-293F-45BE-9FDE-732FDAB9BF5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF80F5D1-293F-45BE-9FDE-732FDAB9BF5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF678F2F-601E-4B32-A638-BAE77EE3216B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF678F2F-601E-4B32-A638-BAE77EE3216B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF678F2F-601E-4B32-A638-BAE77EE3216B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF678F2F-601E-4B32-A638-BAE77EE3216B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F3F3A25-47EE-4E6C-84A9-BDA1AA479A3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F3F3A25-47EE-4E6C-84A9-BDA1AA479A3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F3F3A25-47EE-4E6C-84A9-BDA1AA479A3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F3F3A25-47EE-4E6C-84A9-BDA1AA479A3B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FF80E67D-5C08-4BB4-AD70-C3C1F120A979}
+	EndGlobalSection
+EndGlobal

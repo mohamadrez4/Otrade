@@ -1,0 +1,189 @@
+﻿@{
+    ViewData["Title"] = "Rank";
+}
+
+<div class="rank-page">
+
+    <div class="panel-card">
+        <div class="rank-header">
+            <div>
+                <h3>Rank Overview</h3>
+                <p>Your rank is calculated based on your total network Invest Wallet volume.</p>
+            </div>
+        </div>
+
+        <div id="rankMessage" class="rank-message">
+            Loading rank information...
+        </div>
+
+        <div id="rankContent" style="display:none;">
+
+            <div class="rank-current-box">
+                <div>
+                    <span>Current Rank</span>
+                    <strong id="currentRankName">-</strong>
+                </div>
+
+                <div>
+                    <span>Your Referred Capital</span>
+                    <strong id="networkVolume">$0.00</strong>
+                </div>
+            </div>
+
+            <div class="rank-progress-box">
+                <div class="rank-progress-info">
+                    <span>Next Rank</span>
+                    <strong id="nextRankName">-</strong>
+                </div>
+
+                <div class="rank-progress-track">
+                    <div id="rankProgressBar" class="rank-progress-bar" style="width:0%;"></div>
+                </div>
+
+                <div class="rank-progress-footer">
+                    <span id="progressPercent">0%</span>
+                    <span id="remainingVolume">$0.00 remaining</span>
+                </div>
+            </div>
+
+            <div class="rank-benefits-grid">
+                <div class="rank-benefit-item">
+                    <span>Daily Profit</span>
+                    <strong id="dailyProfitPercent">0%</strong>
+                </div>
+
+                <div class="rank-benefit-item">
+                    <span>Monthly Profit</span>
+                    <strong id="monthlyProfitPercent">0%</strong>
+                </div>
+
+                <div class="rank-benefit-item">
+                    <span>Referral Profit</span>
+                    <strong id="referralProfitPercent">0%</strong>
+                </div>
+
+                <div class="rank-benefit-item">
+                    <span>Main → Invest Bonus</span>
+                    <strong id="mainToInvestPercent">0%</strong>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="rank-section-header">
+            <h3>Rank Levels</h3>
+            <p>Compare all ranks and their requirements.</p>
+        </div>
+
+        <div id="rankTableWrapper" class="rank-table-wrapper" style="display:none;">
+            <table class="rank-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Required Volume</th>
+                        <th>Daily Profit</th>
+                        <th>Monthly Profit</th>
+                        <th>Referral Profit</th>
+                        <th>Main → Invest Bonus</th>
+                    </tr>
+                </thead>
+                <tbody id="rankTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const rankMessage = document.getElementById("rankMessage");
+        const rankContent = document.getElementById("rankContent");
+
+        const currentRankName = document.getElementById("currentRankName");
+        const networkVolume = document.getElementById("networkVolume");
+        const nextRankName = document.getElementById("nextRankName");
+        const rankProgressBar = document.getElementById("rankProgressBar");
+        const progressPercent = document.getElementById("progressPercent");
+        const remainingVolume = document.getElementById("remainingVolume");
+
+        const dailyProfitPercent = document.getElementById("dailyProfitPercent");
+        const monthlyProfitPercent = document.getElementById("monthlyProfitPercent");
+        const referralProfitPercent = document.getElementById("referralProfitPercent");
+        const mainToInvestPercent = document.getElementById("mainToInvestPercent");
+
+        const rankTableWrapper = document.getElementById("rankTableWrapper");
+        const rankTableBody = document.getElementById("rankTableBody");
+
+        async function loadRank() {
+            try {
+                const result = await api("/api/rank/overview");
+                const data = result.data;
+
+                const current = data.currentRank;
+                const next = data.nextRank;
+
+                currentRankName.innerText = current ? current.name : "-";
+                networkVolume.innerText = formatMoney(data.networkVolume);
+
+                nextRankName.innerText = next ? next.name : "Highest Rank";
+                progressPercent.innerText = `${data.progressPercent || 0}%`;
+                remainingVolume.innerText = next
+                    ? `${formatMoney(data.remainingVolume)} remaining`
+                    : "No remaining volume";
+
+                rankProgressBar.style.width = `${data.progressPercent || 0}%`;
+
+                dailyProfitPercent.innerText = current ? `${current.dailyProfitPercent}%` : "0%";
+                monthlyProfitPercent.innerText = current ? `${current.monthlyProfitPercent}%` : "0%";
+                referralProfitPercent.innerText = current ? `${current.referralProfitPercent}%` : "0%";
+                mainToInvestPercent.innerText = current ? `${current.mainToInvestPercent}%` : "0%";
+
+                renderRanks(data.ranks || [], current ? current.rankId : null);
+
+                rankMessage.style.display = "none";
+                rankContent.style.display = "block";
+                rankTableWrapper.style.display = "block";
+
+            } catch (error) {
+                rankMessage.innerText = error.message || "Could not load rank information.";
+                rankMessage.style.display = "block";
+            }
+        }
+
+        function renderRanks(ranks, currentRankId) {
+            rankTableBody.innerHTML = "";
+
+            ranks.forEach(rank => {
+                const row = document.createElement("tr");
+
+                if (rank.rankId === currentRankId) {
+                    row.classList.add("current-rank-row");
+                }
+
+                row.innerHTML = `
+                    <td>${rank.name}</td>
+                    <td>${formatMoney(rank.requiredVolume)}</td>
+                    <td>${rank.dailyProfitPercent}%</td>
+                    <td>${rank.monthlyProfitPercent}%</td>
+                    <td>${rank.referralProfitPercent}%</td>
+                    <td>${rank.mainToInvestPercent}%</td>
+                `;
+
+                rankTableBody.appendChild(row);
+            });
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        loadRank();
+    </script>
+}

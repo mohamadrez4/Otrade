@@ -1,0 +1,179 @@
+﻿@{
+    ViewData["Title"] = "Deposit";
+}
+
+<div class="panel-card">
+    <div class="deposit-header">
+       
+        <div>
+            <h3>Deposit Request</h3>
+            <p>
+                Submit your deposit amount and transaction ID. Your request will be reviewed by the admin.
+            </p>
+        </div>
+    </div>
+    <div id="depositWalletBox" class="deposit-wallet-box" style="display:none;">
+        <p class="deposit-wallet-title">
+            Please use the wallet address below to complete your deposit.
+        </p>
+
+        <div class="deposit-wallet-content">
+            <div>
+                <span>Network</span>
+                <strong id="depositNetwork">-</strong>
+            </div>
+
+            <div>
+                <span>Wallet Address</span>
+                <strong id="depositWalletAddress">-</strong>
+            </div>
+
+            <button id="copyDepositAddressBtn" type="button" class="deposit-copy-btn">
+                Copy
+            </button>
+        </div>
+    </div>
+    <div id="depositMessage" class="deposit-message" style="display:none;"></div>
+
+    <form id="depositForm" class="deposit-form">
+
+        <div class="deposit-form-group">
+            <label for="amount">Amount</label>
+            <input id="amount"
+                   name="amount"
+                   type="number"
+                   min="1"
+                   step="0.01"
+                   class="panel-input"
+                   placeholder="Enter deposit amount"
+                   required />
+        </div>
+
+        <div class="deposit-form-group">
+            <label for="txId">Transaction ID</label>
+            <input id="txId"
+                   name="txId"
+                   type="text"
+                   class="panel-input"
+                   placeholder="Enter transaction ID"
+                   required />
+        </div>
+
+        <button id="submitDepositBtn" type="submit" class="panel-primary-btn">
+            Submit Deposit Request
+        </button>
+
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const depositForm = document.getElementById("depositForm");
+        const amountInput = document.getElementById("amount");
+        const txIdInput = document.getElementById("txId");
+        const submitDepositBtn = document.getElementById("submitDepositBtn");
+        const depositMessage = document.getElementById("depositMessage");
+        const depositWalletBox = document.getElementById("depositWalletBox");
+        const depositNetwork = document.getElementById("depositNetwork");
+        const depositWalletAddress = document.getElementById("depositWalletAddress");
+        const copyDepositAddressBtn = document.getElementById("copyDepositAddressBtn");
+
+        let siteWalletAddress = "";
+        depositForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            hideMessage();
+
+            const amount = parseFloat(amountInput.value);
+            const txId = txIdInput.value.trim();
+
+            if (!amount || amount <= 0) {
+                showMessage("Please enter a valid amount.", false);
+                return;
+            }
+
+            if (!txId) {
+                showMessage("Please enter the transaction ID.", false);
+                return;
+            }
+
+            submitDepositBtn.disabled = true;
+            submitDepositBtn.innerText = "Submitting...";
+
+            try {
+                const result = await api("/api/wallet/deposit/request", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        amount: amount,
+                        txId: txId
+                    })
+                });
+
+                if (!result.success) {
+                    showMessage(result.message || "Could not submit deposit request.", false);
+                    return;
+                }
+
+                showMessage(result.message || "Deposit request submitted successfully.", true);
+
+                amountInput.value = "";
+                txIdInput.value = "";
+            } catch (error) {
+                showMessage(error.message || "Could not submit deposit request.", false);
+            } finally {
+                submitDepositBtn.disabled = false;
+                submitDepositBtn.innerText = "Submit Deposit Request";
+            }
+        });
+        async function loadDepositInfo() {
+            try {
+                const result = await api("/api/wallet/deposit/info");
+                const data = result.data;
+
+                siteWalletAddress = data.siteWalletAddress || data.SiteWalletAddress || "";
+                const network = data.network || data.Network || "";
+
+                depositNetwork.innerText = network || "-";
+                depositWalletAddress.innerText = siteWalletAddress || "-";
+
+                depositWalletBox.style.display = "block";
+            } catch (error) {
+                depositWalletBox.style.display = "none";
+            }
+        }
+
+        copyDepositAddressBtn.addEventListener("click", function () {
+
+            const textarea = document.createElement("textarea");
+            textarea.value = siteWalletAddress;
+
+            document.body.appendChild(textarea);
+            textarea.select();
+
+            document.execCommand("copy");
+
+            document.body.removeChild(textarea);
+
+             copyDepositAddressBtn.innerText = "Copied!";
+
+            setTimeout(() => {
+                copyDepositAddressBtn.innerText = "Copy";
+            }, 1000);
+        });
+
+
+        function showMessage(message, isSuccess) {
+            depositMessage.innerText = message;
+            depositMessage.className = isSuccess
+                ? "deposit-message success"
+                : "deposit-message error";
+            depositMessage.style.display = "block";
+        }
+
+        function hideMessage() {
+            depositMessage.style.display = "none";
+            depositMessage.innerText = "";
+        }
+        loadDepositInfo();
+    </script>
+}

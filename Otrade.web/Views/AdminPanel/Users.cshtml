@@ -1,0 +1,115 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Users Management";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Users</h3>
+            <p>View and manage platform users, ranks, wallets, and KYC status.</p>
+        </div>
+
+        <div class="admin-filter-row">
+            <input id="searchInput" class="panel-input" type="text" placeholder="Search by email or name" />
+            <button id="searchBtn" class="panel-primary-btn">Search</button>
+        </div>
+
+        <div id="usersMessage" class="admin-message">
+            Loading users...
+        </div>
+
+        <div id="usersTableWrapper" class="admin-table-wrapper" style="display:none;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Full Name</th>
+                        <th>Rank</th>
+                        <th>KYC Status</th>
+                        <th>Main Wallet</th>
+                        <th>Invest Wallet</th>
+                        <th>Profit Wallet</th>
+                        <th>Referral Wallet</th>
+                        <th>Sponsor</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const usersMessage = document.getElementById("usersMessage");
+        const usersTableWrapper = document.getElementById("usersTableWrapper");
+        const usersTableBody = document.getElementById("usersTableBody");
+        const searchInput = document.getElementById("searchInput");
+        const searchBtn = document.getElementById("searchBtn");
+
+        let currentPage = 1;
+        const pageSize = 20;
+
+        searchBtn.addEventListener("click", function() {
+            currentPage = 1;
+            loadUsers();
+        });
+
+        async function loadUsers() {
+            usersMessage.style.display = "block";
+            usersMessage.innerText = "Loading users...";
+            usersTableWrapper.style.display = "none";
+            usersTableBody.innerHTML = "";
+
+            const search = searchInput.value.trim();
+            let url = `/api/admin/users?page=${currentPage}&pageSize=${pageSize}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            try {
+                const result = await api(url);
+                if (!result.success) {
+                    usersMessage.innerText = result.message || "Could not load users.";
+                    return;
+                }
+
+                const data = result.data;
+                const items = data.items || [];
+
+                if (!items.length) {
+                    usersMessage.innerText = "No users found.";
+                    return;
+                }
+
+                items.forEach(user => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${user.email || "-"}</td>
+                        <td>${user.firstName} ${user.lastName}</td>
+                        <td>${user.currentRank?.name || "-"}</td>
+                        <td>${user.kycStatus}</td>
+                        <td>${user.wallets?.main || 0}</td>
+                        <td>${user.wallets?.invest || 0}</td>
+                        <td>${user.wallets?.profit || 0}</td>
+                        <td>${user.wallets?.referral || 0}</td>
+                        <td>${user.sponsorEmail || "-"}</td>
+                    `;
+                    usersTableBody.appendChild(row);
+                });
+
+                usersMessage.style.display = "none";
+                usersTableWrapper.style.display = "block";
+
+            } catch (error) {
+                usersMessage.innerText = error.message || "Could not load users.";
+            }
+        }
+
+
+
+        loadUsers();
+    </script>
+}

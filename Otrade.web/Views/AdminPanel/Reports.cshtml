@@ -1,0 +1,297 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Admin Reports";
+}
+
+<div class="admin-page">
+
+    <div class="admin-kpi-grid">
+
+        <div class="panel-card admin-kpi-card">
+            <span>Total Deposits</span>
+            <strong id="totalDeposits">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Total Withdrawals</span>
+            <strong id="totalWithdrawals">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Investment Profits</span>
+            <strong id="totalInvestmentProfits">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Referral Profits</span>
+            <strong id="totalReferralProfits">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Main → Invest Bonuses</span>
+            <strong id="totalMainInvestBonuses">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Pending Deposits</span>
+            <strong id="pendingDepositsCount" class="admin-kpi-highlight">0</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Pending Withdrawals</span>
+            <strong id="pendingWithdrawalsCount" class="admin-kpi-highlight">0</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Total Users</span>
+            <strong id="totalUsers">0</strong>
+        </div>
+
+    </div>
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Detailed Reports</h3>
+            <p>Review detailed financial and activity reports across the platform.</p>
+        </div>
+
+        <div class="reports-tabs">
+            <button class="report-tab active" data-target="deposits">Deposits</button>
+            <button class="report-tab" data-target="withdrawals">Withdrawals</button>
+            <button class="report-tab" data-target="transfers">Transfers</button>
+            <button class="report-tab" data-target="investmentProfits">Investment Profits</button>
+            <button class="report-tab" data-target="referralProfits">Referral Profits</button>
+            <button class="report-tab" data-target="mainInvestBonuses">Main → Invest Bonuses</button>
+        </div>
+
+        <div id="adminReportsMessage" class="admin-message">
+            Loading reports...
+        </div>
+
+        <div id="adminReportsTableWrapper" class="admin-table-wrapper" style="display:none;">
+            <table class="admin-table">
+                <thead id="adminReportsTableHead"></thead>
+                <tbody id="adminReportsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const totalDeposits = document.getElementById("totalDeposits");
+        const totalWithdrawals = document.getElementById("totalWithdrawals");
+        const totalInvestmentProfits = document.getElementById("totalInvestmentProfits");
+        const totalReferralProfits = document.getElementById("totalReferralProfits");
+        const totalMainInvestBonuses = document.getElementById("totalMainInvestBonuses");
+        const pendingDepositsCount = document.getElementById("pendingDepositsCount");
+        const pendingWithdrawalsCount = document.getElementById("pendingWithdrawalsCount");
+        const totalUsers = document.getElementById("totalUsers");
+
+        const adminReportsMessage = document.getElementById("adminReportsMessage");
+        const adminReportsTableWrapper = document.getElementById("adminReportsTableWrapper");
+        const adminReportsTableHead = document.getElementById("adminReportsTableHead");
+        const adminReportsTableBody = document.getElementById("adminReportsTableBody");
+
+        const tabs = document.querySelectorAll(".report-tab");
+
+        let summaryData = null;
+        let detailData = null;
+        let currentTab = "deposits";
+
+        tabs.forEach(tab => {
+            tab.addEventListener("click", function () {
+                tabs.forEach(x => x.classList.remove("active"));
+                this.classList.add("active");
+
+                currentTab = this.dataset.target;
+                renderDetailTable(currentTab);
+            });
+        });
+
+        async function loadAdminReports() {
+            try {
+                const summaryResult = await api("/api/reports/admin");
+                const detailResult = await api("/api/reports/admin/detail");
+
+                if (!summaryResult.success) {
+                    adminReportsMessage.innerText = summaryResult.message || "Could not load report summary.";
+                    return;
+                }
+
+                if (!detailResult.success) {
+                    adminReportsMessage.innerText = detailResult.message || "Could not load report details.";
+                    return;
+                }
+
+                summaryData = summaryResult.data;
+                detailData = detailResult.data;
+
+                fillSummary(summaryData);
+                renderDetailTable(currentTab);
+
+            } catch (error) {
+                adminReportsMessage.innerText = error.message || "Could not load admin reports.";
+            }
+        }
+
+        function fillSummary(data) {
+            totalDeposits.innerText = formatMoney(data.totalDeposits);
+            totalWithdrawals.innerText = formatMoney(data.totalWithdrawals);
+            totalInvestmentProfits.innerText = formatMoney(data.totalInvestmentProfits);
+            totalReferralProfits.innerText = formatMoney(data.totalReferralProfits);
+            totalMainInvestBonuses.innerText = formatMoney(data.totalMainInvestBonuses);
+            pendingDepositsCount.innerText = data.pendingDepositsCount || 0;
+            pendingWithdrawalsCount.innerText = data.pendingWithdrawalsCount || 0;
+            totalUsers.innerText = data.totalUsers || 0;
+        }
+
+        function renderDetailTable(type) {
+            if (!detailData) return;
+
+            adminReportsTableHead.innerHTML = "";
+            adminReportsTableBody.innerHTML = "";
+
+            const items = detailData[type] || [];
+
+            if (!items.length) {
+                adminReportsMessage.innerText = "No records found.";
+                adminReportsMessage.style.display = "block";
+                adminReportsTableWrapper.style.display = "none";
+                return;
+            }
+
+            adminReportsMessage.style.display = "none";
+            adminReportsTableWrapper.style.display = "block";
+
+            if (type === "deposits" || type === "withdrawals") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>User Email</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${escapeHtml(item.userEmail)}</td>
+                        <td>
+                            <span class="admin-status ${String(item.status).toLowerCase()}">
+                                ${escapeHtml(item.status)}
+                            </span>
+                        </td>
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            if (type === "transfers") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>User Email</th>
+                        <th>Wallet</th>
+                        <th>Type</th>
+                        <th>Created At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${escapeHtml(item.userEmail)}</td>
+                        <td>${escapeHtml(item.walletType)}</td>
+                        <td>
+                            <span class="admin-status neutral">
+                                ${escapeHtml(item.type)}
+                            </span>
+                        </td>
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            if (type === "mainInvestBonuses") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>From User</th>
+                        <th>To User</th>
+                        <th>Created At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${escapeHtml(item.fromUserEmail)}</td>
+                        <td>${escapeHtml(item.toUserEmail)}</td>
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            adminReportsTableHead.innerHTML = `
+                <tr>
+                    <th>User Email</th>
+                    <th>Created At</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
+
+            items.forEach(item => {
+                appendRow(`
+                    <td>${escapeHtml(item.userEmail)}</td>
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+        }
+
+        function appendRow(html) {
+            const row = document.createElement("tr");
+            row.innerHTML = html;
+            adminReportsTableBody.appendChild(row);
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        loadAdminReports();
+    </script>
+}

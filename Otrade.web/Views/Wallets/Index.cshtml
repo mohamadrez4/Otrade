@@ -1,0 +1,284 @@
+﻿@{
+    Layout = "~/Views/Shared/_PanelLayout.cshtml";
+    ViewData["Title"] = "Wallets";
+}
+
+<div class="wallet-page">
+
+    <div class="panel-card page-header-card">
+        <div>
+            <h2>Wallets</h2>
+            <p>Manage your Otrade wallets and transfer funds between allowed wallets.</p>
+        </div>
+
+        <button class="btn panel-primary-btn" onclick="openTransferModal()">
+            Transfer
+        </button>
+    </div>
+
+    <div class="wallet-grid wallet-page-grid">
+
+        <div class="panel-card wallet-card wallet-main">
+            <span>Main Wallet</span>
+            <strong id="mainWallet">0.00</strong>
+            <p>Deposit and withdrawal wallet</p>
+        </div>
+
+        <div class="panel-card wallet-card wallet-invest">
+            <span>Invest Wallet</span>
+            <strong id="investWallet">0.00</strong>
+            <p>Active investment balance</p>
+        </div>
+
+        <div class="panel-card wallet-card wallet-profit">
+            <span>Profit Wallet</span>
+            <strong id="profitWallet">0.00</strong>
+            <p>Daily investment profit</p>
+        </div>
+
+        <div class="panel-card wallet-card wallet-referral">
+            <span>Referral Wallet</span>
+            <strong id="referralWallet">0.00</strong>
+            <p>Referral income and bonuses</p>
+        </div>
+
+    </div>
+
+    <div class="panel-card mt-4">
+        <h4>Transfer Rules</h4>
+
+        <div class="rules-grid">
+            <div>Main → Invest</div>
+            <div>Requires active contract</div>
+
+            <div>Invest → Main</div>
+            <div>Only after contract completion</div>
+
+            <div>Profit → Main / Invest</div>
+            <div>Allowed</div>
+
+            <div>Referral → Main / Invest</div>
+            <div>Allowed</div>
+        </div>
+    </div>
+
+</div>
+
+<div class="transfer-modal-backdrop" id="transferModal" style="display:none;">
+    <div class="transfer-modal panel-card">
+
+        <div class="modal-header-custom">
+            <h4>Transfer Between Wallets</h4>
+            <button onclick="closeTransferModal()">×</button>
+        </div>
+
+        <form id="transferForm">
+
+            <div class="mb-3">
+                <label>From Wallet</label>
+                <select class="form-control panel-input" id="fromWallet">
+                    <option value="Main">Main Wallet</option>
+                    <option value="Invest">Invest Wallet</option>
+                    <option value="Profit">Profit Wallet</option>
+                    <option value="Referral">Referral Wallet</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label>To Wallet</label>
+                <select class="form-control panel-input" id="toWallet">
+                    <option value="Main">Main Wallet</option>
+                    <option value="Invest">Invest Wallet</option>
+                    <option value="Profit">Profit Wallet</option>
+                    <option value="Referral">Referral Wallet</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label>Amount</label>
+            
+                <div class="transfer-amount-wrapper">
+                    <input type="number"
+                           class="form-control panel-input transfer-amount-input"
+                           id="transferAmount"
+                           min="0"
+                           step="0.00000001" />
+            
+                    <button type="button"
+                            id="maxTransferBtn"
+                            class="transfer-max-btn">
+                        MAX
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label>Description</label>
+                <input type="text" class="form-control panel-input" id="transferDescription" placeholder="Optional" />
+            </div>
+
+            <button type="submit" class="btn panel-primary-btn w-100">
+                Confirm Transfer
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let walletsMap = {};
+        const allowedTransfers = {
+            Main: ["Invest"],
+            Invest: ["Main"],
+            Profit: ["Main", "Invest"],
+            Referral: ["Main", "Invest"]
+        };
+        document.addEventListener("DOMContentLoaded", async function () {
+            checkAuth();
+           document.getElementById("fromWallet")
+            .addEventListener("change", updateToWalletOptions);
+           document.getElementById("maxTransferBtn")
+            .addEventListener("click", setMaxTransferAmount);
+            updateToWalletOptions();
+
+            await loadWallets();
+        });
+
+        async function loadWallets() {
+            const result = await api("/api/dashboard", { method: "GET" });
+
+            if (!result || !result.success) {
+                showNotification(result?.message || "Unable to load wallets","error");
+                
+                return;
+            }
+
+            walletsMap = {};
+
+            result.data.wallets.forEach(w => {
+                walletsMap[w.walletType] = {
+                    walletId: w.walletId,
+                    balance: w.balance
+                };
+            });
+
+            setWalletValue("Main", "mainWallet");
+            setWalletValue("Invest", "investWallet");
+            setWalletValue("Profit", "profitWallet");
+            setWalletValue("Referral", "referralWallet");
+        }
+        function setMaxTransferAmount() {
+            const fromType = document.getElementById("fromWallet").value;
+            const wallet = walletsMap[fromType];
+
+            if (!wallet) {
+                showNotification("Wallet balance not found", "error");
+                return;
+            }
+
+            document.getElementById("transferAmount").value =
+                Number(wallet.balance || 0);
+
+            showNotification("Maximum transferable amount selected.", "success");
+        }
+        function setWalletValue(type, elementId) {
+            const wallet = walletsMap[type];
+
+            document.getElementById(elementId).innerText =
+                wallet ? formatMoney(wallet.balance) + " USDT" : "0.00 USDT";
+        }
+
+        function openTransferModal() {
+            document.getElementById("transferModal").style.display = "flex";
+        }
+
+        function closeTransferModal() {
+            document.getElementById("transferModal").style.display = "none";
+        }
+        function updateToWalletOptions() {
+            const fromType = document.getElementById("fromWallet").value;   
+            const toSelect = document.getElementById("toWallet");
+
+            const allowedTargets = allowedTransfers[fromType] || [];
+
+            Array.from(toSelect.options).forEach(option => {
+                option.disabled = !allowedTargets.includes(option.value);
+            });
+
+            if (!allowedTargets.includes(toSelect.value)) {
+                toSelect.value = allowedTargets[0] || "";
+            }
+            document.getElementById("transferAmount").value = "";
+        }
+        document.getElementById("transferForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const fromType = document.getElementById("fromWallet").value;
+            const toType = document.getElementById("toWallet").value;
+            const amount = Number(document.getElementById("transferAmount").value);
+            const description = document.getElementById("transferDescription").value;
+
+            if (fromType === toType) {
+                showNotification("Source and destination wallets cannot be the same","error");
+                 
+                return;
+            }
+            if (!allowedTransfers[fromType] ||
+            !allowedTransfers[fromType].includes(toType)) {
+                showNotification("This wallet transfer is not allowed","error");
+            
+            return;
+              }
+            if (!walletsMap[fromType] || !walletsMap[toType]) {
+                showNotification("Wallet information not found","error");
+              
+                return;
+            }
+
+            if (amount <= 0) {
+                showNotification("Invalid amount","error");
+                
+                return;
+            }
+
+            const payload = {
+                fromWalletId: walletsMap[fromType].walletId,
+                toWalletId: walletsMap[toType].walletId,
+                amount: amount,
+                description: description
+            };
+
+            const result = await api("/api/wallet/transfer", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            // if (!result || !result.success) {
+            //     alert(result?.message || "Transfer failed");
+            //     return;
+            // }
+            if (!result.success) {
+                    if (result.message.includes("No active contract")) {
+                        window.location.href = "/contracts";
+                        return;
+                    }
+                    showNotification(result.message,"error");
+                    
+                    return;
+                }
+            showNotification("Transfer completed","success");
+            
+            closeTransferModal();
+            await loadWallets();
+        });
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+    </script>
+}

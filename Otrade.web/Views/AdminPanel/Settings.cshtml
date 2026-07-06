@@ -1,0 +1,168 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "System Settings";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>System Settings</h3>
+            <p>Manage platform wallet, withdrawal, email and SMTP settings.</p>
+        </div>
+
+        <div id="settingsMessage" class="admin-message">
+            Loading settings...
+        </div>
+
+        <form id="settingsForm" class="admin-settings-form" style="display:none;">
+
+            <div class="admin-settings-grid">
+
+                <div class="admin-setting-group">
+                    <label>Site Wallet Address</label>
+                    <input id="SiteWalletAddress" class="panel-input" type="text" />
+                </div>
+                <div class="admin-setting-group">
+                    <label>Site Wallet Network</label>
+                    <input id="Network" class="panel-input" type="text" />
+                </div>
+                <div class="admin-setting-group">
+                    <label>Admin Email</label>
+                    <input id="ADMIN_EMAIL" class="panel-input" type="email" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>Withdrawal Limit</label>
+                    <input id="WithdrawalLimit" class="panel-input" type="number" min="0" step="1" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>SMTP Host</label>
+                    <input id="SmtpHost" class="panel-input" type="text" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>SMTP Port</label>
+                    <input id="SmtpPort" class="panel-input" type="number" min="1" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>SMTP Username</label>
+                    <input id="Username" class="panel-input" type="text" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>SMTP Password</label>
+                    <input id="Password" class="panel-input" type="password" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>From Name</label>
+                    <input id="FromName" class="panel-input" type="text" />
+                </div>
+
+            </div>
+
+            <button id="saveSettingsBtn" type="submit" class="panel-primary-btn mt-3">
+                Save Settings
+            </button>
+
+        </form>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const settingsMessage = document.getElementById("settingsMessage");
+        const settingsForm = document.getElementById("settingsForm");
+        const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+
+        const settingKeys = [
+            "SiteWalletAddress",
+            "Network",
+            "ADMIN_EMAIL",
+            "WithdrawalLimit",
+            "SmtpHost",
+            "SmtpPort",
+            "Username",
+            "Password",
+            "FromName"
+        ];
+
+        async function loadSettings() {
+            try {
+                const result = await api("/api/admin/settings");
+
+                if (!result.success) {
+                    settingsMessage.innerText = result.message || "Could not load settings.";
+                    return;
+                }
+
+                const settings = result.data || [];
+
+                settingKeys.forEach(key => {
+                    const input = document.getElementById(key);
+                    const item = settings.find(x => x.key === key || x.Key === key);
+
+                    if (input && item) {
+                                if (key === "Password") {
+                                    input.value = "";
+                                    input.placeholder = "Leave empty to keep current password";
+                                    return;
+                                }
+                        input.value = item.value || item.Value || "";
+                    }
+                });
+
+                settingsMessage.style.display = "none";
+                settingsForm.style.display = "block";
+
+            } catch (error) {
+                settingsMessage.innerText = error.message || "Could not load settings.";
+            }
+        }
+
+        settingsForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const settings = settingKeys.map(key => {
+                return {
+                    key: key,
+                    value: document.getElementById(key).value
+                };
+            });
+
+            saveSettingsBtn.disabled = true;
+            saveSettingsBtn.innerText = "Saving...";
+
+            try {
+                const result = await api("/api/admin/settings/save", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        settings: settings
+                    })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not save settings.","error");
+                    
+                    return;
+                }
+                showNotification(result.message || "Settings saved successfully.","success");
+                
+                await loadSettings();
+
+            } catch (error) {
+                showNotification(error.message || "Could not save settings.","error");
+               
+            } finally {
+                saveSettingsBtn.disabled = false;
+                saveSettingsBtn.innerText = "Save Settings";
+            }
+        });
+
+        loadSettings();
+    </script>
+}

@@ -1,0 +1,172 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Pending Withdrawals";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Pending Withdrawals</h3>
+            <p>Review, approve, or reject pending withdrawal requests.</p>
+        </div>
+
+        <div id="withdrawalsMessage" class="admin-message">
+            Loading pending withdrawals...
+        </div>
+
+        <div id="withdrawalsTableWrapper" class="admin-table-wrapper" style="display:none;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>User Email</th>
+                        <th>Amount</th>
+                        <th>Network</th>
+                        <th>Wallet Address</th>
+                        <th>Created At</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="withdrawalsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const withdrawalsMessage = document.getElementById("withdrawalsMessage");
+        const withdrawalsTableWrapper = document.getElementById("withdrawalsTableWrapper");
+        const withdrawalsTableBody = document.getElementById("withdrawalsTableBody");
+
+        async function loadPendingWithdrawals() {
+            withdrawalsMessage.style.display = "block";
+            withdrawalsMessage.innerText = "Loading pending withdrawals...";
+            withdrawalsTableWrapper.style.display = "none";
+            withdrawalsTableBody.innerHTML = "";
+
+            try {
+                const result = await api("/api/admin/withdrawals/pending");
+
+                if (!result.success) {
+                    withdrawalsMessage.innerText = result.message || "Could not load pending withdrawals.";
+                    return;
+                }
+
+                const items = result.data || [];
+
+                if (!items.length) {
+                    withdrawalsMessage.innerText = "No pending withdrawals found.";
+                    return;
+                }
+
+                items.forEach(item => {
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${item.userEmail || "-"}</td>
+                        <td>${formatMoney(item.amount)}</td>
+                        <td>
+                            <span class="admin-status neutral">${item.network || "-"}</span>
+                        </td>
+                        <td class="admin-wallet-address">${item.walletAddress || "-"}</td>
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td class="text-end">
+                            <button class="admin-action-btn approve"
+                                    onclick="approveWithdrawal(${item.withdrawalId})">
+                                Approve
+                            </button>
+
+                            <button class="admin-action-btn reject"
+                                    onclick="rejectWithdrawal(${item.withdrawalId})">
+                                Reject
+                            </button>
+                        </td>
+                    `;
+
+                    withdrawalsTableBody.appendChild(row);
+                });
+
+                withdrawalsMessage.style.display = "none";
+                withdrawalsTableWrapper.style.display = "block";
+            } catch (error) {
+                withdrawalsMessage.innerText = error.message || "Could not load pending withdrawals.";
+            }
+        }
+
+        async function approveWithdrawal(withdrawalId) {
+             const confirmed = await showConfirm(
+            "Are you sure you want to approve this withdrawal?",
+            "Approve Withdrawal"
+        );
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const result = await api(`/api/admin/withdrawals/approve/${withdrawalId}`, {
+                    method: "POST"
+                });
+
+                if (!result.success) {
+                     showNotification(result.message || "Could not approve withdrawal.","error");
+                  
+                    return;
+                }
+
+                await loadPendingWithdrawals();
+            } catch (error) {
+                showNotification(result.message || "Could not approve withdrawal.","error");
+            }
+        }
+
+        async function rejectWithdrawal(withdrawalId) {
+            const confirmed = await showConfirm(
+            "Are you sure you want to reject this withdrawal?",
+            "Reject Withdrawal"
+        );
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const result = await api(`/api/admin/withdrawals/reject/${withdrawalId}`, {
+                    method: "POST"
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not reject withdrawal.","error");
+                   
+                    return;
+                }
+
+                await loadPendingWithdrawals();
+            } catch (error) {
+                showNotification(error.message || "Could not reject withdrawal.","error");
+                
+            }
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        loadPendingWithdrawals();
+    </script>
+}

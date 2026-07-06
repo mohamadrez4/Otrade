@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+	<RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+	<RestoreDuringBuild>false</RestoreDuringBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire" Version="1.8.23" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.23" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Otrade.Application\Otrade.Application.csproj" />
+    <ProjectReference Include="..\Otrade.BackgroundJobs\Otrade.BackgroundJobs.csproj" />
+    <ProjectReference Include="..\Otrade.Infrastructure\Otrade.Infrastructure.csproj" />
+    <ProjectReference Include="..\Otrade.Persistence\Otrade.Persistence.csproj" />
+  </ItemGroup>
+
+</Project>

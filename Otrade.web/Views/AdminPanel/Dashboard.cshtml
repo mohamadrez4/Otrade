@@ -1,0 +1,115 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="admin-page">
+
+    <div class="admin-kpi-grid">
+
+        <div class="panel-card admin-kpi-card">
+            <span>Total Users</span>
+            <strong id="totalUsers">0</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Pending Deposits</span>
+            <strong id="pendingDepositsCount" class="admin-kpi-highlight">0</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Pending Withdrawals</span>
+            <strong id="pendingWithdrawalsCount" class="admin-kpi-highlight">0</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Total Deposits</span>
+            <strong id="totalDeposits">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Total Withdrawals</span>
+            <strong id="totalWithdrawals">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Investment Profits</span>
+            <strong id="totalInvestmentProfits">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Referral Profits</span>
+            <strong id="totalReferralProfits">$0.00</strong>
+        </div>
+
+        <div class="panel-card admin-kpi-card">
+            <span>Main → Invest Bonuses</span>
+            <strong id="totalMainInvestBonuses">$0.00</strong>
+        </div>
+
+    </div>
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>System Overview</h3>
+            <p>Quick summary of platform financial activity and pending admin actions.</p>
+        </div>
+
+        <div id="adminDashboardMessage" class="admin-message">
+            Loading admin dashboard...
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const totalUsers = document.getElementById("totalUsers");
+        const pendingDepositsCount = document.getElementById("pendingDepositsCount");
+        const pendingWithdrawalsCount = document.getElementById("pendingWithdrawalsCount");
+        const totalDeposits = document.getElementById("totalDeposits");
+        const totalWithdrawals = document.getElementById("totalWithdrawals");
+        const totalInvestmentProfits = document.getElementById("totalInvestmentProfits");
+        const totalReferralProfits = document.getElementById("totalReferralProfits");
+        const totalMainInvestBonuses = document.getElementById("totalMainInvestBonuses");
+        const adminDashboardMessage = document.getElementById("adminDashboardMessage");
+
+        async function loadAdminDashboard() {
+            try {
+                const result = await api("/api/reports/admin");
+
+                if (!result.success) {
+                    adminDashboardMessage.innerText = result.message || "Could not load admin dashboard.";
+                    return;
+                }
+
+                const data = result.data;
+
+                totalUsers.innerText = data.totalUsers || 0;
+                pendingDepositsCount.innerText = data.pendingDepositsCount || 0;
+                pendingWithdrawalsCount.innerText = data.pendingWithdrawalsCount || 0;
+
+                totalDeposits.innerText = formatMoney(data.totalDeposits);
+                totalWithdrawals.innerText = formatMoney(data.totalWithdrawals);
+                totalInvestmentProfits.innerText = formatMoney(data.totalInvestmentProfits);
+                totalReferralProfits.innerText = formatMoney(data.totalReferralProfits);
+                totalMainInvestBonuses.innerText = formatMoney(data.totalMainInvestBonuses);
+
+                adminDashboardMessage.innerText = "Admin dashboard loaded successfully.";
+            } catch (error) {
+                adminDashboardMessage.innerText = error.message || "Could not load admin dashboard.";
+            }
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        loadAdminDashboard();
+    </script>
+}

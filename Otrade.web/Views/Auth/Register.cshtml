@@ -1,0 +1,254 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Register | Otrade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
+    <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/auth.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+    <script src="~/js/common.js"></script>
+</head>
+<body class="auth-body">
+
+    <div class="register-wrapper">
+
+        <div class="register-card">
+
+            <div class="logo-box text-center">
+                <img src="~/images/logo.png" alt="Otrade Logo" />
+                <span>Online Trading Room</span>
+            </div>
+
+            <div id="registerStep">
+
+                <h2>Create Account</h2>
+
+                <p class="subtitle">
+                    Join Otrade investment platform
+                </p>
+
+
+                <form id="registerForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label>First Name</label>
+                            <input type="text" class="form-control auth-input" id="firstName" placeholder="First name" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Last Name</label>
+                            <input type="text" class="form-control auth-input" id="lastName" placeholder="Last name" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Email</label>
+                        <input type="email" class="form-control auth-input" id="email" placeholder="Enter your email" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Password</label>
+                        <input type="password" class="form-control auth-input" id="password" placeholder="Create password" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Confirm Password</label>
+                        <input type="password" class="form-control auth-input" id="confirmPassword" placeholder="Confirm password" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label>Referral Code</label>
+                        <input type="text" class="form-control auth-input" id="referralCode" placeholder="Referral code" />
+                    </div>
+
+                    <button type="submit" class="btn login-btn w-100">
+                        Create Account
+                    </button>
+                </form>
+
+
+            </div>
+
+            <div id="verifyStep" style="display:none;">
+
+                <h2>Verify Email</h2>
+
+                <p class="subtitle">
+                    Enter verification code
+                </p>
+
+                <form id="verifyForm">
+                    <input type="hidden" id="verifyEmail" />
+
+                    <div class="otp-box mb-4">
+                        <input maxlength="1" class="otp-input" />
+                        <input maxlength="1" class="otp-input" />
+                        <input maxlength="1" class="otp-input" />
+                        <input maxlength="1" class="otp-input" />
+                        <input maxlength="1" class="otp-input" />
+                        <input maxlength="1" class="otp-input" />
+                    </div>
+
+                    <button type="submit" class="btn login-btn w-100">
+                        Verify Account
+                    </button>
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+ 
+
+
+    <script>
+                const token =
+            localStorage.getItem("token");
+
+        if (token)
+        {
+            try
+            {
+                const payload =
+                    JSON.parse(atob(token.split('.')[1]));
+
+                if (payload.exp * 1000 > Date.now())
+                {
+                    window.location.href = "/dashboard";
+                }
+            }
+            catch
+            {
+                localStorage.removeItem("token");
+            }
+        }
+        const params = new URLSearchParams(window.location.search);
+        const ref = params.get("ref");
+
+        if (ref) {
+            const referralInput = document.getElementById("referralCode");
+            referralInput.value = ref;
+            referralInput.readOnly = true;
+        }
+
+        document.getElementById("registerForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            const firstname =document.getElementById("firstName").value;
+            const lastName = document.getElementById("lastName").value;
+            const email = document.getElementById("email").value ;
+            const referralCode = document.getElementById("referralCode").value;
+            if (!firstname){
+                 showNotification("Please enter firstname","error");
+                return;
+            }
+            if (!lastName){
+                 showNotification("Please enter lastName","error");
+                return;
+            }
+            if (!email){
+                 showNotification("Please enter email","error");
+                return;
+            }
+            if (!isValidEmail(email)) {
+                  showNotification("Please enter a valid email address.", "error");
+                  return;
+            }
+            if (!password){
+                 showNotification("Please enter password","error");
+                return;
+            }
+            if (password !== confirmPassword) {
+                 showNotification("Passwords do not match","error");
+                
+                return;
+            }
+            if (!referralCode){
+                 showNotification("Please enter referralCode","error");
+                return;
+            }
+            const payload = {
+                firstName: document.getElementById("firstName").value,
+                lastName: document.getElementById("lastName").value,
+                email: document.getElementById("email").value,
+                password: password,
+                referralCode: document.getElementById("referralCode").value
+            };
+
+            const response = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                showNotification(result.message,"error");
+               
+                return;
+            }
+
+            document.getElementById("verifyEmail").value = payload.email;
+            document.getElementById("registerStep").style.display = "none";
+            document.getElementById("verifyStep").style.display = "block";
+        });
+
+        document.getElementById("verifyForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const inputs = document.querySelectorAll(".otp-input");
+            let code = "";
+
+            inputs.forEach(x => code += x.value);
+
+            const payload = {
+                email: document.getElementById("verifyEmail").value,
+                code: code
+            };
+
+            const response = await fetch("/api/auth/verify-email", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                 showNotification(result.message,"error");
+               
+                return;
+            }
+
+            window.location.href = "/auth/login";
+        });
+
+        document.querySelectorAll(".otp-input").forEach((input, index, inputs) => {
+            input.addEventListener("input", () => {
+                if (input.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+        });
+    </script>
+    <div id="notificationContainer"
+         class="notification-container">
+    </div>
+</body>
+</html>

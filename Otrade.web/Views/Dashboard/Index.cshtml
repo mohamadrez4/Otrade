@@ -1,0 +1,128 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="dashboard-grid">
+
+    <div class="panel-card dashboard-hero">
+        <div>
+            <h2>Welcome to Otrade</h2>
+            <p>Track Your Wallets, Profits, Rank And Your Referred Capital.</p>
+        </div>
+
+        <div class="total-assets">
+            <span>Total Assets</span>
+            <strong id="totalAssets">0 USDT</strong>
+        </div>
+    </div>
+
+    <div class="wallet-grid">
+        <div class="panel-card wallet-card">
+            <span>Main Wallet</span>
+            <strong id="mainWallet">0</strong>
+        </div>
+
+        <div class="panel-card wallet-card">
+            <span>Invest Wallet</span>
+            <strong id="investWallet">0</strong>
+        </div>
+
+        <div class="panel-card wallet-card">
+            <span>Profit Wallet</span>
+            <strong id="profitWallet">0</strong>
+        </div>
+
+        <div class="panel-card wallet-card">
+            <span>Referral Wallet</span>
+            <strong id="referralWallet">0</strong>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="panel-card">
+            <span class="card-label">Current Rank</span>
+            <h3 id="currentRank">-</h3>
+        </div>
+
+        <div class="panel-card">
+            <span class="card-label">Your Referred Capital</span>
+            <h3 id="networkVolume">0 USDT</h3>
+        </div>
+
+        <div class="panel-card">
+            <span class="card-label">Next Rank</span>
+            <h3 id="nextRank">-</h3>
+            <div class="progress-wrapper">
+                <div id="rankProgress" class="progress-fill"></div>
+            </div>
+            <small id="rankProgressText">0%</small>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            checkAuth();
+
+            const result = await api("/api/dashboard", {
+                method: "GET"
+            });
+
+            if (!result || !result.success) {
+                    showNotification(result?.message || "Dashboard data failed","error");
+                
+                return;
+            }
+
+            const data = result.data;
+
+            document.getElementById("totalAssets").innerText =
+                formatMoney(data.totalAssets) + " USDT";
+
+            document.getElementById("currentRank").innerText =
+                data.currentRank ?? "-";
+
+            document.getElementById("networkVolume").innerText =
+                formatMoney(data.networkVolume) + " USDT";
+
+            document.getElementById("nextRank").innerText =
+                data.nextRank ?? "Max Rank";
+
+            document.getElementById("rankProgress").style.width =
+                (data.nextRankProgressPercent ?? 100) + "%";
+
+            document.getElementById("rankProgressText").innerText =
+                (data.nextRankProgressPercent ?? 100) + "%";
+
+            fillWallets(data.wallets);
+        });
+
+        function fillWallets(wallets) {
+            wallets.forEach(w => {
+                const type = w.walletType;
+                const balance = formatMoney(w.balance);
+
+                if (type === "Main")
+                    document.getElementById("mainWallet").innerText = balance;
+
+                if (type === "Invest")
+                    document.getElementById("investWallet").innerText = balance;
+
+                if (type === "Profit")
+                    document.getElementById("profitWallet").innerText = balance;
+
+                if (type === "Referral")
+                    document.getElementById("referralWallet").innerText = balance;
+            });
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+    </script>
+}

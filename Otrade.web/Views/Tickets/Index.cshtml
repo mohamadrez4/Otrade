@@ -1,0 +1,251 @@
+﻿@{
+    ViewData["Title"] = "Tickets";
+}
+
+<div class="tickets-page">
+
+    <div class="panel-card">
+        <div class="tickets-header">
+            <div>
+                <h3>Support Tickets</h3>
+                <p>Create a support ticket and follow your conversations with the support team.</p>
+            </div>
+        </div>
+
+        <div id="ticketMessage" class="ticket-message" style="display:none;"></div>
+
+        <form id="ticketForm" class="ticket-form">
+            <div class="ticket-form-group">
+                <label for="subject">Subject</label>
+                <input id="subject"
+                       type="text"
+                       class="panel-input"
+                       placeholder="Enter ticket subject"
+                       required />
+            </div>
+
+            <div class="ticket-form-group">
+                <label for="message">Message</label>
+                <textarea id="message"
+                          class="panel-input ticket-textarea"
+                          placeholder="Write your message"
+                          required></textarea>
+            </div>
+
+            <button id="createTicketBtn" type="submit" class="panel-primary-btn">
+                Create Ticket
+            </button>
+        </form>
+    </div>
+
+    <div class="panel-card">
+        <div class="tickets-header">
+            <div>
+                <h3>My Tickets</h3>
+                <p>Your submitted support tickets.</p>
+            </div>
+        </div>
+
+        <div id="ticketsLoading" class="ticket-message">
+            Loading tickets...
+        </div>
+
+        <div id="ticketsList" class="tickets-list" style="display:none;"></div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const ticketForm = document.getElementById("ticketForm");
+        const subjectInput = document.getElementById("subject");
+        const messageInput = document.getElementById("message");
+        const createTicketBtn = document.getElementById("createTicketBtn");
+        const ticketMessage = document.getElementById("ticketMessage");
+
+        const ticketsLoading = document.getElementById("ticketsLoading");
+        const ticketsList = document.getElementById("ticketsList");
+
+        ticketForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            hideTicketMessage();
+
+            const subject = subjectInput.value.trim();
+            const message = messageInput.value.trim();
+
+            if (!subject || !message) {
+                showTicketMessage("Please enter subject and message.", false);
+                return;
+            }
+
+            createTicketBtn.disabled = true;
+            createTicketBtn.innerText = "Creating...";
+
+            try {
+                const result = await api("/api/tickets/create", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        subject: subject,
+                        message: message
+                    })
+                });
+
+                if (!result.success) {
+                    showTicketMessage(result.message || "Could not create ticket.", false);
+                    return;
+                }
+
+                showTicketMessage("Ticket created successfully.", true);
+
+                subjectInput.value = "";
+                messageInput.value = "";
+
+                await loadTickets();
+
+            } catch (error) {
+                showTicketMessage(error.message || "Could not create ticket.", false);
+            } finally {
+                createTicketBtn.disabled = false;
+                createTicketBtn.innerText = "Create Ticket";
+            }
+        });
+
+        async function loadTickets() {
+            ticketsLoading.style.display = "block";
+            ticketsLoading.innerText = "Loading tickets...";
+            ticketsList.style.display = "none";
+            ticketsList.innerHTML = "";
+
+            try {
+                const result = await api("/api/tickets/my-tickets");
+                const tickets = result.data || [];
+
+                if (!tickets.length) {
+                    ticketsLoading.innerText = "No tickets found.";
+                    return;
+                }
+
+                      tickets.forEach(ticket => {
+            const item = document.createElement("div");
+            item.className = "ticket-item";
+
+            // اگر تیکت بسته است، فرم Reply را حذف یا غیر فعال می‌کنیم
+            const isClosed = ticket.status.toLowerCase() === "closed";
+
+            item.innerHTML = `
+                <div class="ticket-item-header">
+                    <div>
+                        <h4>${ticket.subject}</h4>
+                        <span>${formatDate(ticket.createdAt)}</span>
+                    </div>
+                    <span class="ticket-status ${ticket.status.toLowerCase()}">${ticket.status}</span>
+                </div>
+
+                <div class="ticket-messages">
+                    ${(ticket.messages || []).map(msg => `
+                        <div class="ticket-message-item">
+                            <div class="ticket-message-meta">
+                                <strong>${msg.senderEmail || "-"}</strong>
+                                <span>${formatDate(msg.createdAt)}</span>
+                            </div>
+                            <p>${msg.message || ""}</p>
+                        </div>
+                    `).join("")}
+                </div>
+
+                ${!isClosed ? `
+                <form class="ticket-reply-form" data-ticket-id="${ticket.ticketId}">
+                    <textarea class="panel-input ticket-reply-input"
+                              placeholder="Write a reply"
+                              required></textarea>
+                    <button type="submit" class="panel-primary-btn">
+                        Send Reply
+                    </button>
+                </form>
+                ` : `<p style="color:#94A3B8;font-size:14px;">This ticket is closed. Replies are disabled.</p>`}
+            `;
+
+            ticketsList.appendChild(item);
+        });
+
+                bindReplyForms();
+
+                ticketsLoading.style.display = "none";
+                ticketsList.style.display = "grid";
+
+            } catch (error) {
+                ticketsLoading.innerText = error.message || "Could not load tickets.";
+                ticketsLoading.style.display = "block";
+            }
+        }
+
+        function bindReplyForms() {
+            document.querySelectorAll(".ticket-reply-form").forEach(form => {
+                form.addEventListener("submit", async function (e) {
+                    e.preventDefault();
+
+                    const ticketId = this.dataset.ticketId;
+                    const input = this.querySelector(".ticket-reply-input");
+                    const button = this.querySelector("button");
+
+                    const message = input.value.trim();
+
+                    if (!message) return;
+
+                    button.disabled = true;
+                    button.innerText = "Sending...";
+
+                    try {
+                        const result = await api(`/api/tickets/reply/${ticketId}`, {
+                            method: "POST",
+                            body: JSON.stringify({
+                                message: message
+                            })
+                        });
+
+                        if (!result.success) {
+                            showNotification(result.message || "Could not send reply.","error");
+                            
+                            return;
+                        }
+
+                        await loadTickets();
+
+                    } catch (error) {
+                        showNotification(error.message || "Could not send reply.","error");
+                         
+                    } finally {
+                        button.disabled = false;
+                        button.innerText = "Send Reply";
+                    }
+                });
+            });
+        }
+
+        function showTicketMessage(message, isSuccess) {
+            ticketMessage.innerText = message;
+            ticketMessage.className = isSuccess
+                ? "ticket-message success"
+                : "ticket-message error";
+            ticketMessage.style.display = "block";
+        }
+
+        function hideTicketMessage() {
+            ticketMessage.innerText = "";
+            ticketMessage.style.display = "none";
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        loadTickets();
+    </script>
+}
