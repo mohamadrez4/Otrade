@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Otrade.Application.DTOs.Auth;
+using Otrade.Application.Services;
 using Otrade.Application.Services.Security;
 using Otrade.Persistence.Context;
 using System;
@@ -8,6 +9,7 @@ namespace Otrade.web.Controllers;
 public class AuthController : Controller
 {
     private readonly AuthService _authService;
+    private readonly PreRegistrationService _preRegistrationService;
     [HttpGet]
     public IActionResult Login()
     {
@@ -23,11 +25,25 @@ public class AuthController : Controller
     {
         return View();
     }
-    public AuthController(AuthService authService)
+    public AuthController(
+        AuthService authService,
+        PreRegistrationService preRegistrationService)
     {
         _authService = authService;
+        _preRegistrationService = preRegistrationService;
     }
+    [HttpPost]
+    [Route("api/auth/pre-register/start")]
+    public async Task<IActionResult> StartPreRegistration(
+    [FromBody] StartPreRegistrationRequest request)
+    {
+        var result = await _preRegistrationService.StartAsync(request);
 
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
     [HttpPost]
     [Route("api/auth/register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)

@@ -70,6 +70,7 @@ builder.Services.AddScoped<ContractService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<PreRegistrationService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<WalletService>();
 builder.Services.AddScoped<JobLockservice>();
