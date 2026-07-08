@@ -11,12 +11,12 @@ using Otrade.Application.Services.Security;
 using Otrade.Persistence.Context;
 using Otrade.Web.Services;
 using System.Text;
-
+using Otrade.web.BackgroundServices;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddHttpClient();
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
 builder.Services
@@ -72,7 +72,7 @@ builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<WalletService>();
-builder.Services.AddScoped<JobLockService>();
+builder.Services.AddScoped<JobLockservice>();
 builder.Services.AddScoped<MainInvestBonusService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<RankService>();
@@ -85,8 +85,11 @@ builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 builder.Services.AddScoped<SystemSettingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<EncryptionService>();
+builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
+builder.Services.AddHostedService<NotificationBackgroundWorker>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -137,5 +140,5 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 
-//app.Run();
-app.Run("http://0.0.0.0:5050");
+app.Run();
+//app.Run("http://0.0.0.0:5050");

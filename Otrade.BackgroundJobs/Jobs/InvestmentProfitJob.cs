@@ -11,8 +11,8 @@ public class InvestmentProfitJob
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ReferralProfitService _referralProfitService;
-    private readonly JobLockService _lockService;
-    public InvestmentProfitJob(IServiceScopeFactory scopeFactory, ReferralProfitService referralProfitService,JobLockService lockService)
+    private readonly JobLockservice _lockService;
+    public InvestmentProfitJob(IServiceScopeFactory scopeFactory, ReferralProfitService referralProfitService,JobLockservice lockService)
     {
         _scopeFactory = scopeFactory;
         _referralProfitService = referralProfitService;

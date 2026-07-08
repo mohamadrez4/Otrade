@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Otrade.Application.Common;
 using Otrade.Application.Common.Interfaces;
 using Otrade.Application.DTOs.Wallet;
@@ -15,23 +14,21 @@ public class WalletService
     private readonly OtradeDbContext _context;
     private readonly MainInvestBonusService _mainInvestBonusService;
     private readonly SystemSettingService _settingService;
-    private readonly IEmailService _emailService;
     private readonly IEmailTemplateService _emailTemplateService;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly INotificationQueue _notificationQueue;
     public WalletService(OtradeDbContext context,
 
-        IServiceScopeFactory scopeFactory,
         MainInvestBonusService mainInvestBonusService,
         SystemSettingService systemSettingService,
         IEmailService emailService,
-        IEmailTemplateService emailTemplateService)
+        IEmailTemplateService emailTemplateService,
+       INotificationQueue notificationQueue)
     {
         _context = context;
-        _scopeFactory = scopeFactory;
         _mainInvestBonusService = mainInvestBonusService;
-        _settingService= systemSettingService;
-        _emailService= emailService;
-        _emailTemplateService= emailTemplateService;
+        _settingService = systemSettingService;
+        _emailTemplateService = emailTemplateService;
+        _notificationQueue = notificationQueue; 
     }
 
     public async Task<ApiResponse<bool>> TransferAsync(
@@ -166,34 +163,23 @@ public class WalletService
 
         _context.Deposits.Add(deposit);
         await _context.SaveChangesAsync();
-        var adminEmail =await _settingService.GetValueAsync("ADMIN_EMAIL");
 
-        var requestamount = request.Amount;
-        var requesttxid = request.TxId;
-        if (!string.IsNullOrWhiteSpace(adminEmail))
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
+        var user = await _context.Users
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x => x.UserId == userId);
 
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
+        var userDisplay = user != null
+            ? $"{user.Email} / UserId: {user.ReferralCode}"
+            : $"UserId: {userId}";
 
-                    await emailService.SendAsync(
-                        adminEmail,
-                        "New Deposit Request",
-                        emailTemplateService.GetDepositNotification(
-                            userId.ToString(),
-                            requestamount,
-                            requesttxid));
-                }
-                catch
-                {
-                }
-            });
-        }
+        var emailBody = _emailTemplateService.GetDepositNotification(
+            userDisplay,
+            request.Amount,
+            request.TxId);
+
+        await _notificationQueue.QueueAdminAsync(
+            "New Deposit Request",
+            emailBody);
         return ResponseFactory.Success(true, "Deposit request submitted");
     }
 
@@ -268,167 +254,19 @@ public class WalletService
 
         await _context.SaveChangesAsync();
         await transaction.CommitAsync();
-        var adminEmail = await _settingService.GetValueAsync("ADMIN_EMAIL");
+       
+        var withdrawalEmailBody = _emailTemplateService.GetWithdrawalNotification(
+    user.Email,
+    request.Amount,
+    address.Address);
 
-        var useremail = user.Email;
-        var requestamount = request.Amount;
-        var address_address = address.Address;
-        if (!string.IsNullOrWhiteSpace(adminEmail))
-        {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
+        await _notificationQueue.QueueAdminAsync(
+            "New Withdrawal Request",
+            withdrawalEmailBody);
 
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-                    await emailService.SendAsync(
-                        adminEmail,
-                        "New Withdrawal Request",
-                        emailTemplateService.GetWithdrawalNotification(
-                            useremail,
-                            requestamount,
-                            address_address)
-                    );
-
-                }
-                catch (Exception ex)
-                {
-                    //using var scope = _scopeFactory.CreateScope();
-
-                    //var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-                    //_context.EmailLogs.Add(new EmailLog
-                    //{
-                    //    ToEmail = useremail,
-                    //    Subject = "New Withdrawal Request",
-                    //    Body = emailTemplateService.GetWithdrawalNotification(
-                    //        useremail,
-                    //        requestamount,
-                    //        address_address),
-                    //    CreatedAt =  DateTime.Now,
-                    //    Status="Faild"
-                    //});
-                    await _context.SaveChangesAsync();
-                    Console.WriteLine($"Withdrawal Email Failed: {ex.Message}");
-                }
-            });
-        }
         return ResponseFactory.Success(true, "Withdrawal request submitted");
     }
-    //public async Task<ApiResponse<bool>> CreateWithdrawalRequestAsync(
-    //    WithdrawalRequest request,
-    //    long userId)
-    //{ 
-    //    var withdrawlimit = await _settingService.GetValueAsync("WithdrawalLimit");
-
-    //    if (withdrawlimit == null || withdrawlimit=="")
-    //        return ResponseFactory.Fail<bool>("Withrawlimit Not Set From Admin");
-
-    //    if (request.Amount < int.Parse(withdrawlimit) )
-    //        return ResponseFactory.Fail<bool>("Minimum withdrawal amount is 100 USDT.");
-    //    var user = await _context.Users
-    //        .FirstOrDefaultAsync(x => x.UserId == userId);
-
-    //    if (user == null)
-    //        return ResponseFactory.Fail<bool>("User not found");
-
-    //    if (user.KycStatus != KycStatus.Approved)
-    //        return ResponseFactory.Fail<bool>("KYC approval required");
-    //    var wallet = await _context.Wallets
-    //        .FirstOrDefaultAsync(x =>
-    //            x.UserId == userId &&
-    //            x.WalletType == WalletType.Main);
-
-    //    if (wallet == null)
-    //        return ResponseFactory.Fail<bool>("Main wallet not found");
-
-    //    if (wallet.Balance < request.Amount)
-    //        return ResponseFactory.Fail<bool>("Insufficient balance");
-
-    //    var address = await _context.UserWalletAddresses
-    //        .FirstOrDefaultAsync(x => x.UserId == userId);
-
-    //    if (address == null)
-    //        return ResponseFactory.Fail<bool>("Wallet address not found");
-    //    var pendingAmount = await _context.Withdrawals
-    //                    .Where(x =>
-    //                        x.UserId == userId &&
-    //                        x.Status == DepositStatus.Pending)
-    //                    .SumAsync(x => (decimal?)x.Amount) ?? 0;
-    //    var availableBalance =wallet.Balance - pendingAmount;
-    //    if (availableBalance < request.Amount)
-    //    {
-    //        return ResponseFactory.Fail<bool>(
-    //            "Insufficient available balance");
-    //    }
-    //    var withdrawal = new Withdrawal
-    //    {
-    //        UserId = userId,
-    //        Amount = request.Amount, 
-    //        WalletAddress = address.Address,
-    //        Network = address.Network,
-    //        Status = DepositStatus.Pending,
-    //        CreatedAt =  DateTime.Now
-    //    };
-
-    //    _context.Withdrawals.Add(withdrawal);
-
-    //    await _context.SaveChangesAsync();
-    //    var adminEmail = await _settingService.GetValueAsync("ADMIN_EMAIL");
-
-    //    var useremail = user.Email;
-    //    var requestamount = request.Amount;
-    //    var address_address = address.Address;
-    //    if (!string.IsNullOrWhiteSpace(adminEmail))
-    //    {
-    //        _ = Task.Run(async () =>
-    //        {
-    //            try
-    //            {
-    //                using var scope = _scopeFactory.CreateScope();
-
-    //                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-    //                var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-    //                await emailService.SendAsync(
-    //                    adminEmail,
-    //                    "New Withdrawal Request",
-    //                    emailTemplateService.GetWithdrawalNotification(
-    //                        useremail,
-    //                        requestamount,
-    //                        address_address)
-    //                );
-
-    //            }
-    //            catch (Exception ex)
-    //            {
-    //                //using var scope = _scopeFactory.CreateScope();
-
-    //                //var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-    //                //_context.EmailLogs.Add(new EmailLog
-    //                //{
-    //                //    ToEmail = useremail,
-    //                //    Subject = "New Withdrawal Request",
-    //                //    Body = emailTemplateService.GetWithdrawalNotification(
-    //                //        useremail,
-    //                //        requestamount,
-    //                //        address_address),
-    //                //    CreatedAt =  DateTime.Now,
-    //                //    Status="Faild"
-    //                //});
-    //                await _context.SaveChangesAsync();
-    //                Console.WriteLine($"Withdrawal Email Failed: {ex.Message}");
-    //            }
-    //        });
-    //    }
-    //    return ResponseFactory.Success(
-    //        true,
-    //        "Withdrawal request submitted");
-    //}
+  
     public async Task<ApiResponse<bool>> SaveWalletAddressAsync(
         string address,
         string network,

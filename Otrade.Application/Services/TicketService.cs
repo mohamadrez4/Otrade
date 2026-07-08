@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Otrade.Application.Common;
 using Otrade.Application.Common.Interfaces;
 using Otrade.Application.DTOs.Ticket;
@@ -11,21 +10,16 @@ namespace Otrade.Application.Services;
 public class TicketService
 {
     private readonly OtradeDbContext _context;
-    private readonly SystemSettingService _settingService;
-    private readonly IEmailService _emailService;
     private readonly IEmailTemplateService _emailTemplateService;
-    private readonly IServiceScopeFactory _scopeFactory;
-    public TicketService(OtradeDbContext context,
-        IServiceScopeFactory scopeFactory,
-        SystemSettingService systemSettingService,
-        IEmailService emailService,
-        IEmailTemplateService emailTemplateService)
+    private readonly INotificationQueue _notificationQueue;
+    public TicketService(
+        OtradeDbContext context,
+        IEmailTemplateService emailTemplateService,
+       INotificationQueue notificationQueue)
     {
         _context = context;
-        _scopeFactory = scopeFactory;
-        _settingService = systemSettingService;
-        _emailService = emailService;
         _emailTemplateService = emailTemplateService;
+        _notificationQueue = notificationQueue;
     }
 
     public async Task<ApiResponse<TicketResponse>> CreateTicketAsync(
@@ -51,36 +45,26 @@ public class TicketService
 
         _context.Tickets.Add(ticket);
         await _context.SaveChangesAsync();
-        var adminEmail = await _settingService.GetValueAsync("ADMIN_EMAIL");
+
 
         var user = await _context.Users.FirstOrDefaultAsync(x => x.UserId == userId);
-        var ticketemail = user?.Email ?? userId.ToString();
-        var requestsubject = request.Subject;
-        if (!string.IsNullOrWhiteSpace(adminEmail))
-        {
-            _ = Task.Run(async () =>
-        {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
+        var ticketEmail = user?.Email ?? userId.ToString();
+        var adminEmailBody = _emailTemplateService.GetTicketCreatedEmail(
+                    ticketEmail,
+                    request.Subject);
 
-                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
+        await _notificationQueue.QueueAdminAsync(
+            "New Ticket Created",
+            adminEmailBody);
 
-                await emailService.SendAsync(
-                    adminEmail,
-                    "New Ticket Created",
-                    emailTemplateService.GetTicketCreatedEmail(
-                       ticketemail,
-                       requestsubject)
-                );
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ticket Email Failed: {ex.Message}");
-            }
-        });
-        }
+        var userEmailBody = _emailTemplateService.GetTicketCreatedEmail(
+            ticketEmail,
+            request.Subject);
+
+        await _notificationQueue.QueueEmailAsync(
+            ticketEmail,
+            "Ticket Created",
+            userEmailBody);
         var response = new TicketResponse
         {
             TicketId = ticket.TicketId,

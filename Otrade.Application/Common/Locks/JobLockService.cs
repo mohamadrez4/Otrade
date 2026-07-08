@@ -4,11 +4,11 @@ using Otrade.Persistence.Context;
 
 namespace Otrade.Application.Common.Locks;
 
-public class JobLockService
+public class JobLockservice
 {
     private readonly OtradeDbContext _context;
 
-    public JobLockService(OtradeDbContext context)
+    public JobLockservice(OtradeDbContext context)
     {
         _context = context;
     }

@@ -61,7 +61,54 @@
                     <label>From Name</label>
                     <input id="FromName" class="panel-input" type="text" />
                 </div>
+                <div class="admin-setting-group">
+                    <label>Telegram Bot Enabled</label>
+                    <select id="TelegramBotEnabled" class="panel-input">
+                        <option value="false">Disabled</option>
+                        <option value="true">Enabled</option>
+                    </select>
+                </div>
 
+                <div class="admin-setting-group">
+                    <label>Telegram Bot Token</label>
+                    <input id="TelegramBotToken" class="panel-input" type="password" placeholder="Enter bot token" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>Telegram Chat ID</label>
+                    <input id="TelegramChatId" class="panel-input" type="text" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>Email Notifications</label>
+                    <select id="NotificationEmailEnabled" class="panel-input">
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                    </select>
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>Telegram Notifications</label>
+                    <select id="NotificationTelegramEnabled" class="panel-input">
+                        <option value="false">Disabled</option>
+                        <option value="true">Enabled</option>
+                    </select>
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>KYC Max File Size (MB)</label>
+                    <input id="KycMaxFileSizeMB" class="panel-input" type="number" min="1" step="1" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>KYC Allowed Extensions</label>
+                    <input id="KycAllowedExtensions" class="panel-input" type="text" placeholder="jpg,jpeg,png,pdf" />
+                </div>
+
+                <div class="admin-setting-group">
+                    <label>Initial Registration Expire Hours</label>
+                    <input id="InitialRegistrationExpireHours" class="panel-input" type="number" min="1" step="1" />
+                </div>
             </div>
 
             <button id="saveSettingsBtn" type="submit" class="panel-primary-btn mt-3">
@@ -88,7 +135,16 @@
             "SmtpPort",
             "Username",
             "Password",
-            "FromName"
+            "FromName",
+
+            "TelegramBotEnabled",
+            "TelegramBotToken",
+            "TelegramChatId",
+            "NotificationEmailEnabled",
+            "NotificationTelegramEnabled",
+            "KycMaxFileSizeMB",
+            "KycAllowedExtensions",
+            "InitialRegistrationExpireHours"
         ];
 
         async function loadSettings() {
@@ -110,6 +166,11 @@
                                 if (key === "Password") {
                                     input.value = "";
                                     input.placeholder = "Leave empty to keep current password";
+                                    return;
+                                }
+                                if (key === "TelegramBotToken") {
+                                    input.value = "";
+                                    input.placeholder = "Leave empty to keep current token";
                                     return;
                                 }
                         input.value = item.value || item.Value || "";
@@ -144,15 +205,16 @@
                         settings: settings
                     })
                 });
+                        if (!result || result.success !== true) {
+            showNotification(result?.message || "Could not save settings.", "error");
+            return;
+        }
 
-                if (!result.success) {
-                    showNotification(result.message || "Could not save settings.","error");
-                    
-                    return;
-                }
-                showNotification(result.message || "Settings saved successfully.","success");
-                
-                await loadSettings();
+        showNotification(result?.message || "Settings saved successfully.", "success");
+
+        setTimeout(async () => {
+            await loadSettings();
+        }, 500);
 
             } catch (error) {
                 showNotification(error.message || "Could not save settings.","error");

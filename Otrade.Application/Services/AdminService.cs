@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 using Otrade.Application.Common;
 using Otrade.Application.Common.Interfaces;
@@ -11,36 +10,30 @@ using Otrade.Application.Services.Security;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 namespace Otrade.Application.Services
 {
     public class AdminService
     {
         private readonly OtradeDbContext _context;
         private readonly SystemSettingService _settingService;
-        private readonly IEmailService _emailService;
         private readonly IEmailTemplateService _emailTemplateService;
-        private readonly IServiceScopeFactory _scopeFactory;
         private readonly EncryptionService _encryptionService;
+        private readonly INotificationQueue _notificationQueue;
         public AdminService(OtradeDbContext context,
         IServiceScopeFactory scopeFactory,
         SystemSettingService systemSettingService,
         IEmailService emailService,
         IEmailTemplateService emailTemplateService,
-         EncryptionService encryptionService
+         EncryptionService encryptionService,
+         INotificationQueue notificationQueue
         )
         {
             _context = context;
 
-            _scopeFactory = scopeFactory;
             _settingService = systemSettingService;
-            _emailService = emailService;
             _emailTemplateService = emailTemplateService;
             _encryptionService = encryptionService;
+            _notificationQueue= notificationQueue;
         }
 
         public async Task<ApiResponse<List<DepositsPending>>>GetPendingDepositsAsync()
@@ -156,106 +149,17 @@ namespace Otrade.Application.Services
             withdrawal.ProcessedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            var amount = withdrawal.Amount;
-            var useremail = withdrawal.User.Email;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
 
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
+            var emailBody = _emailTemplateService.GetWithdrawalApprovedEmail(
+                withdrawal.Amount);
 
-                    await emailService.SendAsync(
-                        useremail,
-                        "Withdrawal Status",
-                           emailTemplateService.GetWithdrawalApprovedEmail(amount)
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Withdrawal Email Failed: {ex.Message}");
-                }
-            });
+            await _notificationQueue.QueueEmailAsync(
+                withdrawal.User.Email,
+                "Withdrawal Status",
+                emailBody);
+
             return ResponseFactory.Success(true, "Withdrawal approved");
         }
-        //public async Task<ApiResponse<bool>>ApproveWithdrawalAsync(long withdrawalId)
-        //{
-        //    var withdrawal = await _context.Withdrawals
-        //        .Include(x=> x.User)
-        //        .FirstOrDefaultAsync(x =>
-        //            x.WithdrawalId == withdrawalId);
-
-        //    if (withdrawal == null)
-        //        return ResponseFactory.Fail<bool>(
-        //            "Withdrawal not found");
-
-        //    if (withdrawal.Status != DepositStatus.Pending)
-        //        return ResponseFactory.Fail<bool>(
-        //            "Already processed");
-
-        //    var wallet = await _context.Wallets
-
-        //        .FirstOrDefaultAsync(x =>
-        //            x.UserId == withdrawal.UserId &&
-        //            x.WalletType == WalletType.Main);
-
-        //    if (wallet == null)
-        //        return ResponseFactory.Fail<bool>(
-        //            "Main wallet not found");
-
-        //    if (wallet.Balance < withdrawal.Amount)
-        //        return ResponseFactory.Fail<bool>(
-        //            "Insufficient balance");
-
-        //    var before = wallet.Balance;
-
-        //    wallet.Balance -= withdrawal.Amount;
-
-        //    withdrawal.Status = DepositStatus.Approved;
-        //    withdrawal.ProcessedAt =  DateTime.Now;
-
-        //    _context.WalletTransactions.Add(
-        //        new WalletTransaction
-        //        {
-        //            UserId = wallet.UserId,
-        //            WalletId = wallet.WalletId,
-        //            Amount = -withdrawal.Amount,
-        //            BalanceBefore = before,
-        //            BalanceAfter = wallet.Balance,
-        //            Type = TransactionType.Withdrawal,
-        //            Description = "Withdrawal approved",
-        //            CreatedAt =  DateTime.Now
-        //        });
-
-        //    await _context.SaveChangesAsync();
-        //    var amount = withdrawal.Amount;
-        //    var useremail = withdrawal.User.Email;
-        //    _ = Task.Run(async () =>
-        //      {
-        //          try
-        //          {
-        //              using var scope = _scopeFactory.CreateScope();
-
-        //              var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-        //              var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-        //              await emailService.SendAsync(
-        //                  useremail,
-        //                  "Withdrawal Status",
-        //                     emailTemplateService.GetWithdrawalApprovedEmail(amount)
-        //              );
-        //          }
-        //          catch (Exception ex)
-        //          {
-        //              Console.WriteLine($"Withdrawal Email Failed: {ex.Message}");
-        //          }
-        //        });
-        // return ResponseFactory.Success(
-        //        true,
-        //        "Withdrawal approved");
-        //}
 
         public async Task<ApiResponse<bool>> RejectWithdrawalAsync(long withdrawalId)
         {
@@ -301,76 +205,18 @@ namespace Otrade.Application.Services
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
-            var amount = withdrawal.Amount;
 
-            var useremail = withdrawal.User.Email;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
+            var emailBody = _emailTemplateService.GetWithdrawalRejectedEmail(
+                withdrawal.Amount,
+                "Withdrawal rejected");
 
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
+            await _notificationQueue.QueueEmailAsync(
+                withdrawal.User.Email,
+                "Withdrawal Status",
+                emailBody);
 
-                    await emailService.SendAsync(
-                       useremail,
-                        "Withdrawal Status",
-                            emailTemplateService.GetWithdrawalRejectedEmail(amount, "Withdrawal rejected")
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Withdrawal Email Failed: {ex.Message}");
-                }
-            });
             return ResponseFactory.Success(true, "Withdrawal rejected");
         }
-        //public async Task<ApiResponse<bool>>RejectWithdrawalAsync(long withdrawalId)
-        //{
-        //    var withdrawal = await _context.Withdrawals
-        //        .Include(x => x.User)
-        //        .FirstOrDefaultAsync(x =>
-        //            x.WithdrawalId == withdrawalId);
-
-        //    if (withdrawal == null)
-        //        return ResponseFactory.Fail<bool>(
-        //            "Withdrawal not found");
-
-        //    if (withdrawal.Status != DepositStatus.Pending)
-        //        return ResponseFactory.Fail<bool>(
-        //            "Already processed");
-
-        //    withdrawal.Status = DepositStatus.Rejected;
-        //    withdrawal.ProcessedAt =  DateTime.Now;
-        //    await _context.SaveChangesAsync();
-        //    var amount = withdrawal.Amount;
-
-        //    var useremail = withdrawal.User.Email;
-        //    _ = Task.Run(async () =>
-        //    {
-        //        try
-        //        {
-        //            using var scope = _scopeFactory.CreateScope();
-
-        //            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-        //            var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-        //            await emailService.SendAsync(
-        //               useremail,
-        //                "Withdrawal Status",
-        //                    emailTemplateService.GetWithdrawalRejectedEmail(amount, "Withdrawal rejected")
-        //            );
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            Console.WriteLine($"Withdrawal Email Failed: {ex.Message}");
-        //        }
-        //    });
-        //    return ResponseFactory.Success(
-        //        true,
-        //        "Withdrawal rejected");
-        //}
         public async Task<ApiResponse<List<PendingKycDto>>>GetPendingKycsAsync()
         {
             var kycs = await _context.KycDocuments
@@ -419,13 +265,25 @@ namespace Otrade.Application.Services
                 x.DocumentType == KycDocumentType.Selfie &&
                 x.Status == KycStatus.Approved);
 
-            user.KycStatus = hasApprovedNationalId && hasApprovedSelfie
+            var isFullyApproved = hasApprovedNationalId && hasApprovedSelfie;
+
+            user.KycStatus = isFullyApproved
                 ? KycStatus.Approved
                 : KycStatus.Pending;
 
-            user.UpdatedAt =  DateTime.Now;
+            user.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+
+            if (isFullyApproved)
+            {
+                var emailBody = _emailTemplateService.GetKycApprovedEmail();
+
+                await _notificationQueue.QueueEmailAsync(
+                    user.Email,
+                    "KYC Approved",
+                    emailBody);
+            }
 
             return ResponseFactory.Success(true, "KYC document approved");
         }
@@ -443,36 +301,20 @@ namespace Otrade.Application.Services
             if (user == null)
                 return ResponseFactory.Fail<bool>("User not found");
 
-            // به جای حذف رکورد، فقط وضعیت را رد کن
             doc.Status = KycStatus.Rejected;
-            doc.CreatedAt =  DateTime.Now; // می‌توان تاریخ آپدیت را هم بروزرسانی کرد
+            doc.CreatedAt = DateTime.Now;
 
-            user.KycStatus = KycStatus.Pending; // وضعیت کلی KYC هنوز Pending است
-            user.UpdatedAt =  DateTime.Now;
+            user.KycStatus = KycStatus.Pending;
+            user.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
 
-            // ارسال ایمیل به کاربر
-            var useremail = user.Email;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
+            var emailBody = _emailTemplateService.GetKycRejectedEmail(reason);
 
-                    await emailService.SendAsync(
-                        useremail,
-                        "KYC Document Status Update",
-                        emailTemplateService.GetKycRejectedEmail(reason)
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"KYC Email Failed: {ex.Message}");
-                }
-            });
+            await _notificationQueue.QueueEmailAsync(
+                user.Email,
+                "KYC Document Status Update",
+                emailBody);
 
             return ResponseFactory.Success(true, "KYC document rejected");
         }
@@ -539,30 +381,19 @@ namespace Otrade.Application.Services
 
             await _context.SaveChangesAsync();
 
+ 
             var ticketUserEmail = ticket.User.Email;
             var ticketSubject = ticket.Subject;
             var replyMessage = message.Trim();
 
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _scopeFactory.CreateScope();
+            var emailBody = _emailTemplateService.GetTicketReplyEmail(
+                ticketSubject,
+                replyMessage);
 
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-                    await emailService.SendAsync(
-                        ticketUserEmail,
-                        "Ticket Reply",
-                        emailTemplateService.GetTicketReplyEmail(ticketSubject, replyMessage)
-                    );
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Ticket Reply Email Failed: {ex.Message}");
-                }
-            });
+            await _notificationQueue.QueueEmailAsync(
+                ticketUserEmail,
+                "Ticket Reply",
+                emailBody);
 
             return ResponseFactory.Success(true, "Reply sent");
         }
@@ -766,11 +597,16 @@ namespace Otrade.Application.Services
                 var key = item.Key.Trim();
                 var value = item.Value?.Trim() ?? "";
 
-                if (key == "Password" && !string.IsNullOrWhiteSpace(value))
+                var isSensitiveSetting =
+                    key == "Password" ||
+                    key == "TelegramBotToken";
+
+                if (isSensitiveSetting &&
+                    !string.IsNullOrWhiteSpace(value) &&
+                    !value.StartsWith("ENC:", StringComparison.OrdinalIgnoreCase))
                 {
                     value = _encryptionService.Encrypt(value);
                 }
-
                 var setting = await _context.SystemSettings
                     .FirstOrDefaultAsync(x => x.Key == key);
 
@@ -784,13 +620,17 @@ namespace Otrade.Application.Services
                 }
                 else
                 {
-                    if (key == "Password" && string.IsNullOrWhiteSpace(item.Value))
+                    if (isSensitiveSetting && string.IsNullOrWhiteSpace(item.Value))
                         continue;
 
                     setting.Value = value;
+
                 }
             }
             await _context.SaveChangesAsync();
+
+            _settingService.ClearCache();
+
 
             return ResponseFactory.Success(true, "Settings saved successfully");
         }

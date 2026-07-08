@@ -7,8 +7,8 @@ namespace Otrade.BackgroundJobs.Jobs;
 public class RankJob
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly JobLockService _lockService;
-    public RankJob(IServiceScopeFactory scopeFactory, JobLockService lockService)
+    private readonly JobLockservice _lockService;
+    public RankJob(IServiceScopeFactory scopeFactory, JobLockservice lockService)
     {
         _scopeFactory = scopeFactory;
         _lockService = lockService;

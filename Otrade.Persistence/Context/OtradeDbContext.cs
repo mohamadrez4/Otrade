@@ -52,9 +52,10 @@ public class OtradeDbContext : DbContext
 
     // ================= SYSTEM =================
     public DbSet<SystemSetting> SystemSettings { get; set; }
+    public DbSet<TemporaryRegistration> TemporaryRegistrations { get; set; }
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
-    public DbSet<JobLock> jobLocks { get; set; }
+    public DbSet<JobLock> JobLocks { get; set; }
     public DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; }
     public DbSet<UserWalletAddress> UserWalletAddresses { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -116,14 +117,22 @@ public class OtradeDbContext : DbContext
 
             entity.HasKey(x => x.WalletId);
 
-            entity.Property(x => x.Balance)
-                .HasPrecision(18, 8);
-
             entity.Property(x => x.WalletType)
                 .HasConversion<string>()
-                .HasMaxLength(20);
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(x => x.Balance)
+                .HasPrecision(18, 8)
+                .HasDefaultValue(0);
+
+            entity.Property(x => x.IsLocked)
+                .HasDefaultValue(false);
 
             entity.HasIndex(x => x.UserId);
+
+            entity.HasIndex(x => new { x.UserId, x.WalletType })
+                .IsUnique();
         });
 
         modelBuilder.Entity<Rank>(entity =>
@@ -180,10 +189,13 @@ public class OtradeDbContext : DbContext
 
             entity.HasIndex(x => x.UserId);
             entity.HasIndex(x => x.WalletId);
-
+            entity.HasIndex(x => x.CreatedAt);
+            entity.Property(x => x.Description)
+                .HasMaxLength(255);
             entity.Property(x => x.Type)
                 .HasConversion<string>()
-                .HasMaxLength(30);
+                .HasMaxLength(30)
+                .IsRequired(); 
         });
         modelBuilder.Entity<WalletTransfer>(entity =>
         {
@@ -193,22 +205,7 @@ public class OtradeDbContext : DbContext
         {
             entity.HasKey(x => x.MessageId);
         });
-        modelBuilder.Entity<WalletTransaction>(entity =>
-        {
-            entity.ToTable("WalletTransactions");
-
-            entity.HasKey(x => x.TransactionId);
-
-            entity.Property(x => x.Amount).HasPrecision(18, 8);
-            entity.Property(x => x.BalanceBefore).HasPrecision(18, 8);
-            entity.Property(x => x.BalanceAfter).HasPrecision(18, 8);
-
-            entity.HasIndex(x => x.UserId);
-            entity.HasIndex(x => x.WalletId);
-
-            entity.Property(x => x.Type)
-                .HasConversion<int>();
-        });
+       
 
         modelBuilder.Entity<Deposit>(entity =>
         {
@@ -247,13 +244,7 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.DocumentType)
                     .HasConversion<string>()
                     .HasMaxLength(30);
-            //entity.Property(x => x.DocumentType)
-            //    .HasMaxLength(30);
 
-            //entity.Property(x => x.FilePath)
-            //    .HasMaxLength(500);
-
-            //entity.HasIndex(x => x.UserId);
         });
 
         modelBuilder.Entity<Domain.Entities.Contract>(entity =>
@@ -284,15 +275,7 @@ public class OtradeDbContext : DbContext
             entity.HasIndex(x => x.ToEmail);
         });
 
-        modelBuilder.Entity<Wallet>(entity =>
-        {
-            entity.Property(x => x.Balance)
-                .HasPrecision(18, 8)
-                .HasDefaultValue(0);
-            entity.Property(x=> x.WalletType)
-            .HasConversion<string>()
-            .HasMaxLength(30);
-        });
+
 
         modelBuilder.Entity<EmailVerificationCode>(entity =>
         {
@@ -306,8 +289,85 @@ public class OtradeDbContext : DbContext
 
             entity.HasIndex(x => x.UserId);
         });
+        modelBuilder.Entity<SystemSetting>(entity =>
+        {
+            entity.ToTable("SystemSettings");
 
+            entity.HasKey(x => x.Id);
 
+            entity.Property(x => x.Key)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(x => x.Value)
+                .IsRequired();
+
+            entity.HasIndex(x => x.Key)
+                .IsUnique();
+        });
+        modelBuilder.Entity<TemporaryRegistration>(entity =>
+        {
+            entity.ToTable("TemporaryRegistrations");
+
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.Email)
+                .IsRequired()
+                .HasMaxLength(150);
+
+            entity.Property(x => x.ReferralCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.DepositTxId)
+                .HasMaxLength(200);
+
+            entity.Property(x => x.ApprovedAmount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.DeclaredAmount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.RejectReason)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.CompletionToken)
+                .HasMaxLength(200);
+
+            entity.HasIndex(x => x.Email);
+
+            entity.HasIndex(x => new { x.Status, x.CreatedAt });
+
+            entity.HasIndex(x => x.ExpiresAt);
+
+            entity.HasIndex(x => x.DepositTxId)
+                .IsUnique()
+                .HasFilter("[DepositTxId] IS NOT NULL");
+
+            entity.HasIndex(x => x.CompletionToken)
+                .IsUnique()
+                .HasFilter("[CompletionToken] IS NOT NULL");
+
+            entity.HasOne(x => x.Sponsor)
+                .WithMany()
+                .HasForeignKey(x => x.SponsorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.ApprovedByUser)
+                .WithMany()
+                .HasForeignKey(x => x.ApprovedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.CompletedUser)
+                .WithMany()
+                .HasForeignKey(x => x.CompletedUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
         modelBuilder.Entity<Rank>().HasData(
     new Rank
     {

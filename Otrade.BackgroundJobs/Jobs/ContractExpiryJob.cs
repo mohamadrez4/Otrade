@@ -10,8 +10,8 @@ namespace Otrade.BackgroundJobs.Jobs;
 public class ContractExpiryJob
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly JobLockService _lockService;
-    public ContractExpiryJob(IServiceScopeFactory scopeFactory, JobLockService lockService)
+    private readonly JobLockservice _lockService;
+    public ContractExpiryJob(IServiceScopeFactory scopeFactory, JobLockservice lockService)
     {
         _scopeFactory = scopeFactory;
         _lockService = lockService;

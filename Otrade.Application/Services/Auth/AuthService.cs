@@ -1,6 +1,5 @@
 ﻿using Azure.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Otrade.Application.Common;
 using Otrade.Application.Common.Interfaces;
 using Otrade.Application.DTOs.Auth;
@@ -12,24 +11,21 @@ using System.Security.Cryptography;
 using System.Text;
 public class AuthService
 {
-    private readonly OtradeDbContext _context; 
+    private readonly OtradeDbContext _context;
     private readonly JwtService _jwtService;
-    private readonly IEmailService _emailService;
     private readonly IEmailTemplateService _emailTemplateService;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly INotificationQueue _notificationQueue;
 
     public AuthService(
-    OtradeDbContext context,
-    JwtService jwtService ,
-    IServiceScopeFactory scopeFactory,
-    IEmailService emailService,
-    IEmailTemplateService emailTemplateService)
+        OtradeDbContext context,
+        JwtService jwtService,
+        IEmailTemplateService emailTemplateService,
+        INotificationQueue notificationQueue)
     {
         _context = context;
-        _scopeFactory = scopeFactory;
         _jwtService = jwtService;
-        _emailService = emailService;  
-         _emailTemplateService = emailTemplateService;
+        _emailTemplateService = emailTemplateService;
+        _notificationQueue = notificationQueue;
     }
     // REGISTER
     public async Task<ApiResponse<bool>> RegisterAsync(RegisterRequest request)
@@ -92,36 +88,12 @@ public class AuthService
         _context.EmailVerificationCodes.Add(code);
 
         await _context.SaveChangesAsync();
-        var email = user.Email;
-        var verificationCode = codegen;
+        var verificationEmailBody = _emailTemplateService.GetVerificationEmail(codegen);
 
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
-
-                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-                await emailService.SendAsync(
-                    email,
-                    "Otrade Email Verification",
-                    emailTemplateService.GetVerificationEmail(verificationCode)
-                );
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Email send failed: {ex.Message}");
-            }
-        });
-        //_backgroundJobClient.Enqueue(() =>
-        //         _emailService.SendAsync(
-        //             user.Email,
-        //             "Otrade Email Verification",
-        //             _emailTemplateService.GetVerificationEmail(codegen)
-        //         )
-        //   );
+        await _notificationQueue.QueueEmailAsync(
+            user.Email,
+            "Otrade Email Verification",
+            verificationEmailBody);
         return ResponseFactory.Success(true, "verification code send");
     }
     // LOGIN
@@ -282,28 +254,12 @@ public class AuthService
 
         await _context.SaveChangesAsync();
 
-        var useremail = user.Email;
-        // ارسال ایمیل
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                using var scope = _scopeFactory.CreateScope();
+        var passwordResetEmailBody = _emailTemplateService.GetPasswordResetEmail(otp);
 
-                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                var emailTemplateService = scope.ServiceProvider.GetRequiredService<IEmailTemplateService>();
-
-                await emailService.SendAsync(
-                    useremail,
-                    "Otrade Password Reset",
-                    emailTemplateService.GetPasswordResetEmail(otp)
-                );
-            }
-            catch
-            {
-                // Log خطا بدون قطع شدن request
-            }
-        });
+        await _notificationQueue.QueueEmailAsync(
+            user.Email,
+            "Otrade Password Reset",
+            passwordResetEmailBody);
 
         return ResponseFactory.Success(true, "Password reset code sent to your email");
     }
