@@ -11,7 +11,7 @@
             <p>Manage your Otrade wallets and transfer funds between allowed wallets.</p>
         </div>
 
-        <button class="btn panel-primary-btn" onclick="openTransferModal()">
+        <button type="button" class="btn panel-primary-btn" onclick="openTransferModal()">
             Transfer
         </button>
     </div>
@@ -20,25 +20,25 @@
 
         <div class="panel-card wallet-card wallet-main">
             <span>Main Wallet</span>
-            <strong id="mainWallet">0.00</strong>
+            <strong id="mainWallet">0.00 USDT</strong>
             <p>Deposit and withdrawal wallet</p>
         </div>
 
         <div class="panel-card wallet-card wallet-invest">
             <span>Invest Wallet</span>
-            <strong id="investWallet">0.00</strong>
+            <strong id="investWallet">0.00 USDT</strong>
             <p>Active investment balance</p>
         </div>
 
         <div class="panel-card wallet-card wallet-profit">
             <span>Profit Wallet</span>
-            <strong id="profitWallet">0.00</strong>
+            <strong id="profitWallet">0.00 USDT</strong>
             <p>Daily investment profit</p>
         </div>
 
         <div class="panel-card wallet-card wallet-referral">
             <span>Referral Wallet</span>
-            <strong id="referralWallet">0.00</strong>
+            <strong id="referralWallet">0.00 USDT</strong>
             <p>Referral income and bonuses</p>
         </div>
 
@@ -61,67 +61,336 @@
             <div>Allowed</div>
         </div>
     </div>
-
-</div>
-
-<div class="transfer-modal-backdrop" id="transferModal" style="display:none;">
-    <div class="transfer-modal panel-card">
-
-        <div class="modal-header-custom">
-            <h4>Transfer Between Wallets</h4>
-            <button onclick="closeTransferModal()">×</button>
+    <div class="panel-card mt-4 internal-transfer-card">
+        <div class="internal-transfer-header">
+            <div>
+                <h4>Internal Transfer</h4>
+                <p>Transfer funds from your Main Wallet to another user's Main Wallet using UID or email.</p>
+            </div>
         </div>
 
-        <form id="transferForm">
+        <div class="internal-transfer-lookup">
+            <div class="internal-transfer-field">
+                <label for="internalReceiverQuery">Receiver UID or Email</label>
 
-            <div class="mb-3">
-                <label>From Wallet</label>
-                <select class="form-control panel-input" id="fromWallet">
-                    <option value="Main">Main Wallet</option>
-                    <option value="Invest">Invest Wallet</option>
-                    <option value="Profit">Profit Wallet</option>
-                    <option value="Referral">Referral Wallet</option>
-                </select>
-            </div>
+                <div class="internal-transfer-search-row">
+                    <input id="internalReceiverQuery"
+                           type="text"
+                           class="panel-input"
+                           autocomplete="off"
+                           placeholder="Enter receiver UID or email" />
 
-            <div class="mb-3">
-                <label>To Wallet</label>
-                <select class="form-control panel-input" id="toWallet">
-                    <option value="Main">Main Wallet</option>
-                    <option value="Invest">Invest Wallet</option>
-                    <option value="Profit">Profit Wallet</option>
-                    <option value="Referral">Referral Wallet</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label>Amount</label>
-            
-                <div class="transfer-amount-wrapper">
-                    <input type="number"
-                           class="form-control panel-input transfer-amount-input"
-                           id="transferAmount"
-                           min="0"
-                           step="0.00000001" />
-            
                     <button type="button"
-                            id="maxTransferBtn"
-                            class="transfer-max-btn">
-                        MAX
+                            id="checkInternalReceiverBtn"
+                            class="panel-primary-btn">
+                        Check
                     </button>
+                </div>
+
+                <small class="internal-transfer-help">
+                    UID is the user's referral code.
+                </small>
+            </div>
+        </div>
+
+        <div id="internalReceiverMessage"
+             class="internal-receiver-message"
+             style="display:none;">
+        </div>
+
+        <div id="internalReceiverPreview"
+             class="internal-receiver-preview"
+             style="display:none;">
+
+            <div class="internal-receiver-preview-icon">
+                ✓
+            </div>
+
+            <div class="internal-receiver-preview-content">
+                <div class="internal-receiver-preview-title">
+                    Receiver Found
+                </div>
+
+                <div class="internal-receiver-grid">
+                    <div>
+                        <span>Full Name</span>
+                        <strong id="internalReceiverFullName">-</strong>
+                    </div>
+
+                    <div>
+                        <span>UID</span>
+                        <strong id="internalReceiverUid">-</strong>
+                    </div>
+
+                    <div>
+                        <span>Email</span>
+                        <strong id="internalReceiverEmail">-</strong>
+                    </div>
+                </div>
+
+                <p class="internal-receiver-warning">
+                    Please make sure this is the correct receiver before continuing.
+                </p>
+            </div>
+        </div>
+        <div id="internalTransferDetails"
+             class="internal-transfer-details"
+             style="display:none;">
+
+            <div class="internal-transfer-details-grid">
+                <div class="internal-transfer-field">
+                    <label for="internalTransferAmount">Amount</label>
+
+                    <input id="internalTransferAmount"
+                           type="number"
+                           min="0"
+                           step="0.00000001"
+                           class="panel-input"
+                           placeholder="Enter amount from Main Wallet" />
+                </div>
+
+                <div class="internal-transfer-field">
+                    <label for="internalTransferDescription">Description</label>
+
+                    <input id="internalTransferDescription"
+                           type="text"
+                           maxlength="500"
+                           class="panel-input"
+                           placeholder="Optional" />
                 </div>
             </div>
 
-            <div class="mb-4">
-                <label>Description</label>
-                <input type="text" class="form-control panel-input" id="transferDescription" placeholder="Optional" />
+            <div class="internal-transfer-balance-box">
+                <span>Your Main Wallet Balance</span>
+                <strong id="internalTransferMainBalance">0.00 USDT</strong>
             </div>
 
-            <button type="submit" class="btn panel-primary-btn w-100">
-                Confirm Transfer
+            <button type="button"
+                    id="sendInternalTransferCodeBtn"
+                    class="panel-primary-btn internal-transfer-send-code-btn">
+                Send Verification Code
             </button>
+        </div>
+
+        <div id="internalTransferVerificationBox"
+             class="internal-transfer-verification-box"
+             style="display:none;">
+
+            <div class="internal-transfer-verification-header">
+                <div>
+                    <h5>Email Verification</h5>
+                    <p>
+                        A 6-digit verification code has been sent to your email.
+                        Enter the code to complete the internal transfer.
+                    </p>
+                </div>
+            </div>
+
+            <div class="internal-transfer-verification-summary">
+                <div>
+                    <span>Receiver</span>
+                    <strong id="internalTransferVerifyReceiver">-</strong>
+                </div>
+
+                <div>
+                    <span>Amount</span>
+                    <strong id="internalTransferVerifyAmount">0.00 USDT</strong>
+                </div>
+            </div>
+
+            <div class="internal-transfer-field">
+                <label for="internalTransferCode">Verification Code</label>
+
+                <input id="internalTransferCode"
+                       type="text"
+                       maxlength="6"
+                       inputmode="numeric"
+                       autocomplete="one-time-code"
+                       class="panel-input internal-transfer-code-input"
+                       placeholder="Enter 6-digit code" />
+            </div>
+
+            <div class="internal-transfer-actions">
+                <button type="button"
+                        id="resetInternalTransferBtn"
+                        class="internal-transfer-secondary-btn">
+                    Change Receiver / Amount
+                </button>
+
+                <button type="button"
+                        id="confirmInternalTransferBtn"
+                        class="panel-primary-btn">
+                    Confirm Internal Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="transfer-modal-backdrop" id="transferModal" style="display:none;">
+    <div class="transfer-modal-shell">
+
+        <div class="transfer-modal-header">
+            <div>
+                <h4>Transfer Between Wallets</h4>
+                <p>Move funds only between allowed wallet paths.</p>
+            </div>
+
+            <button type="button" class="transfer-modal-close" onclick="closeTransferModal()">
+                ×
+            </button>
+        </div>
+
+        <form id="transferForm" class="transfer-modal-form">
+
+            <div class="transfer-modal-body">
+
+                <div class="transfer-field">
+                    <label for="fromWallet">From Wallet</label>
+
+                    <select class="form-control panel-input" id="fromWallet">
+                        <option value="Main">Main Wallet</option>
+                        <option value="Invest">Invest Wallet</option>
+                        <option value="Profit">Profit Wallet</option>
+                        <option value="Referral">Referral Wallet</option>
+                    </select>
+                </div>
+
+                <div class="transfer-field">
+                    <label for="toWallet">To Wallet</label>
+
+                    <select class="form-control panel-input" id="toWallet">
+                        <option value="Main">Main Wallet</option>
+                        <option value="Invest">Invest Wallet</option>
+                        <option value="Profit">Profit Wallet</option>
+                        <option value="Referral">Referral Wallet</option>
+                    </select>
+                </div>
+
+                <div class="transfer-capacity-box" id="transferCapacityBox" style="display:none;">
+                    <div class="transfer-capacity-header">
+                        <div>
+                            <span>Investment Capacity</span>
+                            <strong id="capacityMonthText">Current Month</strong>
+                        </div>
+
+                        <button type="button" onclick="loadCurrentInvestmentCapacity()">
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="transfer-capacity-remaining-box">
+                        <span>Capacity Remaining</span>
+                        <strong id="capacityRemainingText">0.00 USDT</strong>
+                    </div>
+
+                    <p id="capacityWarningText" class="transfer-capacity-warning"></p>
+                </div>
+
+                <div class="transfer-field">
+                    <label for="transferAmount">Amount</label>
+
+                    <div class="transfer-amount-wrapper">
+                        <input type="number"
+                               class="form-control panel-input transfer-amount-input"
+                               id="transferAmount"
+                               min="0"
+                               step="0.00000001"
+                               placeholder="0.00" />
+
+                        <button type="button"
+                                id="maxTransferBtn"
+                                class="transfer-max-btn">
+                            MAX
+                        </button>
+                    </div>
+                </div>
+
+                <div class="transfer-field">
+                    <label for="transferDescription">Description</label>
+
+                    <input type="text"
+                           class="form-control panel-input"
+                           id="transferDescription"
+                           placeholder="Optional" />
+                </div>
+
+            </div>
+
+            <div class="transfer-modal-footer">
+                <button type="button"
+                        class="transfer-cancel-btn"
+                        onclick="closeTransferModal()">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="transfer-submit-btn"
+                        id="confirmTransferBtn">
+                    Confirm Transfer
+                </button>
+            </div>
 
         </form>
+
+    </div>
+</div>
+
+<div class="transfer-confirm-backdrop" id="transferConfirmModal" style="display:none;">
+    <div class="transfer-confirm-shell">
+
+        <div class="transfer-confirm-header">
+            <div>
+                <h4>Confirm Transfer</h4>
+                <p>Please review the details before final confirmation.</p>
+            </div>
+
+            <button type="button" class="transfer-modal-close" onclick="closeTransferConfirmModal()">
+                ×
+            </button>
+        </div>
+
+        <div class="transfer-confirm-body">
+            <div class="transfer-confirm-row">
+                <span>From Wallet</span>
+                <strong id="confirmFromWallet">-</strong>
+            </div>
+
+            <div class="transfer-confirm-row">
+                <span>To Wallet</span>
+                <strong id="confirmToWallet">-</strong>
+            </div>
+
+            <div class="transfer-confirm-row highlight">
+                <span>Amount</span>
+                <strong id="confirmAmount">0.00 USDT</strong>
+            </div>
+
+            <div class="transfer-confirm-row">
+                <span>Fee</span>
+                <strong id="confirmFee">0.00 USDT</strong>
+            </div>
+
+            <div class="transfer-confirm-note" id="confirmDescriptionBox" style="display:none;">
+                <span>Description</span>
+                <p id="confirmDescription">-</p>
+            </div>
+        </div>
+
+        <div class="transfer-confirm-footer">
+            <button type="button"
+                    class="transfer-cancel-btn"
+                    onclick="closeTransferConfirmModal()">
+                Back
+            </button>
+
+            <button type="button"
+                    class="transfer-submit-btn"
+                    id="finalConfirmTransferBtn"
+                    onclick="confirmTransferFinal()">
+                Confirm & Transfer
+            </button>
+        </div>
 
     </div>
 </div>
@@ -129,76 +398,204 @@
 @section Scripts {
     <script>
         let walletsMap = {};
+        let currentInvestmentCapacity = null;
+        let isTransferSubmitting = false;
+        let pendingTransferRequest = null;
+        let selectedInternalReceiver = null;
+        let internalReceiverLookupTimer = null;
+        let selectedInternalTransferVerificationId = null;
+        let internalTransferLocked = false;
+        let internalTransferVerifiedAmount = 0;
         const allowedTransfers = {
             Main: ["Invest"],
             Invest: ["Main"],
             Profit: ["Main", "Invest"],
             Referral: ["Main", "Invest"]
         };
+
         document.addEventListener("DOMContentLoaded", async function () {
             checkAuth();
-           document.getElementById("fromWallet")
-            .addEventListener("change", updateToWalletOptions);
-           document.getElementById("maxTransferBtn")
-            .addEventListener("click", setMaxTransferAmount);
+
+            document.getElementById("fromWallet")
+                .addEventListener("change", updateToWalletOptions);
+
+            document.getElementById("toWallet")
+                .addEventListener("change", updateTransferCapacityBox);
+
+            document.getElementById("transferAmount")
+                .addEventListener("input", updateTransferCapacityBox);
+
+            document.getElementById("maxTransferBtn")
+                .addEventListener("click", setMaxTransferAmount);
+
+            document.getElementById("transferForm")
+                .addEventListener("submit", submitTransfer);
+
+            document.getElementById("transferModal")
+                .addEventListener("click", function (e) {
+                    if (e.target.id === "transferModal") {
+                        closeTransferModal();
+                    }
+                });
+
+            document.getElementById("transferConfirmModal")
+                .addEventListener("click", function (e) {
+                    if (e.target.id === "transferConfirmModal") {
+                        closeTransferConfirmModal();
+                    }
+                });
+
+            document.addEventListener("keydown", function (e) {
+                if (e.key !== "Escape") {
+                    return;
+                }
+
+                if (document.getElementById("transferConfirmModal").style.display === "flex") {
+                    closeTransferConfirmModal();
+                    return;
+                }
+
+                closeTransferModal();
+            });
+        const internalReceiverInput = document.getElementById("internalReceiverQuery");
+        const checkInternalReceiverBtn = document.getElementById("checkInternalReceiverBtn");
+
+        if (internalReceiverInput && checkInternalReceiverBtn) {
+            internalReceiverInput.addEventListener("input", handleInternalReceiverInput);
+            checkInternalReceiverBtn.addEventListener("click", lookupInternalReceiver);
+        }
+                const sendInternalTransferCodeBtn = document.getElementById("sendInternalTransferCodeBtn");
+        const confirmInternalTransferBtn = document.getElementById("confirmInternalTransferBtn");
+        const resetInternalTransferBtn = document.getElementById("resetInternalTransferBtn");
+        const internalTransferCodeInput = document.getElementById("internalTransferCode");
+
+        if (sendInternalTransferCodeBtn) {
+            sendInternalTransferCodeBtn.addEventListener("click", sendInternalTransferVerificationCode);
+        }
+
+        if (confirmInternalTransferBtn) {
+            confirmInternalTransferBtn.addEventListener("click", confirmInternalTransfer);
+        }
+
+        if (resetInternalTransferBtn) {
+            resetInternalTransferBtn.addEventListener("click", resetInternalTransferVerification);
+        }
+
+        if (internalTransferCodeInput) {
+            internalTransferCodeInput.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    confirmInternalTransfer();
+                }
+            });
+        }
             updateToWalletOptions();
 
             await loadWallets();
+            await loadCurrentInvestmentCapacity();
         });
 
         async function loadWallets() {
-            const result = await api("/api/dashboard", { method: "GET" });
+            try {
+                const result = await api("/api/dashboard", {
+                    method: "GET"
+                });
 
-            if (!result || !result.success) {
-                showNotification(result?.message || "Unable to load wallets","error");
-                
-                return;
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Unable to load wallets", "error");
+                    return;
+                }
+
+                walletsMap = {};
+
+                const wallets = result.data?.wallets || [];
+
+                wallets.forEach(w => {
+                    walletsMap[w.walletType] = {
+                        walletId: w.walletId,
+                        balance: Number(w.balance || 0)
+                    };
+                });
+
+                setWalletValue("Main", "mainWallet");
+                setWalletValue("Invest", "investWallet");
+                setWalletValue("Profit", "profitWallet");
+                setWalletValue("Referral", "referralWallet");
+
+            } catch (error) {
+                showNotification(error.message || "Unable to load wallets", "error");
             }
-
-            walletsMap = {};
-
-            result.data.wallets.forEach(w => {
-                walletsMap[w.walletType] = {
-                    walletId: w.walletId,
-                    balance: w.balance
-                };
-            });
-
-            setWalletValue("Main", "mainWallet");
-            setWalletValue("Invest", "investWallet");
-            setWalletValue("Profit", "profitWallet");
-            setWalletValue("Referral", "referralWallet");
         }
-        function setMaxTransferAmount() {
-            const fromType = document.getElementById("fromWallet").value;
-            const wallet = walletsMap[fromType];
 
-            if (!wallet) {
-                showNotification("Wallet balance not found", "error");
-                return;
+        async function loadCurrentInvestmentCapacity() {
+            try {
+                const result = await api("/api/wallet/investment-capacity/current", {
+                    method: "GET"
+                });
+
+                if (!result || !result.success) {
+                    currentInvestmentCapacity = null;
+                    updateTransferCapacityBox();
+                    return;
+                }
+
+                currentInvestmentCapacity = result.data;
+                updateTransferCapacityBox();
+
+            } catch {
+                currentInvestmentCapacity = null;
+                updateTransferCapacityBox();
             }
-
-            document.getElementById("transferAmount").value =
-                Number(wallet.balance || 0);
-
-            showNotification("Maximum transferable amount selected.", "success");
         }
+
         function setWalletValue(type, elementId) {
             const wallet = walletsMap[type];
 
             document.getElementById(elementId).innerText =
-                wallet ? formatMoney(wallet.balance) + " USDT" : "0.00 USDT";
+                wallet
+                    ? formatMoney(wallet.balance) + " USDT"
+                    : "0.00 USDT";
         }
 
         function openTransferModal() {
-            document.getElementById("transferModal").style.display = "flex";
+            const modal = document.getElementById("transferModal");
+
+            modal.style.display = "flex";
+
+            document.getElementById("transferDescription").value = "";
+            document.getElementById("transferAmount").value = "";
+
+            updateToWalletOptions();
+            updateTransferCapacityBox();
+
+            setTimeout(() => {
+                document.getElementById("fromWallet").focus();
+            }, 80);
         }
 
         function closeTransferModal() {
-            document.getElementById("transferModal").style.display = "none";
+            const modal = document.getElementById("transferModal");
+
+            modal.style.display = "none";
+            closeTransferConfirmModal();
+
+            document.getElementById("transferForm").reset();
+            document.getElementById("transferAmount").value = "";
+            document.getElementById("transferDescription").value = "";
+            pendingTransferRequest = null;
+
+            updateToWalletOptions();
         }
+
+        function closeTransferConfirmModal() {
+            const modal = document.getElementById("transferConfirmModal");
+
+            if (modal) {
+                modal.style.display = "none";
+            }
+        }
+
         function updateToWalletOptions() {
-            const fromType = document.getElementById("fromWallet").value;   
+            const fromType = document.getElementById("fromWallet").value;
             const toSelect = document.getElementById("toWallet");
 
             const allowedTargets = allowedTransfers[fromType] || [];
@@ -210,70 +607,631 @@
             if (!allowedTargets.includes(toSelect.value)) {
                 toSelect.value = allowedTargets[0] || "";
             }
-            document.getElementById("transferAmount").value = "";
-        }
-        document.getElementById("transferForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
 
+            document.getElementById("transferAmount").value = "";
+
+            updateTransferCapacityBox();
+        }
+
+        function isMainToInvestTransfer() {
+            const fromType = document.getElementById("fromWallet").value;
+            const toType = document.getElementById("toWallet").value;
+
+            return fromType === "Main" && toType === "Invest";
+        }
+
+        function updateTransferCapacityBox() {
+            const box = document.getElementById("transferCapacityBox");
+            const warning = document.getElementById("capacityWarningText");
+
+            if (!isMainToInvestTransfer()) {
+                box.style.display = "none";
+                return;
+            }
+
+            box.style.display = "block";
+            warning.classList.remove("danger");
+            warning.innerText = "";
+
+            if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
+                document.getElementById("capacityMonthText").innerText = "Not configured";
+                document.getElementById("capacityRemainingText").innerText = "0.00 USDT";
+
+                warning.innerText = "Investment capacity for current month is not configured by admin.";
+                warning.classList.add("danger");
+                return;
+            }
+
+            const remaining = Number(currentInvestmentCapacity.remainingCapacity || 0);
+            const amount = Number(document.getElementById("transferAmount").value || 0);
+
+            document.getElementById("capacityMonthText").innerText =
+                currentInvestmentCapacity.monthLabel || "Current Month";
+
+            document.getElementById("capacityRemainingText").innerText =
+                formatMoney(remaining) + " USDT";
+
+            if (!currentInvestmentCapacity.isActive) {
+                warning.innerText = "Investment capacity for current month is inactive.";
+                warning.classList.add("danger");
+                return;
+            }
+
+            if (remaining <= 0) {
+                warning.innerText = "Investment capacity for current month is full.";
+                warning.classList.add("danger");
+                return;
+            }
+
+            if (amount > 0 && amount > remaining) {
+                warning.innerText =
+                    `Amount exceeds remaining investment capacity. Remaining: ${formatMoney(remaining)} USDT`;
+
+                warning.classList.add("danger");
+                return;
+            }
+
+            warning.innerText =
+                `You can transfer up to ${formatMoney(remaining)} USDT from Main to Invest this month.`;
+        }
+
+        function setMaxTransferAmount() {
+            const fromType = document.getElementById("fromWallet").value;
+            const wallet = walletsMap[fromType];
+
+            if (!wallet) {
+                showNotification("Wallet balance not found", "error");
+                return;
+            }
+
+            let maxAmount = Number(wallet.balance || 0);
+
+            if (isMainToInvestTransfer()) {
+                if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
+                    showNotification("Investment capacity is not configured.", "error");
+                    return;
+                }
+
+                if (!currentInvestmentCapacity.isActive) {
+                    showNotification("Investment capacity is inactive.", "error");
+                    return;
+                }
+
+                const remaining = Number(currentInvestmentCapacity.remainingCapacity || 0);
+
+                if (remaining <= 0) {
+                    showNotification("Investment capacity is full.", "error");
+                    return;
+                }
+
+                maxAmount = Math.min(maxAmount, remaining);
+            }
+
+            document.getElementById("transferAmount").value = maxAmount;
+
+            updateTransferCapacityBox();
+
+            showNotification("Maximum transferable amount selected.", "success");
+        }
+
+        function buildTransferRequest() {
             const fromType = document.getElementById("fromWallet").value;
             const toType = document.getElementById("toWallet").value;
             const amount = Number(document.getElementById("transferAmount").value);
-            const description = document.getElementById("transferDescription").value;
+            const description = document.getElementById("transferDescription").value.trim();
 
             if (fromType === toType) {
-                showNotification("Source and destination wallets cannot be the same","error");
-                 
-                return;
+                showNotification("Source and destination wallets cannot be the same", "error");
+                return null;
             }
+
             if (!allowedTransfers[fromType] ||
-            !allowedTransfers[fromType].includes(toType)) {
-                showNotification("This wallet transfer is not allowed","error");
-            
-            return;
-              }
+                !allowedTransfers[fromType].includes(toType)) {
+                showNotification("This wallet transfer is not allowed", "error");
+                return null;
+            }
+
             if (!walletsMap[fromType] || !walletsMap[toType]) {
-                showNotification("Wallet information not found","error");
-              
-                return;
+                showNotification("Wallet information not found", "error");
+                return null;
             }
 
-            if (amount <= 0) {
-                showNotification("Invalid amount","error");
-                
-                return;
+            if (!amount || amount <= 0) {
+                showNotification("Invalid amount", "error");
+                return null;
             }
 
-            const payload = {
-                fromWalletId: walletsMap[fromType].walletId,
-                toWalletId: walletsMap[toType].walletId,
-                amount: amount,
-                description: description
+            if (amount > Number(walletsMap[fromType].balance || 0)) {
+                showNotification("Insufficient balance", "error");
+                return null;
+            }
+
+            if (isMainToInvestTransfer()) {
+                if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
+                    showNotification("Investment capacity is not configured.", "error");
+                    return null;
+                }
+
+                if (!currentInvestmentCapacity.isActive) {
+                    showNotification("Investment capacity is inactive.", "error");
+                    return null;
+                }
+
+                const remaining = Number(currentInvestmentCapacity.remainingCapacity || 0);
+
+                if (remaining <= 0) {
+                    showNotification("Investment capacity is full.", "error");
+                    return null;
+                }
+
+                if (amount > remaining) {
+                    showNotification(
+                        `Amount exceeds remaining investment capacity. Remaining: ${formatMoney(remaining)} USDT`,
+                        "error"
+                    );
+                    return null;
+                }
+            }
+
+            return {
+                fromType,
+                toType,
+                amount,
+                description,
+                fee: 0,
+                payload: {
+                    fromWalletId: walletsMap[fromType].walletId,
+                    toWalletId: walletsMap[toType].walletId,
+                    amount,
+                    description
+                }
             };
+        }
 
-            const result = await api("/api/wallet/transfer", {
-                method: "POST",
-                body: JSON.stringify(payload)
-            });
+        function submitTransfer(e) {
+            e.preventDefault();
 
-            // if (!result || !result.success) {
-            //     alert(result?.message || "Transfer failed");
-            //     return;
-            // }
-            if (!result.success) {
-                    if (result.message.includes("No active contract")) {
+            if (isTransferSubmitting) {
+                return;
+            }
+
+            const request = buildTransferRequest();
+
+            if (!request) {
+                return;
+            }
+
+            pendingTransferRequest = request;
+            openTransferConfirmModal(request);
+        }
+
+        function openTransferConfirmModal(request) {
+            document.getElementById("confirmFromWallet").innerText = getWalletDisplayName(request.fromType);
+            document.getElementById("confirmToWallet").innerText = getWalletDisplayName(request.toType);
+            document.getElementById("confirmAmount").innerText = formatMoney(request.amount) + " USDT";
+            document.getElementById("confirmFee").innerText = formatMoney(request.fee || 0) + " USDT";
+
+            const descriptionBox = document.getElementById("confirmDescriptionBox");
+            const descriptionText = document.getElementById("confirmDescription");
+
+            if (request.description) {
+                descriptionText.innerText = request.description;
+                descriptionBox.style.display = "block";
+            } else {
+                descriptionText.innerText = "-";
+                descriptionBox.style.display = "none";
+            }
+
+            document.getElementById("transferConfirmModal").style.display = "flex";
+        }
+
+        async function confirmTransferFinal() {
+            if (!pendingTransferRequest || isTransferSubmitting) {
+                return;
+            }
+
+            const submitBtn = document.getElementById("finalConfirmTransferBtn");
+
+            isTransferSubmitting = true;
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Transferring...";
+
+            try {
+                const result = await api("/api/wallet/transfer", {
+                    method: "POST",
+                    body: JSON.stringify(pendingTransferRequest.payload)
+                });
+
+                if (!result || !result.success) {
+                    const message = result?.message || "Transfer failed";
+
+                    if (message.includes("No active contract")) {
                         window.location.href = "/contracts";
                         return;
                     }
-                    showNotification(result.message,"error");
-                    
+
+                    showNotification(message, "error");
                     return;
                 }
-            showNotification("Transfer completed","success");
-            
-            closeTransferModal();
-            await loadWallets();
-        });
 
+                showNotification("Transfer completed", "success");
+
+                closeTransferModal();
+
+                await loadWallets();
+                await loadCurrentInvestmentCapacity();
+
+            } catch (error) {
+                showNotification(error.message || "Transfer failed", "error");
+            } finally {
+                isTransferSubmitting = false;
+                pendingTransferRequest = null;
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Confirm & Transfer";
+            }
+        }
+
+        function getWalletDisplayName(walletType) {
+            const names = {
+                Main: "Main Wallet",
+                Invest: "Invest Wallet",
+                Profit: "Profit Wallet",
+                Referral: "Referral Wallet"
+            };
+
+            return names[walletType] || walletType || "-";
+        }
+        function handleInternalReceiverInput() {
+            if (internalTransferLocked) {
+                return;
+            }
+
+            selectedInternalReceiver = null;
+            selectedInternalTransferVerificationId = null;
+            internalTransferVerifiedAmount = 0;
+
+            hideInternalReceiverPreview();
+            hideInternalTransferDetails();
+            hideInternalTransferVerificationBox();
+
+            const query = document.getElementById("internalReceiverQuery").value.trim();
+
+            clearTimeout(internalReceiverLookupTimer);
+
+            if (!query) {
+                showInternalReceiverMessage("", "");
+                return;
+            }
+
+            if (query.length < 3) {
+                showInternalReceiverMessage("Enter at least 3 characters to search receiver.", "muted");
+                return;
+            }
+
+            showInternalReceiverMessage("Checking receiver...", "muted");
+
+            internalReceiverLookupTimer = setTimeout(() => {
+                lookupInternalReceiver();
+            }, 700);
+        }
+        async function lookupInternalReceiver() {
+            const input = document.getElementById("internalReceiverQuery");
+            const btn = document.getElementById("checkInternalReceiverBtn");
+
+            const query = input.value.trim();
+                    if (internalTransferLocked) {
+            showNotification("Please reset current verification before changing receiver.", "warning");
+            return;
+        }
+            selectedInternalReceiver = null;
+            hideInternalReceiverPreview();
+
+            if (!query) {
+                showInternalReceiverMessage("Receiver UID or email is required.", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Checking...";
+
+            showInternalReceiverMessage("Checking receiver...", "muted");
+
+            try {
+                const result = await api(
+                    `/api/wallet/internal-transfer/recipient?query=${encodeURIComponent(query)}`
+                );
+
+                if (!result || !result.success) {
+                    showInternalReceiverMessage(result?.message || "Receiver not found.", "error");
+                    return;
+                }
+
+                selectedInternalReceiver = result.data;
+
+                renderInternalReceiverPreview(selectedInternalReceiver);
+
+                showInternalReceiverMessage("", "");
+
+            } catch (error) {
+                showInternalReceiverMessage(error.message || "Receiver not found.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Check";
+            }
+        }
+
+        function renderInternalReceiverPreview(receiver) {
+            if (!receiver) {
+                hideInternalReceiverPreview();
+                hideInternalTransferDetails();
+                return;
+            }
+
+            document.getElementById("internalReceiverFullName").innerText =
+                receiver.fullName || "-";
+
+            document.getElementById("internalReceiverUid").innerText =
+                receiver.uid || "-";
+
+            document.getElementById("internalReceiverEmail").innerText =
+                receiver.email || "-";
+
+            document.getElementById("internalReceiverPreview").style.display = "flex";
+
+            showInternalTransferDetails();
+        }
+        function hideInternalReceiverPreview() {
+            const preview = document.getElementById("internalReceiverPreview");
+
+            if (preview) {
+                preview.style.display = "none";
+            }
+
+            const fullName = document.getElementById("internalReceiverFullName");
+            const uid = document.getElementById("internalReceiverUid");
+            const email = document.getElementById("internalReceiverEmail");
+
+            if (fullName) fullName.innerText = "-";
+            if (uid) uid.innerText = "-";
+            if (email) email.innerText = "-";
+        }
+
+        function showInternalReceiverMessage(message, type) {
+            const messageBox = document.getElementById("internalReceiverMessage");
+
+            if (!messageBox) {
+                return;
+            }
+
+            if (!message) {
+                messageBox.innerText = "";
+                messageBox.style.display = "none";
+                messageBox.className = "internal-receiver-message";
+                return;
+            }
+
+            messageBox.innerText = message;
+            messageBox.style.display = "block";
+            messageBox.className = `internal-receiver-message ${type || "muted"}`;
+        }
+                function showInternalTransferDetails() {
+            const details = document.getElementById("internalTransferDetails");
+
+            if (!details) return;
+
+            const mainWallet = walletsMap["Main"];
+            const balance = Number(mainWallet?.balance || 0);
+
+            document.getElementById("internalTransferMainBalance").innerText =
+                formatMoney(balance) + " USDT";
+
+            details.style.display = "block";
+        }
+
+        function hideInternalTransferDetails() {
+            const details = document.getElementById("internalTransferDetails");
+
+            if (details) {
+                details.style.display = "none";
+            }
+
+            const amountInput = document.getElementById("internalTransferAmount");
+            const descriptionInput = document.getElementById("internalTransferDescription");
+
+            if (amountInput) amountInput.value = "";
+            if (descriptionInput) descriptionInput.value = "";
+        }
+
+        function hideInternalTransferVerificationBox() {
+            const box = document.getElementById("internalTransferVerificationBox");
+
+            if (box) {
+                box.style.display = "none";
+            }
+
+            const codeInput = document.getElementById("internalTransferCode");
+
+            if (codeInput) {
+                codeInput.value = "";
+            }
+        }
+
+        function setInternalTransferLocked(isLocked) {
+            internalTransferLocked = isLocked;
+
+            const receiverInput = document.getElementById("internalReceiverQuery");
+            const checkBtn = document.getElementById("checkInternalReceiverBtn");
+            const amountInput = document.getElementById("internalTransferAmount");
+            const descriptionInput = document.getElementById("internalTransferDescription");
+            const sendCodeBtn = document.getElementById("sendInternalTransferCodeBtn");
+
+            if (receiverInput) receiverInput.disabled = isLocked;
+            if (checkBtn) checkBtn.disabled = isLocked;
+            if (amountInput) amountInput.disabled = isLocked;
+            if (descriptionInput) descriptionInput.disabled = isLocked;
+            if (sendCodeBtn) sendCodeBtn.style.display = isLocked ? "none" : "inline-flex";
+        }
+
+        function resetInternalTransferVerification() {
+            selectedInternalTransferVerificationId = null;
+            internalTransferVerifiedAmount = 0;
+
+            setInternalTransferLocked(false);
+            hideInternalTransferVerificationBox();
+
+            showNotification("You can now change receiver or amount and request a new code.", "success");
+        }
+
+        async function sendInternalTransferVerificationCode() {
+            if (!selectedInternalReceiver) {
+                showNotification("Please select a valid receiver first.", "error");
+                return;
+            }
+
+            const amountInput = document.getElementById("internalTransferAmount");
+            const descriptionInput = document.getElementById("internalTransferDescription");
+            const btn = document.getElementById("sendInternalTransferCodeBtn");
+
+            const amount = Number(amountInput.value || 0);
+            const description = descriptionInput.value.trim();
+
+            const mainWallet = walletsMap["Main"];
+            const mainBalance = Number(mainWallet?.balance || 0);
+
+            if (!amount || amount <= 0) {
+                showNotification("Please enter a valid amount.", "error");
+                return;
+            }
+
+            if (amount > mainBalance) {
+                showNotification("Amount is greater than your Main Wallet balance.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Send verification code for transferring ${formatMoney(amount)} USDT to UID ${selectedInternalReceiver.uid}?`,
+                "Internal Transfer Verification"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Sending...";
+
+            try {
+                const result = await api("/api/wallet/internal-transfer/send-code", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        receiver: selectedInternalReceiver.uid,
+                        amount,
+                        description
+                    })
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not send verification code.", "error");
+                    return;
+                }
+
+                selectedInternalTransferVerificationId = result.data.verificationId;
+                internalTransferVerifiedAmount = Number(result.data.amount || amount);
+
+                document.getElementById("internalTransferVerifyReceiver").innerText =
+                    `${result.data.receiverFullName || "-"} / UID: ${result.data.receiverUid}`;
+
+                document.getElementById("internalTransferVerifyAmount").innerText =
+                    formatMoney(internalTransferVerifiedAmount) + " USDT";
+
+                setInternalTransferLocked(true);
+
+                document.getElementById("internalTransferVerificationBox").style.display = "block";
+
+                showNotification(result.message || "Verification code sent to your email.", "success");
+
+                setTimeout(() => {
+                    document.getElementById("internalTransferCode").focus();
+                }, 100);
+
+            } catch (error) {
+                showNotification(error.message || "Could not send verification code.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Send Verification Code";
+            }
+        }
+
+        async function confirmInternalTransfer() {
+            const codeInput = document.getElementById("internalTransferCode");
+            const btn = document.getElementById("confirmInternalTransferBtn");
+
+            const code = codeInput.value.trim();
+
+            if (!selectedInternalTransferVerificationId) {
+                showNotification("Verification request was not created.", "error");
+                return;
+            }
+
+            if (!code) {
+                showNotification("Verification code is required.", "error");
+                return;
+            }
+
+            if (code.length !== 6) {
+                showNotification("Verification code must be 6 digits.", "error");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Confirming...";
+
+            try {
+                const result = await api("/api/wallet/internal-transfer/confirm", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        verificationId: selectedInternalTransferVerificationId,
+                        code
+                    })
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Internal transfer failed.", "error");
+                    return;
+                }
+
+                showNotification(result.message || "Internal transfer completed.", "success");
+
+                resetInternalTransferFormAfterSuccess();
+
+                await loadWallets();
+
+            } catch (error) {
+                showNotification(error.message || "Internal transfer failed.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Confirm Internal Transfer";
+            }
+        }
+
+        function resetInternalTransferFormAfterSuccess() {
+            selectedInternalReceiver = null;
+            selectedInternalTransferVerificationId = null;
+            internalTransferVerifiedAmount = 0;
+
+            setInternalTransferLocked(false);
+
+            const receiverInput = document.getElementById("internalReceiverQuery");
+
+            if (receiverInput) {
+                receiverInput.value = "";
+            }
+
+            hideInternalReceiverPreview();
+            hideInternalTransferDetails();
+            hideInternalTransferVerificationBox();
+            showInternalReceiverMessage("", "");
+        }
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,

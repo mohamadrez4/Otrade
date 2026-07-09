@@ -22,7 +22,10 @@
             <div class="sidebar-logo">
                 <img src="~/images/logo.png" />
             </div>
-
+            <div class="sidebar-uid-chip" id="sidebarUidCard" style="display:none;">
+                <span>UID</span>
+                <strong id="sidebarUserUid">-</strong>
+            </div>
             <nav class="sidebar-nav">
 
                 <a href="/dashboard" class="nav-item">
@@ -102,6 +105,22 @@
                 link.classList.add("active");
             }
         });
+                async function loadPanelUserUid() {
+            try {
+                const result = await api("/api/profile");
+
+                if (!result || !result.success || !result.data?.referralCode) {
+                    return;
+                }
+
+                document.getElementById("sidebarUserUid").innerText = result.data.referralCode;
+                document.getElementById("sidebarUidCard").style.display = "block";
+            } catch {
+                // silent
+            }
+        }
+
+        loadPanelUserUid();
     </script>
     @RenderSection("Scripts", required: false)
 

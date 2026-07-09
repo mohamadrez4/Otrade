@@ -1,0 +1,456 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Recover Registration | Otrade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/auth.css" rel="stylesheet" />
+    <link href="~/css/pre-registration.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+
+    <script src="~/js/common.js"></script>
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+
+        <div class="auth-left">
+            <div class="brand-glow"></div>
+            <img class="hero-logo" src="~/images/Logo4.png" alt="Otrade Logo" />
+
+            <div class="hero-content">
+                <h1>Recover Your<br />Registration.</h1>
+
+                <p>
+                    If you closed the waiting page or lost connection, you can safely recover your pre-registration.
+                </p>
+
+                <div class="stat-card">
+                    <span>Step 1</span>
+                    <strong>Email + TxId</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Step 2</span>
+                    <strong>Email Verification</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Step 3</span>
+                    <strong>Continue Waiting</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <div class="login-card pre-register-card recover-card">
+
+                <div class="logo-box">
+                    <img src="~/images/logo.png" alt="Otrade Logo" />
+                    <span>Online Trading Room</span>
+                </div>
+
+                <div class="pre-stepper">
+                    <div class="pre-step active" id="recoverStepDot1">
+                        <span>Find</span>
+                    </div>
+
+                    <div class="pre-step-line"></div>
+
+                    <div class="pre-step" id="recoverStepDot2">
+                        <span>Verify</span>
+                    </div>
+                </div>
+
+                <div class="recover-icon">
+                    ↻
+                </div>
+
+                <section id="recoverLookupSection">
+                    <h2>Recover Registration</h2>
+
+                    <p class="subtitle">
+                        Enter the same email and transaction hash you submitted during payment.
+                    </p>
+
+                    <form id="recoverForm" autocomplete="off">
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email"
+                                   class="form-control auth-input"
+                                   id="email"
+                                   name="recover_email_not_login"
+                                   autocomplete="new-password"
+                                   autocorrect="off"
+                                   autocapitalize="off"
+                                   spellcheck="false"
+                                   placeholder="Enter your email" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label>Transaction Hash / TxId</label>
+                            <input type="text"
+                                   class="form-control auth-input"
+                                   id="txId"
+                                   name="recover_tx_not_login"
+                                   autocomplete="new-password"
+                                   autocorrect="off"
+                                   autocapitalize="off"
+                                   spellcheck="false"
+                                   placeholder="Enter transaction hash" />
+                        </div>
+
+                        <button type="submit" class="btn login-btn w-100" id="recoverBtn">
+                            Send Verification Code
+                        </button>
+                    </form>
+
+                    <div class="auth-footer mt-4">
+                        New registration?
+                        <a href="/auth/register">Start again</a>
+                    </div>
+
+                    <div class="pre-info-note mt-4">
+                        For security, we will send a verification code to your email before continuing.
+                    </div>
+                </section>
+
+                <section id="recoverVerifySection" style="display:none;">
+                    <h2>Verify Recovery</h2>
+
+                    <p class="subtitle">
+                        Enter the 6-digit code sent to
+                        <strong id="recoveryEmailText"></strong>.
+                    </p>
+
+                    <form id="recoverVerifyForm" autocomplete="off">
+                        <div class="otp-box mb-4">
+                            <input maxlength="1" class="otp-input recovery-otp" inputmode="numeric" autocomplete="one-time-code" />
+                            <input maxlength="1" class="otp-input recovery-otp" inputmode="numeric" autocomplete="one-time-code" />
+                            <input maxlength="1" class="otp-input recovery-otp" inputmode="numeric" autocomplete="one-time-code" />
+                            <input maxlength="1" class="otp-input recovery-otp" inputmode="numeric" autocomplete="one-time-code" />
+                            <input maxlength="1" class="otp-input recovery-otp" inputmode="numeric" autocomplete="one-time-code" />
+                            <input maxlength="1" class="otp-input recovery-otp" inputmode="numeric" autocomplete="one-time-code" />
+                        </div>
+
+                        <button type="submit" class="btn login-btn w-100" id="recoverVerifyBtn">
+                            Verify & Continue
+                        </button>
+
+                        <button type="button" class="pre-secondary-btn w-100 mt-3" id="backToRecoverBtn">
+                            Back
+                        </button>
+                    </form>
+
+                    <button type="button" class="pre-secondary-btn w-100 mt-3" id="resendRecoveryCodeBtn">
+                        Resend Code
+                    </button>
+
+                    <div class="pre-info-note mt-4">
+                        After verification, you will return to the waiting page. If admin already approved your payment, registration will continue automatically.
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script>
+        let recoveryEmail = "";
+        let recoveryTxId = "";
+        let isSendingRecoveryCode = false;
+
+        const savedEmail = localStorage.getItem("preRegistrationEmail");
+        const savedTxId = localStorage.getItem("preRegistrationTxId");
+
+        if (savedEmail) {
+            document.getElementById("email").value = savedEmail;
+        }
+
+        if (savedTxId) {
+            document.getElementById("txId").value = savedTxId;
+        }
+
+        async function publicApi(url, payload) {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            return await response.json();
+        }
+
+        document.getElementById("recoverForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            await sendRecoveryCode();
+        });
+
+        document.getElementById("resendRecoveryCodeBtn").addEventListener("click", async function () {
+            await sendRecoveryCode(true);
+        });
+
+        document.getElementById("backToRecoverBtn").addEventListener("click", function () {
+            clearRecoveryOtp();
+            showLookupStep();
+        });
+
+        document.getElementById("recoverVerifyForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            await verifyRecoveryCode();
+        });
+
+        async function sendRecoveryCode(isResend = false) {
+            if (isSendingRecoveryCode) {
+                return;
+            }
+
+            const email = document.getElementById("email").value.trim().toLowerCase();
+            const txId = document.getElementById("txId").value.trim();
+
+            if (!email || !isValidEmail(email)) {
+                showNotification("Please enter a valid email address.", "error");
+                return;
+            }
+
+            if (!txId || txId.length < 10) {
+                showNotification("Please enter a valid transaction hash.", "error");
+                return;
+            }
+
+            recoveryEmail = email;
+            recoveryTxId = txId;
+
+            const recoverBtn = document.getElementById("recoverBtn");
+            const resendBtn = document.getElementById("resendRecoveryCodeBtn");
+
+            isSendingRecoveryCode = true;
+            recoverBtn.disabled = true;
+            resendBtn.disabled = true;
+
+            recoverBtn.innerText = isResend ? "Resending..." : "Checking...";
+            resendBtn.innerText = "Sending...";
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/recover", {
+                    email: recoveryEmail,
+                    txId: recoveryTxId
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not recover registration.", "error");
+                    return;
+                }
+
+                const data = result.data || {};
+
+                if (data.isRejected) {
+                    showNotification(data.message || "Your request was rejected.", "error");
+                    return;
+                }
+
+                if (data.isExpired) {
+                    showNotification(data.message || "Your request has expired.", "warning");
+                    return;
+                }
+
+                if (data.canContinueWaiting === false) {
+                    showNotification(data.message || "This registration cannot be recovered.", "warning");
+                    return;
+                }
+
+                localStorage.setItem("preRegistrationEmail", recoveryEmail);
+                localStorage.setItem("preRegistrationTxId", recoveryTxId);
+
+                document.getElementById("recoveryEmailText").innerText = recoveryEmail;
+
+                clearRecoveryOtp();
+                showVerifyStep();
+
+                showNotification(
+                    isResend
+                        ? "Recovery code resent to your email."
+                        : "Recovery code sent to your email.",
+                    "success"
+                );
+
+            } catch {
+                showNotification("Network error. Please try again.", "error");
+            } finally {
+                isSendingRecoveryCode = false;
+
+                recoverBtn.disabled = false;
+                resendBtn.disabled = false;
+
+                recoverBtn.innerText = "Send Verification Code";
+                resendBtn.innerText = "Resend Code";
+            }
+        }
+
+        async function verifyRecoveryCode() {
+            if (!recoveryEmail || !recoveryTxId) {
+                showNotification("Recovery session not found. Please try again.", "error");
+                showLookupStep();
+                return;
+            }
+
+            const code = getRecoveryOtpCode();
+
+            if (code.length !== 6) {
+                showNotification("Please enter the 6-digit verification code.", "error");
+                return;
+            }
+
+            const verifyBtn = document.getElementById("recoverVerifyBtn");
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerText = "Verifying...";
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/recover/verify", {
+                    email: recoveryEmail,
+                    txId: recoveryTxId,
+                    code: code
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Invalid verification code.", "error");
+                    return;
+                }
+
+                const data = result.data || {};
+
+                if (!data.trackingToken) {
+                    showNotification(data.message || "Tracking token was not returned.", "error");
+                    return;
+                }
+
+                localStorage.setItem("preRegistrationTrackingToken", data.trackingToken);
+                localStorage.setItem("preRegistrationEmail", recoveryEmail);
+                localStorage.setItem("preRegistrationTxId", recoveryTxId);
+                localStorage.setItem("preRegistrationWaitStartedAt", Date.now().toString());
+
+                showNotification("Recovery verified successfully.", "success");
+
+                setTimeout(() => {
+                    window.location.href = "/auth/pre-registration-wait";
+                }, 700);
+
+            } catch {
+                showNotification("Network error. Please try again.", "error");
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = "Verify & Continue";
+            }
+        }
+
+        function showLookupStep() {
+            setRecoverStep(1);
+
+            document.getElementById("recoverLookupSection").style.display = "block";
+            document.getElementById("recoverVerifySection").style.display = "none";
+        }
+
+        function showVerifyStep() {
+            setRecoverStep(2);
+
+            document.getElementById("recoverLookupSection").style.display = "none";
+            document.getElementById("recoverVerifySection").style.display = "block";
+
+            const firstInput = document.querySelector(".recovery-otp");
+
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 80);
+            }
+        }
+
+        function setRecoverStep(step) {
+            const dot1 = document.getElementById("recoverStepDot1");
+            const dot2 = document.getElementById("recoverStepDot2");
+
+            dot1.classList.remove("active", "done");
+            dot2.classList.remove("active", "done");
+
+            if (step === 1) {
+                dot1.classList.add("active");
+                return;
+            }
+
+            dot1.classList.add("done");
+            dot2.classList.add("active");
+        }
+
+        function getRecoveryOtpCode() {
+            const inputs = document.querySelectorAll(".recovery-otp");
+            let code = "";
+
+            inputs.forEach(input => {
+                code += input.value.trim();
+            });
+
+            return code;
+        }
+
+        function clearRecoveryOtp() {
+            document.querySelectorAll(".recovery-otp").forEach(input => {
+                input.value = "";
+            });
+        }
+
+        document.querySelectorAll(".recovery-otp").forEach((input, index, inputs) => {
+            input.addEventListener("input", function () {
+                input.value = input.value.replace(/\D/g, "");
+
+                if (input.value.length === 1 && index < inputs.length - 1) {
+                    inputs[index + 1].focus();
+                }
+            });
+
+            input.addEventListener("keydown", function (e) {
+                if (e.key === "Backspace" && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
+
+            input.addEventListener("paste", function (e) {
+                e.preventDefault();
+
+                const pastedText = (e.clipboardData || window.clipboardData)
+                    .getData("text")
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
+
+                if (!pastedText) {
+                    return;
+                }
+
+                inputs.forEach((otpInput, otpIndex) => {
+                    otpInput.value = pastedText[otpIndex] || "";
+                });
+
+                const lastFilledIndex = Math.min(pastedText.length, inputs.length) - 1;
+
+                if (lastFilledIndex >= 0) {
+                    inputs[lastFilledIndex].focus();
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

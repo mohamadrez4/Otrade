@@ -1,0 +1,259 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Waiting Approval | Otrade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/auth.css" rel="stylesheet" />
+    <link href="~/css/pre-registration.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+
+    <script src="~/js/common.js"></script>
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+
+        <div class="auth-left">
+            <div class="brand-glow"></div>
+            <img class="hero-logo" src="~/images/Logo4.png" alt="Otrade Logo" />
+
+            <div class="hero-content">
+                <h1>Payment Submitted.<br />Waiting Approval.</h1>
+                <p>
+                    Your transaction hash has been submitted. Stay on this page while admin reviews your payment.
+                </p>
+
+                <div class="stat-card">
+                    <span>Status</span>
+                    <strong id="leftStatusText">Pending Review</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Next Step</span>
+                    <strong>Complete Account</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <div class="login-card pre-register-card wait-card">
+
+                <div class="logo-box">
+                    <img src="~/images/logo.png" alt="Otrade Logo" />
+                    <span>Online Trading Room</span>
+                </div>
+
+                <div class="wait-animation">
+                    <div class="wait-ring"></div>
+                    <div class="wait-dot"></div>
+                </div>
+
+                <h2>Waiting for Admin Approval</h2>
+
+                <p class="subtitle">
+                    If your payment is approved within 15 minutes, registration will continue automatically.
+                </p>
+
+                <div class="wait-progress-box">
+                    <div class="wait-progress-header">
+                        <span>Remaining Time</span>
+                        <strong id="remainingTime">15:00</strong>
+                    </div>
+
+                    <div class="wait-progress-track">
+                        <div id="waitProgressBar" class="wait-progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="wait-status-card">
+                    <span id="statusBadge" class="wait-status-badge pending">Pending</span>
+                    <p id="waitStatusText">
+                        Checking payment status...
+                    </p>
+                </div>
+
+                <div class="pre-info-note mt-4">
+                    You can safely close this page. If you return later, use Recover Registration with your email and TxId.
+                </div>
+
+                <div class="auth-footer mt-4">
+                    Lost connection?
+                    <a href="/auth/recover-pre-registration">Recover registration</a>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script>
+        let timer = null;
+        const maxWaitSeconds = 15 * 60;
+
+        async function publicApi(url, payload) {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            return await response.json();
+        }
+
+        function formatSeconds(seconds) {
+            seconds = Math.max(0, Number(seconds || 0));
+
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+
+            return `${m}:${s.toString().padStart(2, "0")}`;
+        }
+
+        function setStatusBadge(type, text) {
+            const badge = document.getElementById("statusBadge");
+
+            badge.className = "wait-status-badge " + type;
+            badge.innerText = text;
+        }
+
+        function updateProgress(remainingSeconds) {
+            const percent = Math.max(0, Math.min(100, (remainingSeconds / maxWaitSeconds) * 100));
+
+            document.getElementById("remainingTime").innerText = formatSeconds(remainingSeconds);
+            document.getElementById("waitProgressBar").style.width = percent + "%";
+        }
+
+        async function checkStatus() {
+            const trackingToken = localStorage.getItem("preRegistrationTrackingToken");
+
+            if (!trackingToken) {
+                showNotification("Tracking information not found. Please recover your registration.", "warning");
+
+                setTimeout(() => {
+                    window.location.href = "/auth/recover-pre-registration";
+                }, 1000);
+
+                return;
+            }
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/wait-status", {
+                    trackingToken
+                });
+
+                if (!result.success) {
+                    document.getElementById("waitStatusText").innerText =
+                        result.message || "Could not check status.";
+
+                    setStatusBadge("danger", "Error");
+                    return;
+                }
+
+                const data = result.data;
+
+                updateProgress(data.remainingSeconds || 0);
+
+                document.getElementById("waitStatusText").innerText =
+                    data.message || "Waiting for admin approval.";
+
+                if (data.isApproved) {
+                    clearInterval(timer);
+
+                    setStatusBadge("success", "Approved");
+                    document.getElementById("leftStatusText").innerText = "Approved";
+
+                    localStorage.setItem("preRegistrationCompletionToken", data.completionToken || "");
+                    localStorage.setItem("preRegistrationApprovedAmount", data.approvedAmount || "0");
+
+                    showNotification(
+                        "Your payment was approved. Complete your registration.",
+                        "success"
+                    );
+
+                    setTimeout(() => {
+                        window.location.href = "/auth/complete-pre-registration";
+                    }, 900);
+
+                    return;
+                }
+
+                if (data.isRejected) {
+                    clearInterval(timer);
+
+                    setStatusBadge("danger", "Rejected");
+                    document.getElementById("leftStatusText").innerText = "Rejected";
+
+                    showNotification(
+                        data.rejectReason || "Your payment was rejected.",
+                        "error"
+                    );
+
+                    document.getElementById("waitStatusText").innerText =
+                        data.rejectReason || "Your payment was rejected.";
+
+                    return;
+                }
+
+                if (data.isExpired) {
+                    clearInterval(timer);
+
+                    setStatusBadge("warning", "Expired");
+                    document.getElementById("leftStatusText").innerText = "Expired";
+
+                    showNotification(
+                        "Your pre-registration has expired.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+                if (data.isWaitOver) {
+                    clearInterval(timer);
+
+                    setStatusBadge("warning", "Wait Over");
+                    document.getElementById("leftStatusText").innerText = "Still Pending";
+
+                    document.getElementById("waitStatusText").innerText =
+                        "15 minutes waiting time is over. Your request is still pending and can be recovered later.";
+
+                    showNotification(
+                        "15 minutes waiting time is over. You can recover and check later.",
+                        "warning"
+                    );
+
+                    return;
+                }
+
+                setStatusBadge("pending", "Pending");
+                document.getElementById("leftStatusText").innerText = "Pending Review";
+
+            } catch {
+                document.getElementById("waitStatusText").innerText =
+                    "Connection lost. We will retry automatically.";
+
+                setStatusBadge("warning", "Offline");
+            }
+        }
+
+        window.addEventListener("online", checkStatus);
+
+        checkStatus();
+        timer = setInterval(checkStatus, 5000);
+    </script>
+
+</body>
+</html>

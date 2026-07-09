@@ -1,0 +1,468 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Pre-Registrations";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card pre-admin-card">
+
+        <div class="pre-admin-header">
+            <div>
+               
+                <h3>Pre-Registration Deposits</h3>
+                <p>
+                    Review deposits submitted before account creation. Approved amount will be credited to Main Wallet after registration completion.
+                </p>
+            </div>
+
+            <button type="button" class="pre-admin-refresh-btn" onclick="loadItems()">
+                Refresh
+            </button>
+        </div>
+
+        <div id="message" class="pre-admin-empty">
+            Loading pending pre-registrations...
+        </div>
+
+        <div id="tableWrapper" class="pre-admin-table-wrapper" style="display:none;">
+            <table class="pre-admin-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Sponsor</th>
+                        <th>Declared Amount</th>
+                        <th>Transaction Hash</th>
+                        <th>Submitted At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Approve Modal -->
+<div class="pre-modal-backdrop" id="approveModal">
+    <div class="pre-modal">
+        <div class="pre-modal-header">
+            <div>
+                <span>Approve Request</span>
+                <h4>Confirm approved amount</h4>
+            </div>
+
+            <button type="button" class="pre-modal-close" onclick="closeApproveModal()">×</button>
+        </div>
+
+        <div class="pre-modal-body">
+            <input type="hidden" id="approveId" />
+
+            <div class="pre-modal-info">
+                <span>Email</span>
+                <strong id="approveEmail">-</strong>
+            </div>
+
+            <div class="pre-modal-info">
+                <span>Declared Amount</span>
+                <strong id="approveDeclaredAmount">$0.00</strong>
+            </div>
+
+            <div class="mb-3">
+                <label class="pre-modal-label">Approved Amount</label>
+                <input type="number"
+                       step="0.00000001"
+                       min="0"
+                       id="approvedAmount"
+                       class="pre-modal-input"
+                       placeholder="Enter approved amount" />
+            </div>
+
+            <div class="pre-modal-note">
+                This amount will be credited to the user's Main Wallet after completing registration. Invest Wallet will remain zero.
+            </div>
+        </div>
+
+        <div class="pre-modal-footer">
+            <button type="button" class="pre-modal-secondary" onclick="closeApproveModal()">
+                Cancel
+            </button>
+
+            <button type="button" class="pre-modal-primary" onclick="submitApprove()">
+                Approve
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="pre-modal-backdrop" id="rejectModal">
+    <div class="pre-modal">
+        <div class="pre-modal-header">
+            <div>
+                <span>Reject Request</span>
+                <h4>Enter rejection reason</h4>
+            </div>
+
+            <button type="button" class="pre-modal-close" onclick="closeRejectModal()">×</button>
+        </div>
+
+        <div class="pre-modal-body">
+            <input type="hidden" id="rejectId" />
+
+            <div class="pre-modal-info">
+                <span>Email</span>
+                <strong id="rejectEmail">-</strong>
+            </div>
+
+            <div class="mb-3">
+                <label class="pre-modal-label">Reject Reason</label>
+                <textarea id="rejectReason"
+                          class="pre-modal-input pre-modal-textarea"
+                          placeholder="Write reason..."
+                          maxlength="500"></textarea>
+            </div>
+
+            <div class="pre-modal-note danger">
+                The user will not be able to continue this pre-registration after rejection.
+            </div>
+        </div>
+
+        <div class="pre-modal-footer">
+            <button type="button" class="pre-modal-secondary" onclick="closeRejectModal()">
+                Cancel
+            </button>
+
+            <button type="button" class="pre-modal-danger" onclick="submitReject()">
+                Reject
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const message = document.getElementById("message");
+        const tableWrapper = document.getElementById("tableWrapper");
+        const tableBody = document.getElementById("tableBody");
+
+        let itemsCache = [];
+
+        async function loadItems() {
+            message.style.display = "block";
+            message.innerText = "Loading pending pre-registrations...";
+            tableWrapper.style.display = "none";
+            tableBody.innerHTML = "";
+
+            try {
+                const result = await api("/api/admin/pre-registrations/pending");
+
+                if (!result.success) {
+                    message.innerText = result.message || "Could not load pre-registrations.";
+                    return;
+                }
+
+                itemsCache = result.data || [];
+
+                if (!itemsCache.length) {
+                    message.innerText = "No pending pre-registration deposits found.";
+                    return;
+                }
+
+                renderRows(itemsCache);
+
+                message.style.display = "none";
+                tableWrapper.style.display = "block";
+
+            } catch (error) {
+                message.innerText = error.message || "Could not load data.";
+            }
+        }
+
+        function renderRows(items) {
+            tableBody.innerHTML = "";
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+
+                const emailTd = document.createElement("td");
+                emailTd.innerHTML = `
+                    <div class="pre-user-cell">
+                        <div class="pre-user-avatar">${getInitial(item.email)}</div>
+                        <div>
+                            <strong>${escapeHtml(item.email || "-")}</strong>
+                            <span>ID: ${item.id}</span>
+                        </div>
+                    </div>
+                `;
+
+                const sponsorTd = document.createElement("td");
+                sponsorTd.innerHTML = `
+                    <div class="pre-muted-cell">
+                        <strong>${escapeHtml(item.sponsorEmail || "-")}</strong>
+                        <span>${item.sponsorId ? "Sponsor ID: " + item.sponsorId : ""}</span>
+                    </div>
+                `;
+
+                const amountTd = document.createElement("td");
+                amountTd.innerHTML = `
+                    <span class="pre-money">${formatMoney(item.declaredAmount)}</span>
+                `;
+
+                const txTd = document.createElement("td");
+                txTd.innerHTML = `
+                    <div class="pre-tx-cell">
+                        <code title="${escapeHtml(item.depositTxId || "")}">
+                            ${escapeHtml(shortTx(item.depositTxId))}
+                        </code>
+                        <button type="button"
+                                class="pre-copy-btn"
+                                onclick="copyTx('${escapeJs(item.depositTxId || "")}')">
+                            Copy
+                        </button>
+                    </div>
+                `;
+
+                const dateTd = document.createElement("td");
+                dateTd.innerHTML = `
+                    <div class="pre-date-cell">
+                        <strong>${formatDate(item.createdAt)}</strong>
+                        <span>${escapeHtml(item.status || "DepositSubmitted")}</span>
+                    </div>
+                `;
+
+                const actionTd = document.createElement("td");
+                actionTd.innerHTML = `
+                    <div class="pre-action-group">
+                        <button type="button"
+                                class="pre-action-approve"
+                                onclick="openApproveModal(${item.id})">
+                            Approve
+                        </button>
+
+                        <button type="button"
+                                class="pre-action-reject"
+                                onclick="openRejectModal(${item.id})">
+                            Reject
+                        </button>
+                    </div>
+                `;
+
+                row.appendChild(emailTd);
+                row.appendChild(sponsorTd);
+                row.appendChild(amountTd);
+                row.appendChild(txTd);
+                row.appendChild(dateTd);
+                row.appendChild(actionTd);
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function openApproveModal(id) {
+            const item = itemsCache.find(x => x.id === id);
+
+            if (!item) {
+                showNotification("Request not found.", "error");
+                return;
+            }
+
+            document.getElementById("approveId").value = item.id;
+            document.getElementById("approveEmail").innerText = item.email || "-";
+            document.getElementById("approveDeclaredAmount").innerText = formatMoney(item.declaredAmount);
+            document.getElementById("approvedAmount").value = Number(item.declaredAmount || 0);
+
+            document.getElementById("approveModal").classList.add("show");
+
+            setTimeout(() => {
+                document.getElementById("approvedAmount").focus();
+            }, 100);
+        }
+
+        function closeApproveModal() {
+            document.getElementById("approveModal").classList.remove("show");
+        }
+
+        async function submitApprove() {
+            const id = Number(document.getElementById("approveId").value);
+            const approvedAmount = Number(document.getElementById("approvedAmount").value);
+
+            if (!id) {
+                showNotification("Invalid request.", "error");
+                return;
+            }
+
+            if (!approvedAmount || approvedAmount <= 0) {
+                showNotification("Approved amount is invalid.", "error");
+                return;
+            }
+
+            try {
+                const result = await api(`/api/admin/pre-registrations/approve/${id}`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        approvedAmount
+                    })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not approve request.", "error");
+                    return;
+                }
+
+                closeApproveModal();
+
+                showNotification("Pre-registration approved successfully.", "success");
+
+                await loadItems();
+
+            } catch (error) {
+                showNotification(error.message || "Could not approve request.", "error");
+            }
+        }
+
+        function openRejectModal(id) {
+            const item = itemsCache.find(x => x.id === id);
+
+            if (!item) {
+                showNotification("Request not found.", "error");
+                return;
+            }
+
+            document.getElementById("rejectId").value = item.id;
+            document.getElementById("rejectEmail").innerText = item.email || "-";
+            document.getElementById("rejectReason").value = "";
+
+            document.getElementById("rejectModal").classList.add("show");
+
+            setTimeout(() => {
+                document.getElementById("rejectReason").focus();
+            }, 100);
+        }
+
+        function closeRejectModal() {
+            document.getElementById("rejectModal").classList.remove("show");
+        }
+
+        async function submitReject() {
+            const id = Number(document.getElementById("rejectId").value);
+            const reason = document.getElementById("rejectReason").value.trim();
+
+            if (!id) {
+                showNotification("Invalid request.", "error");
+                return;
+            }
+
+            if (!reason) {
+                showNotification("Reject reason is required.", "error");
+                return;
+            }
+
+            if (reason.length > 500) {
+                showNotification("Reject reason is too long.", "error");
+                return;
+            }
+
+            try {
+                const result = await api(`/api/admin/pre-registrations/reject/${id}`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        reason
+                    })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not reject request.", "error");
+                    return;
+                }
+
+                closeRejectModal();
+
+                showNotification("Pre-registration rejected.", "success");
+
+                await loadItems();
+
+            } catch (error) {
+                showNotification(error.message || "Could not reject request.", "error");
+            }
+        }
+
+        async function copyTx(value) {
+            if (!value) {
+                showNotification("Transaction hash is empty.", "warning");
+                return;
+            }
+
+            await navigator.clipboard.writeText(value);
+
+            showNotification("Transaction hash copied.", "success");
+        }
+
+        function getInitial(value) {
+            if (!value) return "?";
+            return value.trim().charAt(0).toUpperCase();
+        }
+
+        function shortTx(value) {
+            if (!value) return "-";
+            if (value.length <= 18) return value;
+            return value.substring(0, 10) + "..." + value.substring(value.length - 8);
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function escapeJs(value) {
+            return String(value || "")
+                .replace(/\\/g, "\\\\")
+                .replace(/'/g, "\\'");
+        }
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape") {
+                closeApproveModal();
+                closeRejectModal();
+            }
+        });
+
+        document.getElementById("approveModal").addEventListener("click", function (e) {
+            if (e.target === this) closeApproveModal();
+        });
+
+        document.getElementById("rejectModal").addEventListener("click", function (e) {
+            if (e.target === this) closeRejectModal();
+        });
+
+        loadItems();
+    </script>
+}

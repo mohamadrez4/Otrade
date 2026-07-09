@@ -8,129 +8,215 @@
     <meta charset="utf-8" />
     <title>Register | Otrade</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
     <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
     <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
+
     <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="~/css/auth.css" rel="stylesheet" />
+    <link href="~/css/pre-registration.css" rel="stylesheet" />
     <link href="~/css/common.css" rel="stylesheet" />
+
     <script src="~/js/common.js"></script>
 </head>
+
 <body class="auth-body">
 
-    <div class="register-wrapper">
+    <div class="auth-wrapper">
 
-        <div class="register-card">
+        <div class="auth-left">
+            <div class="brand-glow"></div>
+            <img class="hero-logo" src="~/images/Logo4.png" alt="Otrade Logo" />
 
-            <div class="logo-box text-center">
-                <img src="~/images/logo.png" alt="Otrade Logo" />
-                <span>Online Trading Room</span>
-            </div>
-
-            <div id="registerStep">
-
-                <h2>Create Account</h2>
-
-                <p class="subtitle">
-                    Join Otrade investment platform
+            <div class="hero-content">
+                <h1>Start Smart.<br />Join Otrade.</h1>
+                <p>
+                    Verify your email, submit your deposit hash, and complete your account after admin approval.
                 </p>
 
+                <div class="stat-card">
+                    <span>Step 1</span>
+                    <strong>Email Verification</strong>
+                </div>
 
-                <form id="registerForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label>First Name</label>
-                            <input type="text" class="form-control auth-input" id="firstName" placeholder="First name" />
+                <div class="stat-card">
+                    <span>Step 2</span>
+                    <strong>Deposit Review</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Step 3</span>
+                    <strong>Main Wallet Credit</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <div class="login-card pre-register-card">
+
+                <div class="logo-box">
+                    <img src="~/images/logo.png" alt="Otrade Logo" />
+                    <span>Online Trading Room</span>
+                </div>
+
+                <div class="pre-stepper">
+                    <div class="pre-step active" id="stepDot1">
+                        <span>Email</span>
+                    </div>
+
+                    <div class="pre-step-line"></div>
+
+                    <div class="pre-step" id="stepDot2">
+                        <span>Verify</span>
+                    </div>
+
+                    <div class="pre-step-line"></div>
+
+                    <div class="pre-step" id="stepDot3">
+                        <span>Deposit</span>
+                    </div>
+                </div>
+
+                <section id="emailStep">
+                    <h2>Create Account</h2>
+                    <p class="subtitle">
+                        Enter your email and referral code. We will send a verification code before payment.
+                    </p>
+
+                    <form id="startForm">
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email"
+                                   class="form-control auth-input"
+                                   id="email"
+                                   placeholder="Enter your email" />
                         </div>
 
-                        <div class="col-md-6 mb-3">
-                            <label>Last Name</label>
-                            <input type="text" class="form-control auth-input" id="lastName" placeholder="Last name" />
+                        <div class="mb-4">
+                            <label>Referral Code</label>
+                            <input type="text"
+                                   class="form-control auth-input"
+                                   id="referralCode"
+                                   placeholder="Referral code" />
+                        </div>
+
+                        <button type="submit" class="btn login-btn w-100" id="startBtn">
+                            Send Verification Code
+                        </button>
+                    </form>
+
+                    <div class="auth-footer">
+                        Already paid?
+                        <a href="/auth/recover-pre-registration">Recover registration</a>
+                    </div>
+
+                    <div class="auth-footer mt-2">
+                        Already have an account?
+                        <a href="/auth/login">Login</a>
+                    </div>
+                </section>
+
+                <section id="verifyStep" style="display:none;">
+                    <h2>Verify Email</h2>
+                    <p class="subtitle">
+                        Enter the 6-digit code sent to <strong id="verifyEmailText"></strong>.
+                    </p>
+
+                    <form id="verifyForm">
+                        <div class="otp-box mb-4">
+                            <input maxlength="1" class="otp-input" inputmode="numeric" />
+                            <input maxlength="1" class="otp-input" inputmode="numeric" />
+                            <input maxlength="1" class="otp-input" inputmode="numeric" />
+                            <input maxlength="1" class="otp-input" inputmode="numeric" />
+                            <input maxlength="1" class="otp-input" inputmode="numeric" />
+                            <input maxlength="1" class="otp-input" inputmode="numeric" />
+                        </div>
+
+                        <button type="submit" class="btn login-btn w-100" id="verifyBtn">
+                            Verify & Continue
+                        </button>
+                    </form>
+
+                    <button type="button" class="pre-secondary-btn w-100 mt-3" id="resendBtn">
+                        Resend code
+                    </button>
+                </section>
+
+                <section id="depositStep" style="display:none;">
+                    <h2>Submit Deposit</h2>
+                    <p class="subtitle">
+                        Send USDT, then submit your amount and transaction hash for admin approval.
+                    </p>
+
+                    <div class="pre-wallet-card mb-4">
+                        <div>
+                            <span>Network</span>
+                            <strong id="depositNetworkText">Loading...</strong>
+                        </div>
+
+                        <div>
+                            <span>Wallet Address</span>
+                            <div class="pre-copy-row">
+                                <code id="walletAddress">Loading wallet address...</code>
+                                <button type="button" id="copyWalletBtn">Copy</button>
+                            </div>
                         </div>
                     </div>
+                    <form id="depositForm">
+                        <div class="mb-3">
+                            <label>Paid Amount</label>
+                            <input type="number"
+                                   step="0.00000001"
+                                   min="0"
+                                   class="form-control auth-input"
+                                   id="amount"
+                                   placeholder="Amount paid" />
+                        </div>
 
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input type="email" class="form-control auth-input" id="email" placeholder="Enter your email" />
+                        <div class="mb-4">
+                            <label>Transaction Hash / TxId</label>
+                            <input type="text"
+                                   class="form-control auth-input"
+                                   id="txId"
+                                   placeholder="Paste transaction hash" />
+                        </div>
+
+                        <button type="submit" class="btn login-btn w-100" id="depositBtn">
+                            Submit Payment
+                        </button>
+                    </form>
+
+                    <div class="pre-info-note mt-4">
+                        Your approved deposit will be credited to your Main Wallet after registration completion.
+                        Invest Wallet remains zero until you manually transfer Main → Invest.
                     </div>
-
-                    <div class="mb-3">
-                        <label>Password</label>
-                        <input type="password" class="form-control auth-input" id="password" placeholder="Create password" />
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Confirm Password</label>
-                        <input type="password" class="form-control auth-input" id="confirmPassword" placeholder="Confirm password" />
-                    </div>
-
-                    <div class="mb-4">
-                        <label>Referral Code</label>
-                        <input type="text" class="form-control auth-input" id="referralCode" placeholder="Referral code" />
-                    </div>
-
-                    <button type="submit" class="btn login-btn w-100">
-                        Create Account
-                    </button>
-                </form>
-
+                </section>
 
             </div>
-
-            <div id="verifyStep" style="display:none;">
-
-                <h2>Verify Email</h2>
-
-                <p class="subtitle">
-                    Enter verification code
-                </p>
-
-                <form id="verifyForm">
-                    <input type="hidden" id="verifyEmail" />
-
-                    <div class="otp-box mb-4">
-                        <input maxlength="1" class="otp-input" />
-                        <input maxlength="1" class="otp-input" />
-                        <input maxlength="1" class="otp-input" />
-                        <input maxlength="1" class="otp-input" />
-                        <input maxlength="1" class="otp-input" />
-                        <input maxlength="1" class="otp-input" />
-                    </div>
-
-                    <button type="submit" class="btn login-btn w-100">
-                        Verify Account
-                    </button>
-                </form>
-
-            </div>
-
         </div>
 
     </div>
- 
 
+    <div id="notificationContainer" class="notification-container"></div>
 
     <script>
-                const token =
-            localStorage.getItem("token");
+        let temporaryRegistrationId = Number(localStorage.getItem("preRegistrationId") || 0);
+        let preRegistrationEmail = localStorage.getItem("preRegistrationEmail") || "";
 
-        if (token)
-        {
-            try
-            {
-                const payload =
-                    JSON.parse(atob(token.split('.')[1]));
+        const token = localStorage.getItem("token");
 
-                if (payload.exp * 1000 > Date.now())
-                {
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.exp * 1000 > Date.now()) {
                     window.location.href = "/dashboard";
                 }
-            }
-            catch
-            {
+            } catch {
                 localStorage.removeItem("token");
             }
         }
+
         const params = new URLSearchParams(window.location.search);
         const ref = params.get("ref");
 
@@ -140,53 +226,8 @@
             referralInput.readOnly = true;
         }
 
-        document.getElementById("registerForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const password = document.getElementById("password").value;
-            const confirmPassword = document.getElementById("confirmPassword").value;
-            const firstname =document.getElementById("firstName").value;
-            const lastName = document.getElementById("lastName").value;
-            const email = document.getElementById("email").value ;
-            const referralCode = document.getElementById("referralCode").value;
-            if (!firstname){
-                 showNotification("Please enter firstname","error");
-                return;
-            }
-            if (!lastName){
-                 showNotification("Please enter lastName","error");
-                return;
-            }
-            if (!email){
-                 showNotification("Please enter email","error");
-                return;
-            }
-            if (!isValidEmail(email)) {
-                  showNotification("Please enter a valid email address.", "error");
-                  return;
-            }
-            if (!password){
-                 showNotification("Please enter password","error");
-                return;
-            }
-            if (password !== confirmPassword) {
-                 showNotification("Passwords do not match","error");
-                
-                return;
-            }
-            if (!referralCode){
-                 showNotification("Please enter referralCode","error");
-                return;
-            }
-            const payload = {
-                firstName: document.getElementById("firstName").value,
-                lastName: document.getElementById("lastName").value,
-                email: document.getElementById("email").value,
-                password: password,
-                referralCode: document.getElementById("referralCode").value
-            };
-
-            const response = await fetch("/api/auth/register", {
+        async function publicApi(url, payload) {
+            const response = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -194,18 +235,78 @@
                 body: JSON.stringify(payload)
             });
 
-            const result = await response.json();
+            return await response.json();
+        }
 
-            if (!result.success) {
-                showNotification(result.message,"error");
-               
+        document.getElementById("startForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            await startPreRegistration();
+        });
+
+        document.getElementById("resendBtn").addEventListener("click", async function () {
+            await startPreRegistration(true);
+        });
+
+        async function startPreRegistration(isResend = false) {
+            const email = document.getElementById("email").value.trim().toLowerCase();
+            const referralCode = document.getElementById("referralCode").value.trim();
+
+            if (!email || !isValidEmail(email)) {
+                showNotification("Please enter a valid email address.", "error");
                 return;
             }
 
-            document.getElementById("verifyEmail").value = payload.email;
-            document.getElementById("registerStep").style.display = "none";
-            document.getElementById("verifyStep").style.display = "block";
-        });
+            if (!referralCode) {
+                showNotification("Please enter referral code.", "error");
+                return;
+            }
+
+            const startBtn = document.getElementById("startBtn");
+            const resendBtn = document.getElementById("resendBtn");
+
+            startBtn.disabled = true;
+            resendBtn.disabled = true;
+
+            startBtn.innerText = "Sending code...";
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/start", {
+                    email,
+                    referralCode
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not send verification code.", "error");
+                    return;
+                }
+
+                temporaryRegistrationId = result.data.temporaryRegistrationId;
+                preRegistrationEmail = result.data.email;
+
+                localStorage.setItem("preRegistrationId", temporaryRegistrationId);
+                localStorage.setItem("preRegistrationEmail", preRegistrationEmail);
+
+                document.getElementById("verifyEmailText").innerText = preRegistrationEmail;
+
+                if (result.data.isEmailVerified) {
+                    showDepositStep();
+                } else {
+                    showVerifyStep();
+                    showNotification(
+                        isResend ? "Verification code resent." : "Verification code sent to your email.",
+                        "success"
+                    );
+                }
+
+            } catch {
+                showNotification("Network error. Please try again.", "error");
+            } finally {
+                startBtn.disabled = false;
+                resendBtn.disabled = false;
+                startBtn.innerText = "Send Verification Code";
+            }
+        }
 
         document.getElementById("verifyForm").addEventListener("submit", async function (e) {
             e.preventDefault();
@@ -213,42 +314,193 @@
             const inputs = document.querySelectorAll(".otp-input");
             let code = "";
 
-            inputs.forEach(x => code += x.value);
+            inputs.forEach(x => code += x.value.trim());
 
-            const payload = {
-                email: document.getElementById("verifyEmail").value,
-                code: code
-            };
-
-            const response = await fetch("/api/auth/verify-email", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (!result.success) {
-                 showNotification(result.message,"error");
-               
+            if (code.length !== 6) {
+                showNotification("Please enter the 6-digit code.", "error");
                 return;
             }
 
-            window.location.href = "/auth/login";
+            const verifyBtn = document.getElementById("verifyBtn");
+            verifyBtn.disabled = true;
+            verifyBtn.innerText = "Verifying...";
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/verify-email", {
+                    temporaryRegistrationId,
+                    email: preRegistrationEmail,
+                    code
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Invalid verification code.", "error");
+                    return;
+                }
+
+                showNotification("Email verified successfully.", "success");
+
+                showDepositStep();
+
+            } catch {
+                showNotification("Network error. Please try again.", "error");
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.innerText = "Verify & Continue";
+            }
+        });
+
+        document.getElementById("depositForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const amount = Number(document.getElementById("amount").value);
+            const txId = document.getElementById("txId").value.trim();
+
+            if (!temporaryRegistrationId) {
+                showNotification("Registration session not found.", "error");
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                showNotification("Please enter a valid amount.", "error");
+                return;
+            }
+
+            if (!txId || txId.length < 10) {
+                showNotification("Please enter a valid transaction hash.", "error");
+                return;
+            }
+
+            const depositBtn = document.getElementById("depositBtn");
+            depositBtn.disabled = true;
+            depositBtn.innerText = "Submitting...";
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/deposit", {
+                    temporaryRegistrationId,
+                    amount,
+                    txId
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not submit payment.", "error");
+                    return;
+                }
+
+                localStorage.setItem("preRegistrationTrackingToken", result.data.trackingToken);
+                localStorage.setItem("preRegistrationTxId", result.data.txId);
+                localStorage.setItem("preRegistrationWaitStartedAt", Date.now().toString());
+
+                showNotification("Payment submitted. Waiting for admin approval.", "success");
+
+                setTimeout(() => {
+                    window.location.href = "/auth/pre-registration-wait";
+                }, 700);
+
+            } catch {
+                showNotification("Network error. Please try again.", "error");
+            } finally {
+                depositBtn.disabled = false;
+                depositBtn.innerText = "Submit Payment";
+            }
+        });
+
+        document.getElementById("copyWalletBtn").addEventListener("click", async function () {
+            const value = document.getElementById("walletAddress").innerText.trim();
+
+            if (!value ||
+                value === "Loading wallet address..." ||
+                value === "Wallet address is not configured" ||
+                value === "Could not load wallet address") {
+                showNotification("Wallet address is not available.", "error");
+                return;
+            }
+
+            await navigator.clipboard.writeText(value);
+
+            showNotification("Wallet address copied.", "success");
         });
 
         document.querySelectorAll(".otp-input").forEach((input, index, inputs) => {
             input.addEventListener("input", () => {
+                input.value = input.value.replace(/\D/g, "");
+
                 if (input.value.length === 1 && index < inputs.length - 1) {
                     inputs[index + 1].focus();
                 }
             });
+
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Backspace" && !input.value && index > 0) {
+                    inputs[index - 1].focus();
+                }
+            });
         });
+
+        function showEmailStep() {
+            setStep(1);
+            document.getElementById("emailStep").style.display = "block";
+            document.getElementById("verifyStep").style.display = "none";
+            document.getElementById("depositStep").style.display = "none";
+        }
+
+        function showVerifyStep() {
+            setStep(2);
+            document.getElementById("emailStep").style.display = "none";
+            document.getElementById("verifyStep").style.display = "block";
+            document.getElementById("depositStep").style.display = "none";
+
+            const firstInput = document.querySelector(".otp-input");
+            if (firstInput) firstInput.focus();
+        }
+
+        function showDepositStep() {
+            setStep(3);
+            document.getElementById("emailStep").style.display = "none";
+            document.getElementById("verifyStep").style.display = "none";
+            document.getElementById("depositStep").style.display = "block";
+        }
+
+        function setStep(step) {
+            [1, 2, 3].forEach(x => {
+                const dot = document.getElementById(`stepDot${x}`);
+                dot.classList.remove("active", "done");
+
+                if (x < step) dot.classList.add("done");
+                if (x === step) dot.classList.add("active");
+            });
+        }
+                async function loadDepositInfo() {
+            try {
+                const response = await fetch("/api/auth/pre-register/deposit-info", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    document.getElementById("depositNetworkText").innerText = "Not configured";
+                    document.getElementById("walletAddress").innerText = "Wallet address is not configured";
+                    return;
+                }
+
+                const walletAddress = result.data.walletAddress || "";
+                const network = result.data.network || "USDT";
+
+                document.getElementById("depositNetworkText").innerText = network;
+
+                document.getElementById("walletAddress").innerText =
+                    walletAddress || "Wallet address is not configured";
+
+            } catch {
+                document.getElementById("depositNetworkText").innerText = "Error";
+                document.getElementById("walletAddress").innerText = "Could not load wallet address";
+            }
+        }
+        loadDepositInfo();
     </script>
-    <div id="notificationContainer"
-         class="notification-container">
-    </div>
+
 </body>
 </html>

@@ -8,7 +8,7 @@
     <div class="panel-card">
         <div class="admin-section-header">
             <h3>Pending Deposits</h3>
-            <p>Approve or reject pending deposit requests from users.</p>
+            <p>Approve or reject pending deposit requests from users. You can correct the final approved amount before crediting Main Wallet.</p>
         </div>
 
         <div id="depositsMessage" class="admin-message">
@@ -16,16 +16,17 @@
         </div>
 
         <div id="depositsTableWrapper" class="admin-table-wrapper" style="display:none;">
-            <table class="admin-table">
+            <table class="admin-table admin-deposits-table">
                 <thead>
                     <tr>
                         <th>User Email</th>
-                        <th>Amount</th>
-                        <th>TxId</th>
+                        <th>Requested Amount</th>
+                        <th>Tx Hash</th>
                         <th>Created At</th>
-                        <th>Actions</th>
+                        <th class="text-end">Actions</th>
                     </tr>
                 </thead>
+
                 <tbody id="depositsTableBody"></tbody>
             </table>
         </div>
@@ -33,11 +34,112 @@
 
 </div>
 
+<!-- Approve Modal -->
+<div class="admin-modal-backdrop" id="approveDepositModal" style="display:none;">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h4>Approve Deposit</h4>
+
+            <button type="button" onclick="closeApproveDepositModal()">
+                ×
+            </button>
+        </div>
+
+        <div class="admin-modal-body">
+            <input type="hidden" id="approveDepositId" />
+
+            <div class="admin-modal-info">
+                <span>User</span>
+                <strong id="approveDepositEmail">-</strong>
+            </div>
+
+            <div class="admin-modal-info">
+                <span>Requested Amount</span>
+                <strong id="approveRequestedAmount">0.00</strong>
+            </div>
+
+            <label>Approved Amount</label>
+
+            <input id="approvedAmountInput"
+                   class="panel-input"
+                   type="number"
+                   min="0"
+                   step="0.00000001"
+                   placeholder="Enter final approved amount" />
+
+            <small class="admin-modal-help">
+                This amount will be credited to the user's Main Wallet.
+            </small>
+        </div>
+
+        <div class="admin-modal-actions">
+            <button type="button"
+                    class="admin-modal-cancel"
+                    onclick="closeApproveDepositModal()">
+                Cancel
+            </button>
+
+            <button type="button"
+                    class="admin-modal-success"
+                    id="confirmApproveDepositBtn"
+                    onclick="confirmApproveDeposit()">
+                Approve Deposit
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="admin-modal-backdrop" id="rejectDepositModal" style="display:none;">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h4>Reject Deposit</h4>
+
+            <button type="button" onclick="closeRejectDepositModal()">
+                ×
+            </button>
+        </div>
+
+        <div class="admin-modal-body">
+            <input type="hidden" id="rejectDepositId" />
+
+            <label>Reject Reason</label>
+
+            <textarea id="rejectDepositReason"
+                      class="panel-input admin-reject-textarea"
+                      maxlength="1000"
+                      rows="5"
+                      placeholder="Explain why this deposit is rejected..."></textarea>
+
+            <small class="admin-modal-help">
+                The reason will be stored in deposit admin note.
+            </small>
+        </div>
+
+        <div class="admin-modal-actions">
+            <button type="button"
+                    class="admin-modal-cancel"
+                    onclick="closeRejectDepositModal()">
+                Cancel
+            </button>
+
+            <button type="button"
+                    class="admin-modal-danger"
+                    id="confirmRejectDepositBtn"
+                    onclick="confirmRejectDeposit()">
+                Reject Deposit
+            </button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         const depositsMessage = document.getElementById("depositsMessage");
         const depositsTableWrapper = document.getElementById("depositsTableWrapper");
         const depositsTableBody = document.getElementById("depositsTableBody");
+
+        let depositsCache = [];
 
         async function loadPendingDeposits() {
             depositsMessage.style.display = "block";
@@ -48,22 +150,62 @@
             try {
                 const result = await api("/api/admin/deposits/pending");
 
-                if (!result.success || !result.data || !result.data.length) {
+                if (!result.success) {
+                    depositsMessage.innerText = result.message || "Could not load pending deposits.";
+                    return;
+                }
+
+                depositsCache = result.data || [];
+
+                if (!depositsCache.length) {
                     depositsMessage.innerText = "No pending deposits found.";
                     return;
                 }
 
-                result.data.forEach(deposit => {
+                depositsCache.forEach(deposit => {
                     const row = document.createElement("tr");
-                    debugger;
+
                     row.innerHTML = `
-                        <td>${deposit.email || "-"}</td>
-                        <td>${formatMoney(deposit.amount)}</td>
-                        <td>${deposit.txId || "-"}</td>
-                        <td>${formatDate(deposit.createdAt)}</td>
                         <td>
-                            <button class="panel-primary-btn btn-sm" onclick="approveDeposit(${deposit.depositId})">Approve</button>
-                            <button class="panel-primary-btn btn-sm btn-reject" onclick="rejectDeposit(${deposit.depositId})">Reject</button>
+                            <span class="admin-user-email">
+                                ${escapeHtml(deposit.email || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="admin-money">
+                                ${formatMoney(deposit.amount)}
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="admin-tx-cell">
+                                <span title="${escapeHtml(deposit.txId || "")}">
+                                    ${escapeHtml(deposit.txId || "-")}
+                                </span>
+
+                                ${
+                                    deposit.txId
+                                        ? `<button type="button" onclick="copyAdminText('${escapeForJs(deposit.txId)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>${formatDate(deposit.createdAt)}</td>
+
+                        <td class="text-end">
+                            <div class="admin-row-actions">
+                                <button class="panel-primary-btn btn-sm"
+                                        onclick="openApproveDepositModal(${deposit.depositId})">
+                                    Approve
+                                </button>
+
+                                <button class="panel-primary-btn btn-sm btn-reject"
+                                        onclick="openRejectDepositModal(${deposit.depositId})">
+                                    Reject
+                                </button>
+                            </div>
                         </td>
                     `;
 
@@ -72,69 +214,214 @@
 
                 depositsMessage.style.display = "none";
                 depositsTableWrapper.style.display = "block";
+
             } catch (error) {
                 depositsMessage.innerText = error.message || "Could not load pending deposits.";
             }
         }
 
-        async function approveDeposit(depositId) {
+        function openApproveDepositModal(depositId) {
+            const deposit = depositsCache.find(x => x.depositId === depositId);
 
-             const confirmed = await showConfirm(
-            "Are you sure you want to approve this deposit?",
-            "Approve Deposit"
-        );
-            if (!confirmed) return;
+            if (!deposit) {
+                showNotification("Deposit not found.", "error");
+                return;
+            }
+
+            document.getElementById("approveDepositId").value = deposit.depositId;
+            document.getElementById("approveDepositEmail").innerText = deposit.email || "-";
+            document.getElementById("approveRequestedAmount").innerText = formatMoney(deposit.amount);
+            document.getElementById("approvedAmountInput").value = Number(deposit.amount || 0);
+
+            document.getElementById("approveDepositModal").style.display = "flex";
+
+            setTimeout(() => {
+                document.getElementById("approvedAmountInput").focus();
+            }, 80);
+        }
+
+        function closeApproveDepositModal() {
+            document.getElementById("approveDepositModal").style.display = "none";
+            document.getElementById("approveDepositId").value = "";
+            document.getElementById("approvedAmountInput").value = "";
+        }
+
+        async function confirmApproveDeposit() {
+            const depositId = Number(document.getElementById("approveDepositId").value);
+            const approvedAmount = Number(document.getElementById("approvedAmountInput").value);
+
+            if (!depositId) {
+                showNotification("Deposit was not selected.", "error");
+                return;
+            }
+
+            if (!approvedAmount || approvedAmount <= 0) {
+                showNotification("Approved amount must be greater than zero.", "error");
+                return;
+            }
+
+            const btn = document.getElementById("confirmApproveDepositBtn");
+
+            btn.disabled = true;
+            btn.innerText = "Approving...";
 
             try {
-                const result = await api(`/api/admin/deposits/approve/${depositId}`, { method: "POST" });
+                const result = await api(`/api/admin/deposits/approve/${depositId}`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        approvedAmount
+                    })
+                });
 
                 if (!result.success) {
-                    showNotification(result.message || "Could not approve deposit.","error");
-                    
+                    showNotification(result.message || "Could not approve deposit.", "error");
                     return;
                 }
-                showNotification("Deposit approved successfully.","success");
-               
-                loadPendingDeposits();
+
+                showNotification("Deposit approved successfully.", "success");
+
+                closeApproveDepositModal();
+                await loadPendingDeposits();
+
             } catch (error) {
-                showNotification(error.message || "Could not approve deposit.","error");
-                
+                showNotification(error.message || "Could not approve deposit.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Approve Deposit";
             }
         }
 
-        async function rejectDeposit(depositId) {
-            const reason = prompt("Enter reason for rejection:");
+        function openRejectDepositModal(depositId) {
+            const deposit = depositsCache.find(x => x.depositId === depositId);
 
-            if (reason === null || reason.trim() === "") return;
+            if (!deposit) {
+                showNotification("Deposit not found.", "error");
+                return;
+            }
+
+            document.getElementById("rejectDepositId").value = deposit.depositId;
+            document.getElementById("rejectDepositReason").value = "";
+            document.getElementById("rejectDepositModal").style.display = "flex";
+
+            setTimeout(() => {
+                document.getElementById("rejectDepositReason").focus();
+            }, 80);
+        }
+
+        function closeRejectDepositModal() {
+            document.getElementById("rejectDepositModal").style.display = "none";
+            document.getElementById("rejectDepositId").value = "";
+            document.getElementById("rejectDepositReason").value = "";
+        }
+
+        async function confirmRejectDeposit() {
+            const depositId = Number(document.getElementById("rejectDepositId").value);
+            const reason = document.getElementById("rejectDepositReason").value.trim();
+
+            if (!depositId) {
+                showNotification("Deposit was not selected.", "error");
+                return;
+            }
+
+            if (!reason) {
+                showNotification("Reject reason is required.", "error");
+                return;
+            }
+
+            if (reason.length > 1000) {
+                showNotification("Reject reason cannot be more than 1000 characters.", "error");
+                return;
+            }
+
+            const btn = document.getElementById("confirmRejectDepositBtn");
+
+            btn.disabled = true;
+            btn.innerText = "Rejecting...";
 
             try {
                 const result = await api(`/api/admin/deposits/reject/${depositId}`, {
                     method: "POST",
-                    body: JSON.stringify({ reason })
+                    body: JSON.stringify({
+                        reason
+                    })
                 });
 
                 if (!result.success) {
-                    showNotification(result.message || "Could not reject deposit.","error");
-                   
+                    showNotification(result.message || "Could not reject deposit.", "error");
                     return;
                 }
-                showNotification("Deposit rejected successfully.","success");
-               
-                loadPendingDeposits();
+
+                showNotification("Deposit rejected successfully.", "success");
+
+                closeRejectDepositModal();
+                await loadPendingDeposits();
+
             } catch (error) {
-                 showNotification(error.message || "Could not reject deposit.","error");
-                
+                showNotification(error.message || "Could not reject deposit.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Reject Deposit";
+            }
+        }
+
+        async function copyAdminText(text) {
+            if (!text) return;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification("Copied to clipboard.", "success");
+            } catch {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                showNotification("Copied to clipboard.", "success");
             }
         }
 
         function formatMoney(value) {
             const number = Number(value || 0);
-            return "$" + number.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
         }
 
         function formatDate(value) {
             if (!value) return "-";
-            return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" });
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function escapeForJs(value) {
+            return String(value || "")
+                .replaceAll("\\", "\\\\")
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"')
+                .replaceAll("\n", "")
+                .replaceAll("\r", "");
         }
 
         loadPendingDeposits();

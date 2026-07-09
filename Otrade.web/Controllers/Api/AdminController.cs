@@ -8,6 +8,7 @@ using Otrade.Application.DTOs.Wallet;
 using Otrade.Application.Services;
 using Otrade.Application.Services.Security;
 using Otrade.Persistence.Context;
+
 namespace Otrade.web.Controllers.Api;
 
 [Authorize]
@@ -17,13 +18,18 @@ public class AdminController : ControllerBase
 {
     private readonly AdminService _adminService;
     private readonly OtradeDbContext _context;
-
+    private readonly PreRegistrationService _preRegistrationService;
+    private readonly InvestmentCapacityService _investmentCapacityService;
     public AdminController(
-        AdminService adminService,
-        OtradeDbContext context)
+    AdminService adminService,
+    OtradeDbContext context,
+    PreRegistrationService preRegistrationService,
+    InvestmentCapacityService investmentCapacityService)
     {
         _adminService = adminService;
         _context = context;
+        _preRegistrationService = preRegistrationService;
+        _investmentCapacityService = investmentCapacityService;
     }
 
     [Authorize]
@@ -38,32 +44,40 @@ public class AdminController : ControllerBase
 
         return Ok(result);
     }
-    
+
     [Authorize]
     [HttpPost("deposits/approve/{id}")]
-    public async Task<IActionResult> Approve(long id,[FromServices] CurrentUserService currentUser)
+    public async Task<IActionResult> Approve(
+        long id,
+        [FromBody] ApproveDepositRequest request,
+        [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin)
             return Forbid();
 
-        var result = await _adminService.ApproveDepositAsync(id);
+        var result = await _adminService.ApproveDepositAsync(
+            id,
+            request.ApprovedAmount);
 
         if (!result.Success)
             return BadRequest(result);
 
         return Ok(result);
     }
-    
+
     [Authorize]
     [HttpPost("deposits/reject/{id}")]
     public async Task<IActionResult> Reject(
-        long id,
-        [FromServices] CurrentUserService currentUser)
+    long id,
+    [FromBody] RejectDepositRequest request,
+    [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin)
             return Forbid();
 
-        var result = await _adminService.RejectDepositAsync(id);
+        var result = await _adminService.RejectDepositAsync(
+            id,
+            request.Reason);
 
         if (!result.Success)
             return BadRequest(result);
@@ -108,12 +122,15 @@ public class AdminController : ControllerBase
     [HttpPost("withdrawals/reject/{id}")]
     public async Task<IActionResult> RejectWithdrawal(
         long id,
+        [FromBody] RejectWithdrawalRequest request,
         [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin)
             return Forbid();
 
-        var result = await _adminService.RejectWithdrawalAsync(id);
+        var result = await _adminService.RejectWithdrawalAsync(
+            id,
+            request.Reason);
 
         if (!result.Success)
             return BadRequest(result);
@@ -139,7 +156,9 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
-        var result = await _adminService.ApproveKycDocumentAsync(documentId);
+        var result = await _adminService.ApproveKycDocumentAsync(
+                    documentId,
+                    currentUser.UserId);
 
         if (!result.Success)
             return BadRequest(result);
@@ -157,7 +176,8 @@ public class AdminController : ControllerBase
             return Forbid();
         var result = await _adminService.RejectKycDocumentAsync(
             documentId,
-            request.Reason);
+            request.Reason,
+            currentUser.UserId);
 
         if (!result.Success)
             return BadRequest(result);
@@ -323,5 +343,108 @@ public class AdminController : ControllerBase
         };
 
         return PhysicalFile(fullPath, contentType);
+    }
+    [Authorize]
+    [HttpGet("pre-registrations/pending")]
+    public async Task<IActionResult> GetPendingPreRegistrations(
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var result = await _preRegistrationService.GetPendingForAdminAsync();
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("pre-registrations/approve/{id}")]
+    public async Task<IActionResult> ApprovePreRegistration(
+        long id,
+        [FromBody] ApprovePreRegistrationRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var result = await _preRegistrationService.ApproveAsync(
+            id,
+            request.ApprovedAmount,
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("pre-registrations/reject/{id}")]
+    public async Task<IActionResult> RejectPreRegistration(
+        long id,
+        [FromBody] RejectPreRegistrationRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var result = await _preRegistrationService.RejectAsync(
+            id,
+            request.Reason);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
+    [HttpGet("investment-capacity")]
+    public async Task<IActionResult> GetInvestmentCapacities(
+    [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var result = await _investmentCapacityService.GetAdminListAsync();
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("investment-capacity/save")]
+    public async Task<IActionResult> SaveInvestmentCapacity(
+        [FromBody] SaveInvestmentCapacityRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var result = await _investmentCapacityService.SaveAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
+    [HttpGet("wallet-summary")]
+    public async Task<IActionResult> GetWalletSummary(
+    [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var result = await _adminService.GetWalletSummaryAsync();
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
     }
 }

@@ -1,0 +1,372 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Investment Capacity";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card capacity-admin-card">
+
+        <div class="capacity-admin-header">
+            <div>
+                <span class="capacity-admin-eyebrow">Financial Control</span>
+                <h3>Investment Capacity</h3>
+                <p>
+                    Define monthly investment capacity. Capacity is consumed only when users transfer funds from Main Wallet to Invest Wallet.
+                </p>
+            </div>
+
+            <button type="button" class="capacity-refresh-btn" onclick="loadCapacities()">
+                Refresh
+            </button>
+        </div>
+
+        <div class="capacity-summary-grid">
+            <div class="capacity-summary-card">
+                <span>Current Month</span>
+                <strong id="summaryMonth">-</strong>
+            </div>
+
+            <div class="capacity-summary-card">
+                <span>Total Capacity</span>
+                <strong id="summaryTotal">$0.00</strong>
+            </div>
+
+            <div class="capacity-summary-card">
+                <span>Used Capacity</span>
+                <strong id="summaryUsed">$0.00</strong>
+            </div>
+
+            <div class="capacity-summary-card highlight">
+                <span>Remaining</span>
+                <strong id="summaryRemaining">$0.00</strong>
+            </div>
+        </div>
+
+        <div class="capacity-form-card">
+            <div class="capacity-form-header">
+                <h4>Create / Update Monthly Capacity</h4>
+                <p>Select a month and set the total capacity.</p>
+            </div>
+
+            <form id="capacityForm">
+                <div class="capacity-form-grid">
+                    <div class="capacity-field">
+                        <label>Year</label>
+                        <input id="capacityYear"
+                               class="capacity-input"
+                               type="number"
+                               min="2020"
+                               max="2100"
+                               step="1" />
+                    </div>
+
+                    <div class="capacity-field">
+                        <label>Month</label>
+                        <select id="capacityMonth" class="capacity-input">
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+
+                    <div class="capacity-field">
+                        <label>Total Capacity</label>
+                        <input id="totalCapacity"
+                               class="capacity-input"
+                               type="number"
+                               min="0"
+                               step="0.00000001"
+                               placeholder="Example: 10000" />
+                    </div>
+
+                    <div class="capacity-field">
+                        <label>Status</label>
+                        <select id="isActive" class="capacity-input">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="capacity-actions">
+                    <button type="submit" class="capacity-save-btn" id="saveCapacityBtn">
+                        Save Capacity
+                    </button>
+
+                    <button type="button" class="capacity-secondary-btn" onclick="setCurrentMonth()">
+                        Current Month
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="message" class="capacity-empty">
+            Loading investment capacities...
+        </div>
+
+        <div id="tableWrapper" class="capacity-table-wrapper" style="display:none;">
+            <table class="capacity-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Total</th>
+                        <th>Used</th>
+                        <th>Remaining</th>
+                        <th>Usage</th>
+                        <th>Status</th>
+                        <th>Updated</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const message = document.getElementById("message");
+        const tableWrapper = document.getElementById("tableWrapper");
+        const tableBody = document.getElementById("tableBody");
+
+        let capacitiesCache = [];
+
+        document.getElementById("capacityForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            await saveCapacity();
+        });
+
+        function setCurrentMonth() {
+            const now = new Date();
+
+            document.getElementById("capacityYear").value = now.getFullYear();
+            document.getElementById("capacityMonth").value = now.getMonth() + 1;
+        }
+
+        async function loadCapacities() {
+            message.style.display = "block";
+            message.innerText = "Loading investment capacities...";
+            tableWrapper.style.display = "none";
+            tableBody.innerHTML = "";
+
+            try {
+                const result = await api("/api/admin/investment-capacity");
+
+                if (!result.success) {
+                    message.innerText = result.message || "Could not load investment capacities.";
+                    return;
+                }
+
+                capacitiesCache = result.data || [];
+
+                updateSummary(capacitiesCache);
+                renderRows(capacitiesCache);
+
+                if (!capacitiesCache.length) {
+                    message.innerText = "No investment capacity records found.";
+                    return;
+                }
+
+                message.style.display = "none";
+                tableWrapper.style.display = "block";
+
+            } catch (error) {
+                message.innerText = error.message || "Could not load investment capacities.";
+            }
+        }
+
+        async function saveCapacity() {
+            const year = Number(document.getElementById("capacityYear").value);
+            const month = Number(document.getElementById("capacityMonth").value);
+            const totalCapacity = Number(document.getElementById("totalCapacity").value);
+            const isActive = document.getElementById("isActive").value === "true";
+
+            if (!year || year < 2020 || year > 2100) {
+                showNotification("Year is invalid.", "error");
+                return;
+            }
+
+            if (!month || month < 1 || month > 12) {
+                showNotification("Month is invalid.", "error");
+                return;
+            }
+
+            if (!totalCapacity || totalCapacity <= 0) {
+                showNotification("Total capacity must be greater than zero.", "error");
+                return;
+            }
+
+            const saveBtn = document.getElementById("saveCapacityBtn");
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Saving...";
+
+            try {
+                const result = await api("/api/admin/investment-capacity/save", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        year,
+                        month,
+                        totalCapacity,
+                        isActive
+                    })
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not save capacity.", "error");
+                    return;
+                }
+
+                showNotification("Investment capacity saved successfully.", "success");
+
+                await loadCapacities();
+
+            } catch (error) {
+                showNotification(error.message || "Could not save capacity.", "error");
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerText = "Save Capacity";
+            }
+        }
+
+        function renderRows(items) {
+            tableBody.innerHTML = "";
+
+            items.forEach(item => {
+                const usagePercent = item.totalCapacity > 0
+                    ? Math.min(100, (item.usedCapacity / item.totalCapacity) * 100)
+                    : 0;
+
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>
+                        <div class="capacity-month-cell">
+                            <strong>${escapeHtml(item.monthLabel || "-")}</strong>
+                            <span>${item.year}/${String(item.month).padStart(2, "0")}</span>
+                        </div>
+                    </td>
+
+                    <td><span class="capacity-money">${formatMoney(item.totalCapacity)}</span></td>
+                    <td><span class="capacity-money muted">${formatMoney(item.usedCapacity)}</span></td>
+                    <td><span class="capacity-money green">${formatMoney(item.remainingCapacity)}</span></td>
+
+                    <td>
+                        <div class="capacity-usage">
+                            <div class="capacity-usage-track">
+                                <div class="capacity-usage-fill" style="width:${usagePercent}%"></div>
+                            </div>
+                            <span>${usagePercent.toFixed(1)}%</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="capacity-status ${item.isActive ? "active" : "inactive"}">
+                            ${item.isActive ? "Active" : "Inactive"}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="capacity-date">${formatDate(item.updatedAt)}</span>
+                    </td>
+
+                    <td>
+                        <button type="button"
+                                class="capacity-edit-btn"
+                                onclick="editCapacity(${item.capacityId})">
+                            Edit
+                        </button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            });
+        }
+
+        function editCapacity(capacityId) {
+            const item = capacitiesCache.find(x => x.capacityId === capacityId);
+
+            if (!item) {
+                showNotification("Capacity record not found.", "error");
+                return;
+            }
+
+            document.getElementById("capacityYear").value = item.year;
+            document.getElementById("capacityMonth").value = item.month;
+            document.getElementById("totalCapacity").value = Number(item.totalCapacity || 0);
+            document.getElementById("isActive").value = item.isActive ? "true" : "false";
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        }
+
+        function updateSummary(items) {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+
+            const current = items.find(x => x.year === year && x.month === month);
+
+            document.getElementById("summaryMonth").innerText =
+                current ? current.monthLabel : `${year}/${String(month).padStart(2, "0")}`;
+
+            document.getElementById("summaryTotal").innerText =
+                current ? formatMoney(current.totalCapacity) : "$0.00";
+
+            document.getElementById("summaryUsed").innerText =
+                current ? formatMoney(current.usedCapacity) : "$0.00";
+
+            document.getElementById("summaryRemaining").innerText =
+                current ? formatMoney(current.remainingCapacity) : "$0.00";
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        setCurrentMonth();
+        loadCapacities();
+    </script>
+}

@@ -10,6 +10,7 @@ using Otrade.Application.Services.Security;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
+using System.Security.Cryptography.X509Certificates;
 namespace Otrade.Application.Services
 {
     public class AdminService
@@ -54,8 +55,13 @@ namespace Otrade.Application.Services
 
             return ResponseFactory.Success(deposits);
         }
-        public async Task<ApiResponse<bool>> ApproveDepositAsync(long depositId)
+        public async Task<ApiResponse<bool>> ApproveDepositAsync(
+            long depositId,
+            decimal approvedAmount)
         {
+            if (approvedAmount <= 0)
+                return ResponseFactory.Fail<bool>("Approved amount must be greater than zero");
+
             var deposit = await _context.Deposits
                 .FirstOrDefaultAsync(x => x.DepositId == depositId);
 
@@ -73,33 +79,53 @@ namespace Otrade.Application.Services
             if (wallet == null)
                 return ResponseFactory.Fail<bool>("Wallet not found");
 
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var now = DateTime.Now;
+
             var before = wallet.Balance;
-            var after = before + deposit.Amount;
+            var after = before + approvedAmount;
 
             wallet.Balance = after;
 
+            deposit.Amount = approvedAmount;
             deposit.Status = DepositStatus.Approved;
+            deposit.ProcessedAt = now;
+            deposit.AdminNote = $"Approved amount: {approvedAmount}";
 
             var tx = new WalletTransaction
             {
                 UserId = deposit.UserId,
                 WalletId = wallet.WalletId,
-                Amount = deposit.Amount,
+                Amount = approvedAmount,
                 BalanceBefore = before,
                 BalanceAfter = after,
                 Type = TransactionType.Deposit,
                 Description = $"Deposit approved (TxId: {deposit.TxId})",
-                CreatedAt =  DateTime.Now
+                CreatedAt = now
             };
 
             _context.WalletTransactions.Add(tx);
+
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return ResponseFactory.Success(true, "Deposit approved");
         }
-        public async Task<ApiResponse<bool>> RejectDepositAsync(long depositId)
+        public async Task<ApiResponse<bool>> RejectDepositAsync(
+            long depositId,
+            string reason)
         {
+            var rejectReason = reason?.Trim();
+
+            if (string.IsNullOrWhiteSpace(rejectReason))
+                return ResponseFactory.Fail<bool>("Reject reason is required");
+
+            if (rejectReason.Length > 1000)
+                return ResponseFactory.Fail<bool>("Reject reason cannot be more than 1000 characters");
+
             var deposit = await _context.Deposits
+                .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.DepositId == depositId);
 
             if (deposit == null)
@@ -109,9 +135,16 @@ namespace Otrade.Application.Services
                 return ResponseFactory.Fail<bool>("Already processed");
 
             deposit.Status = DepositStatus.Rejected;
+            deposit.AdminNote = rejectReason;
+            deposit.ProcessedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+            var emailBody = _emailTemplateService.GetDepositRejectedEmail(deposit.Amount, rejectReason);
 
+            await _notificationQueue.QueueEmailAsync(
+                deposit.User.Email,
+                "Deposit Status",
+                emailBody);
             return ResponseFactory.Success(true, "Deposit rejected");
         }
         public async Task<ApiResponse<List<WithdrawalPending>>>GetPendingWithdrawalsAsync()
@@ -161,8 +194,18 @@ namespace Otrade.Application.Services
             return ResponseFactory.Success(true, "Withdrawal approved");
         }
 
-        public async Task<ApiResponse<bool>> RejectWithdrawalAsync(long withdrawalId)
+        public async Task<ApiResponse<bool>> RejectWithdrawalAsync(
+           long withdrawalId,
+           string reason)
         {
+            var rejectReason = reason?.Trim();
+
+            if (string.IsNullOrWhiteSpace(rejectReason))
+                return ResponseFactory.Fail<bool>("Reject reason is required");
+
+            if (rejectReason.Length > 1000)
+                return ResponseFactory.Fail<bool>("Reject reason cannot be more than 1000 characters");
+
             var withdrawal = await _context.Withdrawals
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.WithdrawalId == withdrawalId);
@@ -183,13 +226,16 @@ namespace Otrade.Application.Services
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
+            var now = DateTime.Now;
+
             var before = wallet.Balance;
             var after = before + withdrawal.Amount;
 
             wallet.Balance = after;
 
             withdrawal.Status = DepositStatus.Rejected;
-            withdrawal.ProcessedAt = DateTime.Now;
+            withdrawal.AdminNote = rejectReason;
+            withdrawal.ProcessedAt = now;
 
             _context.WalletTransactions.Add(new WalletTransaction
             {
@@ -199,8 +245,8 @@ namespace Otrade.Application.Services
                 BalanceBefore = before,
                 BalanceAfter = after,
                 Type = TransactionType.Adjustment,
-                Description = "Withdrawal rejected and refunded",
-                CreatedAt = DateTime.Now
+                Description = $"Withdrawal rejected and refunded. Reason: {rejectReason}",
+                CreatedAt = now
             });
 
             await _context.SaveChangesAsync();
@@ -208,11 +254,11 @@ namespace Otrade.Application.Services
 
             var emailBody = _emailTemplateService.GetWithdrawalRejectedEmail(
                 withdrawal.Amount,
-                "Withdrawal rejected");
+                rejectReason);
 
             await _notificationQueue.QueueEmailAsync(
                 withdrawal.User.Email,
-                "Withdrawal Status",
+                "Withdrawal Rejected",
                 emailBody);
 
             return ResponseFactory.Success(true, "Withdrawal rejected");
@@ -237,7 +283,9 @@ namespace Otrade.Application.Services
 
             return ResponseFactory.Success(kycs);
         }
-        public async Task<ApiResponse<bool>> ApproveKycDocumentAsync(long documentId)
+        public async Task<ApiResponse<bool>> ApproveKycDocumentAsync(
+            long documentId,
+            long adminId)
         {
             var doc = await _context.KycDocuments
                 .FirstOrDefaultAsync(x => x.DocumentId == documentId);
@@ -245,13 +293,21 @@ namespace Otrade.Application.Services
             if (doc == null)
                 return ResponseFactory.Fail<bool>("Document not found");
 
+            if (doc.Status != KycStatus.Pending)
+                return ResponseFactory.Fail<bool>("Only pending documents can be approved");
+
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.UserId == doc.UserId);
 
             if (user == null)
                 return ResponseFactory.Fail<bool>("User not found");
 
+            var now = DateTime.Now;
+
             doc.Status = KycStatus.Approved;
+            doc.RejectReason = null;
+            doc.ReviewedAt = now;
+            doc.ReviewedByAdminId = adminId;
 
             var userDocs = await _context.KycDocuments
                 .Where(x => x.UserId == doc.UserId)
@@ -271,7 +327,7 @@ namespace Otrade.Application.Services
                 ? KycStatus.Approved
                 : KycStatus.Pending;
 
-            user.UpdatedAt = DateTime.Now;
+            user.UpdatedAt = now;
 
             await _context.SaveChangesAsync();
 
@@ -287,13 +343,27 @@ namespace Otrade.Application.Services
 
             return ResponseFactory.Success(true, "KYC document approved");
         }
-        public async Task<ApiResponse<bool>> RejectKycDocumentAsync(long documentId, string reason)
+        public async Task<ApiResponse<bool>> RejectKycDocumentAsync(
+            long documentId,
+            string reason,
+            long adminId)
         {
+            var rejectReason = reason?.Trim();
+
+            if (string.IsNullOrWhiteSpace(rejectReason))
+                return ResponseFactory.Fail<bool>("Reject reason is required");
+
+            if (rejectReason.Length > 1000)
+                return ResponseFactory.Fail<bool>("Reject reason cannot be more than 1000 characters");
+
             var doc = await _context.KycDocuments
                 .FirstOrDefaultAsync(x => x.DocumentId == documentId);
 
             if (doc == null)
                 return ResponseFactory.Fail<bool>("Document not found");
+
+            if (doc.Status != KycStatus.Pending)
+                return ResponseFactory.Fail<bool>("Only pending documents can be rejected");
 
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.UserId == doc.UserId);
@@ -301,15 +371,19 @@ namespace Otrade.Application.Services
             if (user == null)
                 return ResponseFactory.Fail<bool>("User not found");
 
-            doc.Status = KycStatus.Rejected;
-            doc.CreatedAt = DateTime.Now;
+            var now = DateTime.Now;
 
-            user.KycStatus = KycStatus.Pending;
-            user.UpdatedAt = DateTime.Now;
+            doc.Status = KycStatus.Rejected;
+            doc.RejectReason = rejectReason;
+            doc.ReviewedAt = now;
+            doc.ReviewedByAdminId = adminId;
+
+            user.KycStatus = KycStatus.Rejected;
+            user.UpdatedAt = now;
 
             await _context.SaveChangesAsync();
 
-            var emailBody = _emailTemplateService.GetKycRejectedEmail(reason);
+            var emailBody = _emailTemplateService.GetKycRejectedEmail(rejectReason);
 
             await _notificationQueue.QueueEmailAsync(
                 user.Email,
@@ -483,9 +557,9 @@ namespace Otrade.Application.Services
             return ResponseFactory.Success(result);
         }
         public async Task<ApiResponse<PagedResponse<AdminUserDto>>> GetUsersAsync(
-            int page=1,
-            int pageSize=20,
-            string? search=null)
+            int page = 1,
+            int pageSize = 20,
+            string? search = null)
         {
             if (page <= 0)
                 page = 1;
@@ -504,10 +578,17 @@ namespace Otrade.Application.Services
 
             if (!string.IsNullOrWhiteSpace(search))
             {
+                var searchText = search.Trim();
+
                 query = query.Where(x =>
-                    x.Email.Contains(search) ||
-                    x.FirstName.Contains(search) ||
-                    x.LastName.Contains(search));
+                    x.Email.Contains(searchText) ||
+                    x.FirstName.Contains(searchText) ||
+                    x.LastName.Contains(searchText) ||
+                    x.ReferralCode.Contains(searchText) ||
+                    (x.Sponsor != null && x.Sponsor.Email.Contains(searchText)) ||
+                    (x.Sponsor != null && x.Sponsor.ReferralCode.Contains(searchText)) ||
+                    (x.Sponsor != null && x.Sponsor.FirstName.Contains(searchText)) ||
+                    (x.Sponsor != null && x.Sponsor.LastName.Contains(searchText)));
             }
 
             var totalCount = await query.CountAsync();
@@ -522,8 +603,20 @@ namespace Otrade.Application.Services
                     Email = x.Email,
                     FirstName = x.FirstName,
                     LastName = x.LastName,
+                    ReferralCode = x.ReferralCode,
                     KycStatus = x.KycStatus.ToString(),
-                    SponsorEmail = x.Sponsor != null ? x.Sponsor.Email : null,
+
+                    SponsorEmail = x.Sponsor != null
+                        ? x.Sponsor.Email
+                        : null,
+
+                    SponsorFullName = x.Sponsor != null
+                        ? (x.Sponsor.FirstName + " " + x.Sponsor.LastName).Trim()
+                        : null,
+
+                    SponsorReferralCode = x.Sponsor != null
+                        ? x.Sponsor.ReferralCode
+                        : null,
 
                     CurrentRank = _context.Ranks
                         .Where(r => r.RankId == x.CurrentRankId)
@@ -633,6 +726,55 @@ namespace Otrade.Application.Services
 
 
             return ResponseFactory.Success(true, "Settings saved successfully");
+        }
+        public async Task<ApiResponse<AdminWalletSummaryResponse>> GetWalletSummaryAsync()
+        {
+            var groupedWallets = await _context.Wallets
+                .AsNoTracking()
+                .GroupBy(x => x.WalletType)
+                .Select(x => new
+                {
+                    WalletType = x.Key,
+                    Total = x.Sum(w => w.Balance),
+                    Count = x.Count()
+                })
+                .ToListAsync();
+
+            decimal GetTotal(WalletType walletType)
+            {
+                return groupedWallets
+                    .FirstOrDefault(x => x.WalletType == walletType)
+                    ?.Total ?? 0;
+            }
+
+            var usersWithBalance = await _context.Wallets
+                .AsNoTracking()
+                .Where(x => x.Balance > 0)
+                .Select(x => x.UserId)
+                .Distinct()
+                .CountAsync();
+
+            var totalWallets = await _context.Wallets
+                .AsNoTracking()
+                .CountAsync();
+
+            var totalMain = GetTotal(WalletType.Main);
+            var totalInvest = GetTotal(WalletType.Invest);
+            var totalProfit = GetTotal(WalletType.Profit);
+            var totalReferral = GetTotal(WalletType.Referral);
+
+            var response = new AdminWalletSummaryResponse
+            {
+                TotalMainWallet = totalMain,
+                TotalInvestWallet = totalInvest,
+                TotalProfitWallet = totalProfit,
+                TotalReferralWallet = totalReferral,
+                TotalAssets = totalMain + totalInvest + totalProfit + totalReferral,
+                TotalWallets = totalWallets,
+                UsersWithBalance = usersWithBalance
+            };
+
+            return ResponseFactory.Success(response);
         }
     }
 }

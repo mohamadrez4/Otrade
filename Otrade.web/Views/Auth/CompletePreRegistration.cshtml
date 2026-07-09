@@ -1,0 +1,282 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Complete Registration | Otrade</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/auth.css" rel="stylesheet" />
+    <link href="~/css/pre-registration.css" rel="stylesheet" />
+    <link href="~/css/common.css" rel="stylesheet" />
+
+    <script src="~/js/common.js"></script>
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+
+        <div class="auth-left">
+            <div class="brand-glow"></div>
+            <img class="hero-logo" src="~/images/Logo4.png" alt="Otrade Logo" />
+
+            <div class="hero-content">
+                <h1>Almost Done.<br />Create Your Account.</h1>
+                <p>
+                    Your deposit was approved. Complete your profile to activate your account.
+                </p>
+
+                <div class="stat-card">
+                    <span>Wallet Credit</span>
+                    <strong>Main Wallet</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Invest Wallet</span>
+                    <strong>Manual Transfer Required</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <div class="login-card pre-register-card complete-card">
+
+                <div class="logo-box">
+                    <img src="~/images/logo.png" alt="Otrade Logo" />
+                    <span>Online Trading Room</span>
+                </div>
+
+                <div class="complete-success-icon">
+                    ✓
+                </div>
+
+                <h2>Complete Registration</h2>
+
+                <p class="subtitle">
+                    Fill in your account information. Your approved deposit will be credited to Main Wallet.
+                </p>
+
+                <div class="approved-card">
+                    <span>Approved Amount</span>
+                    <strong id="approvedAmountText">$0.00</strong>
+                    <p>
+                        This amount goes to Main Wallet. No contract will be created automatically.
+                    </p>
+                </div>
+
+                <form id="completeForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label>First Name</label>
+                            <input type="text"
+                                   class="form-control auth-input"
+                                   id="firstName"
+                                   placeholder="First name" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Last Name</label>
+                            <input type="text"
+                                   class="form-control auth-input"
+                                   id="lastName"
+                                   placeholder="Last name" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Password</label>
+                        <div class="pre-password-wrap">
+                            <input type="password"
+                                   class="form-control auth-input"
+                                   id="password"
+                                   placeholder="Create password" />
+
+                            <button type="button"
+                                    class="pre-eye-btn"
+                                    onclick="togglePassword('password', this)"
+                                    aria-label="Show password">
+                                <span class="eye-open">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 5C7 5 2.7 8.1 1 12c1.7 3.9 6 7 11 7s9.3-3.1 11-7c-1.7-3.9-6-7-11-7Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm0-2A2.5 2.5 0 1 0 12 9.5a2.5 2.5 0 0 0 0 5Z" />
+                                    </svg>
+                                </span>
+
+                                <span class="eye-closed">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3.3 2 2 3.3l3 3C3.2 7.6 1.8 9.6 1 12c1.7 3.9 6 7 11 7 2 0 3.9-.5 5.5-1.3l3.2 3.2 1.3-1.3L3.3 2Zm8.7 15c-3.8 0-7.1-2.1-8.8-5 .7-1.3 1.8-2.5 3.1-3.4l2.2 2.2A4.4 4.4 0 0 0 7.5 12 4.5 4.5 0 0 0 12 16.5c.4 0 .8-.1 1.2-.2l2 2A10.2 10.2 0 0 1 12 17Zm2.4-3.8c.1-.4.1-.8.1-1.2A4.5 4.5 0 0 0 10 7.5c-.4 0-.8.1-1.2.2L7.2 6.1C8.7 5.4 10.3 5 12 5c5 0 9.3 3.1 11 7a12.5 12.5 0 0 1-3.2 4.1l-2.1-2.1c.5-.6.8-1.3.8-2.1a2.5 2.5 0 0 0-2.5-2.5c-.8 0-1.5.3-2.1.8l-1.9-1.9c.1 0 .2-.1.3-.1A2.5 2.5 0 0 1 14.5 12c0 .1 0 .2-.1.3Z" />
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label>Confirm Password</label>
+                        <div class="pre-password-wrap">
+                            <input type="password"
+                                   class="form-control auth-input"
+                                   id="confirmPassword"
+                                   placeholder="Confirm password" />
+
+                            <button type="button"
+                                    class="pre-eye-btn"
+                                    onclick="togglePassword('confirmPassword', this)"
+                                    aria-label="Show password">
+                                <span class="eye-open">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 5C7 5 2.7 8.1 1 12c1.7 3.9 6 7 11 7s9.3-3.1 11-7c-1.7-3.9-6-7-11-7Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm0-2A2.5 2.5 0 1 0 12 9.5a2.5 2.5 0 0 0 0 5Z" />
+                                    </svg>
+                                </span>
+
+                                <span class="eye-closed">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M3.3 2 2 3.3l3 3C3.2 7.6 1.8 9.6 1 12c1.7 3.9 6 7 11 7 2 0 3.9-.5 5.5-1.3l3.2 3.2 1.3-1.3L3.3 2Zm8.7 15c-3.8 0-7.1-2.1-8.8-5 .7-1.3 1.8-2.5 3.1-3.4l2.2 2.2A4.4 4.4 0 0 0 7.5 12 4.5 4.5 0 0 0 12 16.5c.4 0 .8-.1 1.2-.2l2 2A10.2 10.2 0 0 1 12 17Zm2.4-3.8c.1-.4.1-.8.1-1.2A4.5 4.5 0 0 0 10 7.5c-.4 0-.8.1-1.2.2L7.2 6.1C8.7 5.4 10.3 5 12 5c5 0 9.3 3.1 11 7a12.5 12.5 0 0 1-3.2 4.1l-2.1-2.1c.5-.6.8-1.3.8-2.1a2.5 2.5 0 0 0-2.5-2.5c-.8 0-1.5.3-2.1.8l-1.9-1.9c.1 0 .2-.1.3-.1A2.5 2.5 0 0 1 14.5 12c0 .1 0 .2-.1.3Z" />
+                                    </svg>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn login-btn w-100" id="completeBtn">
+                        Complete Registration
+                    </button>
+                </form>
+
+                <div class="pre-info-note mt-4">
+                    After login, transfer Main → Invest manually to start investment under existing rules.
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script>
+        const completionToken = localStorage.getItem("preRegistrationCompletionToken");
+        const approvedAmount = Number(localStorage.getItem("preRegistrationApprovedAmount") || 0);
+
+        if (!completionToken) {
+            showNotification("Completion token not found. Please recover your registration.", "warning");
+
+            setTimeout(() => {
+                window.location.href = "/auth/recover-pre-registration";
+            }, 1200);
+        }
+
+        document.getElementById("approvedAmountText").innerText =
+            "$" + approvedAmount.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+
+        async function publicApi(url, payload) {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            return await response.json();
+        }
+
+        document.getElementById("completeForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById("firstName").value.trim();
+            const lastName = document.getElementById("lastName").value.trim();
+            const password = document.getElementById("password").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+
+            if (!firstName) {
+                showNotification("Please enter first name.", "error");
+                return;
+            }
+
+            if (!lastName) {
+                showNotification("Please enter last name.", "error");
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                showNotification("Password must be at least 6 characters.", "error");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showNotification("Passwords do not match.", "error");
+                return;
+            }
+
+            const completeBtn = document.getElementById("completeBtn");
+            completeBtn.disabled = true;
+            completeBtn.innerText = "Creating account...";
+
+            try {
+                const result = await publicApi("/api/auth/pre-register/complete", {
+                    completionToken,
+                    firstName,
+                    lastName,
+                    password
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not complete registration.", "error");
+                    return;
+                }
+
+                localStorage.setItem("token", result.data.token);
+
+                clearPreRegistrationStorage();
+
+                showNotification("Registration completed successfully.", "success");
+
+                setTimeout(() => {
+                    window.location.href = "/dashboard";
+                }, 800);
+
+            } catch {
+                showNotification("Network error. Please try again.", "error");
+            } finally {
+                completeBtn.disabled = false;
+                completeBtn.innerText = "Complete Registration";
+            }
+        });
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+
+            const isHidden = input.type === "password";
+
+            input.type = isHidden ? "text" : "password";
+
+            btn.classList.toggle("is-visible", isHidden);
+
+            btn.setAttribute(
+                "aria-label",
+                isHidden ? "Hide password" : "Show password"
+            );
+        }
+
+        function clearPreRegistrationStorage() {
+            localStorage.removeItem("preRegistrationTrackingToken");
+            localStorage.removeItem("preRegistrationCompletionToken");
+            localStorage.removeItem("preRegistrationApprovedAmount");
+            localStorage.removeItem("preRegistrationEmail");
+            localStorage.removeItem("preRegistrationTxId");
+            localStorage.removeItem("preRegistrationId");
+            localStorage.removeItem("preRegistrationWaitStartedAt");
+        }
+    </script>
+
+</body>
+</html>

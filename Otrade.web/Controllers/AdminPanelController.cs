@@ -51,4 +51,14 @@ public class AdminPanelController : Controller
     {
         return View();
     }
+    [HttpGet("/admin/pre-registrations")]
+    public IActionResult PreRegistrations()
+    {
+        return View();
+    }
+    [HttpGet("/admin/investment-capacity")]
+    public IActionResult InvestmentCapacity()
+    {
+        return View();
+    }
 }

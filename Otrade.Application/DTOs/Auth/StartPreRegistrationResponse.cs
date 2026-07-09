@@ -10,5 +10,9 @@ public class StartPreRegistrationResponse
 
     public string Status { get; set; } = string.Empty;
 
+    public bool IsEmailVerified { get; set; }
+
+    public DateTime? EmailVerificationExpireAt { get; set; }
+
     public DateTime ExpiresAt { get; set; }
 }

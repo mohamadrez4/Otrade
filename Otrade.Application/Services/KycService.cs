@@ -5,19 +5,22 @@ using Otrade.Application.DTOs.Kyc;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
-
+using System.Net;
 namespace Otrade.Application.Services;
 
 public class KycService
 {
     private readonly OtradeDbContext _context;
+    private readonly INotificationQueue _notificationQueue;
     private readonly IFileStorageService _fileStorageService;
 
     public KycService(
         OtradeDbContext context,
+        INotificationQueue notificationQueue,
         IFileStorageService fileStorageService)
     {
         _context = context;
+        _notificationQueue = notificationQueue; 
         _fileStorageService = fileStorageService;
     }
 

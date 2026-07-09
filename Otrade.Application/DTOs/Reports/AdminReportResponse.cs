@@ -10,5 +10,6 @@ public class AdminReportResponse
 
     public int PendingDepositsCount { get; set; }
     public int PendingWithdrawalsCount { get; set; }
+    public int PendingPreRegistrationsCount { get; set; }
     public int TotalUsers { get; set; }
 }

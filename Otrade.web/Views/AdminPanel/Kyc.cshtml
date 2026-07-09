@@ -33,7 +33,48 @@
     </div>
 
 </div>
+<div class="admin-modal-backdrop" id="rejectKycModal" style="display:none;">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h4>Reject KYC Document</h4>
 
+            <button type="button" onclick="closeRejectKycModal()">
+                ×
+            </button>
+        </div>
+
+        <div class="admin-modal-body">
+            <input type="hidden" id="rejectKycDocumentId" />
+
+            <label>Reject Reason</label>
+
+            <textarea id="rejectKycReason"
+                      class="panel-input kyc-reject-textarea"
+                      rows="5"
+                      maxlength="1000"
+                      placeholder="Explain why this document is rejected..."></textarea>
+
+            <small class="kyc-reject-help">
+                This reason will be saved and sent to the user by email.
+            </small>
+        </div>
+
+        <div class="admin-modal-actions">
+            <button type="button"
+                    class="admin-modal-cancel"
+                    onclick="closeRejectKycModal()">
+                Cancel
+            </button>
+
+            <button type="button"
+                    class="admin-modal-danger"
+                    id="confirmRejectKycBtn"
+                    onclick="confirmRejectKyc()">
+                Reject KYC
+            </button>
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script>
         const kycMessage = document.getElementById("kycMessage");
@@ -76,7 +117,7 @@
                             <button class="admin-action-btn approve"
                                 onclick="approveKyc(${doc.documentId})">Approve</button>
                             <button class="admin-action-btn reject"
-                                onclick="rejectKyc(${doc.documentId})">Reject</button>
+                                onclick="openRejectKycModal(${doc.documentId})">Reject</button>
                         </td>
                     `;
 
@@ -115,10 +156,45 @@
             }
         }
 
-        async function rejectKyc(documentId) {
-            const reason = prompt("Enter reason for rejection:");
+        function openRejectKycModal(documentId) {
+            document.getElementById("rejectKycDocumentId").value = documentId;
+            document.getElementById("rejectKycReason").value = "";
+            document.getElementById("rejectKycModal").style.display = "flex";
 
-            if (reason === null || reason.trim() === "") return;
+            setTimeout(() => {
+                document.getElementById("rejectKycReason").focus();
+            }, 80);
+        }
+
+        function closeRejectKycModal() {
+            document.getElementById("rejectKycModal").style.display = "none";
+            document.getElementById("rejectKycDocumentId").value = "";
+            document.getElementById("rejectKycReason").value = "";
+        }
+
+        async function confirmRejectKyc() {
+            const documentId = Number(document.getElementById("rejectKycDocumentId").value);
+            const reason = document.getElementById("rejectKycReason").value.trim();
+
+            if (!documentId) {
+                showNotification("Document was not selected.", "error");
+                return;
+            }
+
+            if (!reason) {
+                showNotification("Reject reason is required.", "error");
+                return;
+            }
+
+            if (reason.length > 1000) {
+                showNotification("Reject reason cannot be more than 1000 characters.", "error");
+                return;
+            }
+
+            const btn = document.getElementById("confirmRejectKycBtn");
+
+            btn.disabled = true;
+            btn.innerText = "Rejecting...";
 
             try {
                 const result = await api(`/api/admin/kyc/document/${documentId}/reject`, {
@@ -127,19 +203,23 @@
                 });
 
                 if (!result.success) {
-                    showNotification(result.message || "Could not reject document.","error");
-                  
+                    showNotification(result.message || "Could not reject document.", "error");
                     return;
                 }
-                showNotification("Document rejected successfully.","success");
-                
-                loadPendingKycs();
+
+                showNotification("Document rejected successfully.", "success");
+
+                closeRejectKycModal();
+
+                await loadPendingKycs();
+
             } catch (error) {
-                showNotification(error.message || "Could not reject document.","error");
-                
+                showNotification(error.message || "Could not reject document.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Reject KYC";
             }
         }
-
         function formatDate(value) {
             if (!value) return "-";
             return new Date(value).toLocaleDateString("en-US", {

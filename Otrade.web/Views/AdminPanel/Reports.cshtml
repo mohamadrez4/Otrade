@@ -54,7 +54,81 @@
             <h3>Detailed Reports</h3>
             <p>Review detailed financial and activity reports across the platform.</p>
         </div>
+        <div class="reports-filter-card">
 
+            <div class="reports-filter-grid">
+
+                <div class="reports-filter-field">
+                    <label>Email / UID</label>
+                    <input id="reportEmailFilter"
+                           class="panel-input"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Search by email or UID" />
+                </div>
+
+
+
+                <div class="reports-filter-field">
+                    <label>From Date</label>
+                    <input id="reportFromDateFilter"
+                           class="panel-input report-date-input"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Select start date" />
+                </div>
+
+                <div class="reports-filter-field">
+                    <label>To Date</label>
+                    <input id="reportToDateFilter"
+                           class="panel-input report-date-input"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Select end date" />
+                </div>
+                <div class="reports-filter-field">
+                    <label>Status</label>
+                    <select id="reportStatusFilter" class="panel-input">
+                        <option value="All">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Canceled">Canceled</option>
+                    </select>
+                </div>
+                <div class="reports-filter-field">
+                    <label>Min Amount</label>
+                    <input id="reportMinAmountFilter"
+                           class="panel-input"
+                           type="number"
+                           min="0"
+                           step="0.00000001"
+                           placeholder="0" />
+                </div>
+
+                <div class="reports-filter-field">
+                    <label>Max Amount</label>
+                    <input id="reportMaxAmountFilter"
+                           class="panel-input"
+                           type="number"
+                           min="0"
+                           step="0.00000001"
+                           placeholder="10000" />
+                </div>
+
+            </div>
+
+            <div class="reports-filter-actions">
+                <button type="button" class="reports-filter-apply" id="applyReportsFilterBtn">
+                    Apply Filters
+                </button>
+
+                <button type="button" class="reports-filter-clear" id="clearReportsFilterBtn">
+                    Clear
+                </button>
+            </div>
+
+        </div>
         <div class="reports-tabs">
             <button class="report-tab active" data-target="deposits">Deposits</button>
             <button class="report-tab" data-target="withdrawals">Withdrawals</button>
@@ -78,8 +152,62 @@
 
 </div>
 
-@section Scripts {
+@section Scripts { 
     <script>
+        let reportFromDatePicker = null;
+        let reportToDatePicker = null;
+
+        function initializeReportDatePickers() {
+            reportFromDatePicker = flatpickr("#reportFromDateFilter", {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                disableMobile: true,
+                monthSelectorType: "static",
+
+                onChange: function (selectedDates, dateStr) {
+                    if (!reportToDatePicker) {
+                        return;
+                    }
+
+                    if (dateStr) {
+                        reportToDatePicker.set("minDate", dateStr);
+
+                        const toDateValue = document.getElementById("reportToDateFilter").value;
+
+                        if (toDateValue && toDateValue < dateStr) {
+                            reportToDatePicker.clear();
+
+                            showNotification(
+                                "To Date cannot be earlier than From Date.",
+                                "warning"
+                            );
+                        }
+                    } else {
+                        reportToDatePicker.set("minDate", null);
+                    }
+                }
+            });
+
+            reportToDatePicker = flatpickr("#reportToDateFilter", {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                disableMobile: true,
+                monthSelectorType: "static",
+
+                onChange: function (selectedDates, dateStr) {
+                    const fromDateValue = document.getElementById("reportFromDateFilter").value;
+
+                    if (fromDateValue && dateStr && dateStr < fromDateValue) {
+                        reportToDatePicker.clear();
+
+                        showNotification(
+                            "To Date cannot be earlier than From Date.",
+                            "error"
+                        );
+                    }
+                }
+            });
+        }
         const totalDeposits = document.getElementById("totalDeposits");
         const totalWithdrawals = document.getElementById("totalWithdrawals");
         const totalInvestmentProfits = document.getElementById("totalInvestmentProfits");
@@ -95,7 +223,29 @@
         const adminReportsTableBody = document.getElementById("adminReportsTableBody");
 
         const tabs = document.querySelectorAll(".report-tab");
+                document.getElementById("applyReportsFilterBtn")
+            .addEventListener("click", async function () {
+                await loadAdminReports();
+            });
 
+        document.getElementById("clearReportsFilterBtn")
+            .addEventListener("click", async function () {
+                document.getElementById("reportEmailFilter").value = "";
+                document.getElementById("reportStatusFilter").value = "All";
+                document.getElementById("reportMinAmountFilter").value = "";
+                document.getElementById("reportMaxAmountFilter").value = "";
+
+                if (reportFromDatePicker) {
+                    reportFromDatePicker.clear();
+                }
+
+                if (reportToDatePicker) {
+                    reportToDatePicker.clear();
+                    reportToDatePicker.set("minDate", null);
+                }
+
+                await loadAdminReports();
+            });
         let summaryData = null;
         let detailData = null;
         let currentTab = "deposits";
@@ -113,7 +263,13 @@
         async function loadAdminReports() {
             try {
                 const summaryResult = await api("/api/reports/admin");
-                const detailResult = await api("/api/reports/admin/detail");
+                const filterQuery = buildReportsFilterQuery();
+
+                     if (filterQuery === null) {
+                         return;
+                     }
+
+                const detailResult = await api("/api/reports/admin/detail" + filterQuery);
 
                 if (!summaryResult.success) {
                     adminReportsMessage.innerText = summaryResult.message || "Could not load report summary.";
@@ -135,7 +291,32 @@
                 adminReportsMessage.innerText = error.message || "Could not load admin reports.";
             }
         }
+        function buildReportsFilterQuery() {
+            const params = new URLSearchParams();
 
+            const email = document.getElementById("reportEmailFilter").value.trim();
+            const status = document.getElementById("reportStatusFilter").value;
+            const fromDate = document.getElementById("reportFromDateFilter").value;
+            const toDate = document.getElementById("reportToDateFilter").value;
+            const minAmount = document.getElementById("reportMinAmountFilter").value;
+            const maxAmount = document.getElementById("reportMaxAmountFilter").value;
+
+            if (fromDate && toDate && toDate < fromDate) {
+                showNotification("To Date cannot be earlier than From Date.", "error");
+                return null;
+            }
+
+            if (email) params.append("email", email);
+            if (status && status !== "All") params.append("status", status);
+            if (fromDate) params.append("fromDate", fromDate);
+            if (toDate) params.append("toDate", toDate);
+            if (minAmount) params.append("minAmount", minAmount);
+            if (maxAmount) params.append("maxAmount", maxAmount);
+
+            const query = params.toString();
+
+            return query ? "?" + query : "";
+        }
         function fillSummary(data) {
             totalDeposits.innerText = formatMoney(data.totalDeposits);
             totalWithdrawals.innerText = formatMoney(data.totalWithdrawals);
@@ -165,60 +346,126 @@
             adminReportsMessage.style.display = "none";
             adminReportsTableWrapper.style.display = "block";
 
-            if (type === "deposits" || type === "withdrawals") {
-                adminReportsTableHead.innerHTML = `
-                    <tr>
-                        <th>User Email</th>
-                        <th>Status</th>
-                        <th>Created At</th>
-                        <th class="text-end">Amount</th>
-                    </tr>
-                `;
+        if (type === "deposits") {
+            adminReportsTableHead.innerHTML = `
+                <tr>
+                    <th>User Email</th>
+                    <th>Tx Hash</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
 
-                items.forEach(item => {
-                    appendRow(`
-                        <td>${escapeHtml(item.userEmail)}</td>
-                        <td>
-                            <span class="admin-status ${String(item.status).toLowerCase()}">
-                                ${escapeHtml(item.status)}
-                            </span>
-                        </td>
-                        <td>${formatDate(item.createdAt)}</td>
-                        <td class="text-end">${formatMoney(item.amount)}</td>
-                    `);
-                });
+            items.forEach(item => {
+                appendRow(`
+                    <td>${escapeHtml(item.userEmail)}</td>
+                    <td>
+                        <div class="admin-tx-cell">
+                            <span>${escapeHtml(item.txId || "-")}</span>
+                            ${
+                                item.txId
+                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <span class="admin-status ${String(item.status).toLowerCase()}">
+                            ${escapeHtml(item.status)}
+                        </span>
+                    </td>
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
 
-                return;
-            }
+            return;
+        }
 
-            if (type === "transfers") {
-                adminReportsTableHead.innerHTML = `
-                    <tr>
-                        <th>User Email</th>
-                        <th>Wallet</th>
-                        <th>Type</th>
-                        <th>Created At</th>
-                        <th class="text-end">Amount</th>
-                    </tr>
-                `;
+        if (type === "withdrawals") {
+            adminReportsTableHead.innerHTML = `
+                <tr>
+                    <th>User Email</th>
+                    <th>Network</th>
+                    <th>Wallet Address</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
 
-                items.forEach(item => {
-                    appendRow(`
-                        <td>${escapeHtml(item.userEmail)}</td>
-                        <td>${escapeHtml(item.walletType)}</td>
-                        <td>
-                            <span class="admin-status neutral">
-                                ${escapeHtml(item.type)}
-                            </span>
-                        </td>
-                        <td>${formatDate(item.createdAt)}</td>
-                        <td class="text-end">${formatMoney(item.amount)}</td>
-                    `);
-                });
+            items.forEach(item => {
+                appendRow(`
+                    <td>${escapeHtml(item.userEmail)}</td>
+                    <td>${escapeHtml(item.network || "-")}</td>
+                    <td>
+                        <div class="admin-tx-cell">
+                            <span>${escapeHtml(item.walletAddress || "-")}</span>
+                            ${
+                                item.walletAddress
+                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+                    <td>
+                        <span class="admin-status ${String(item.status).toLowerCase()}">
+                            ${escapeHtml(item.status)}
+                        </span>
+                    </td>
+                    <td>${formatDate(item.createdAt)}</td>
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
 
-                return;
-            }
+            return;
+        }
 
+        if (type === "transfers") {
+            adminReportsTableHead.innerHTML = `
+                <tr>
+                    <th>From User</th>
+                    <th>To User</th>
+                    <th>Wallet Path</th>
+                    <th>Description</th>
+                    <th>Created At</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
+
+            items.forEach(item => {
+                appendRow(`
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.fromUserUid || "-")}</strong>
+                            <span>${escapeHtml(item.fromUserEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.toUserUid || "-")}</strong>
+                            <span>${escapeHtml(item.toUserEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(item.fromWalletType || "-")}
+                        →
+                        ${escapeHtml(item.toWalletType || "-")}
+                    </td>
+
+                    <td>${escapeHtml(item.description || "-")}</td>
+
+                    <td>${formatDate(item.createdAt)}</td>
+
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+
+            return;
+        }
             if (type === "mainInvestBonuses") {
                 adminReportsTableHead.innerHTML = `
                     <tr>
@@ -240,10 +487,12 @@
 
                 return;
             }
-
+            if (type === "referralProfits") {
             adminReportsTableHead.innerHTML = `
                 <tr>
-                    <th>User Email</th>
+                    <th>Receiver</th>
+                    <th>Source User</th>
+                    <th>Profit Type</th>
                     <th>Created At</th>
                     <th class="text-end">Amount</th>
                 </tr>
@@ -251,11 +500,63 @@
 
             items.forEach(item => {
                 appendRow(`
-                    <td>${escapeHtml(item.userEmail)}</td>
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.userUid || "-")}</strong>
+                            <span>${escapeHtml(item.userEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.sourceUserUid || "-")}</strong>
+                            <span>${escapeHtml(item.sourceUserEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="admin-status neutral">
+                            ${escapeHtml(item.profitType || "Referral Profit")}
+                        </span>
+                    </td>
+
                     <td>${formatDate(item.createdAt)}</td>
+
                     <td class="text-end">${formatMoney(item.amount)}</td>
                 `);
             });
+
+            return;
+        }
+        adminReportsTableHead.innerHTML = `
+            <tr>
+                <th>User</th>
+                <th>Profit Type</th>
+                <th>Created At</th>
+                <th class="text-end">Amount</th>
+            </tr>
+        `;
+
+        items.forEach(item => {
+            appendRow(`
+                <td>
+                    <div class="report-user-cell">
+                        <strong>${escapeHtml(item.userUid || "-")}</strong>
+                        <span>${escapeHtml(item.userEmail || "-")}</span>
+                    </div>
+                </td>
+
+                <td>
+                    <span class="admin-status neutral">
+                        ${escapeHtml(item.profitType || getReadableAdminType(type))}
+                    </span>
+                </td>
+
+                <td>${formatDate(item.createdAt)}</td>
+
+                <td class="text-end">${formatMoney(item.amount)}</td>
+            `);
+        });
         }
 
         function appendRow(html) {
@@ -291,7 +592,44 @@
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#039;");
         }
+        async function copyReportText(text) {
+            if (!text) return;
 
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification("Copied to clipboard.", "success");
+            } catch {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                showNotification("Copied to clipboard.", "success");
+            }
+        }
+
+        function escapeForJs(value) {
+            return String(value || "")
+                .replaceAll("\\", "\\\\")
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"')
+                .replaceAll("\n", "")
+                .replaceAll("\r", "");
+        }
+          function getReadableAdminType(type) {
+            if (type === "investmentProfits") return "Investment Profit";
+            if (type === "referralProfits") return "Referral Profit";
+            if (type === "mainInvestBonuses") return "Main → Invest Bonus";
+            return type || "-";
+        }
+        initializeReportDatePickers();
         loadAdminReports();
     </script>
 }

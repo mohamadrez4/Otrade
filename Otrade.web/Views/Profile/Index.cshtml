@@ -22,18 +22,22 @@
                 <span>First Name</span>
                 <strong id="firstName">-</strong>
             </div>
+
             <div class="profile-info-item">
                 <span>Last Name</span>
                 <strong id="lastName">-</strong>
             </div>
+
             <div class="profile-info-item">
                 <span>Email</span>
                 <strong id="email">-</strong>
             </div>
+
             <div class="profile-info-item">
                 <span>Referral Code</span>
                 <strong id="referralCode">-</strong>
             </div>
+
             <div class="profile-info-item">
                 <span>KYC Status</span>
                 <strong id="kycStatus" class="profile-status">-</strong>
@@ -52,9 +56,10 @@
 
         <div id="walletAddressMessage" class="profile-alert" style="display:none;"></div>
 
-        <form id="walletAddressForm" class="profile-form">
+        <form id="walletAddressForm" class="profile-form" autocomplete="off">
             <div class="profile-form-group">
                 <label for="network">Network</label>
+
                 <select id="network" class="panel-input" required>
                     <option value="">Select network</option>
                     <option value="TRC20">TRC20</option>
@@ -64,9 +69,11 @@
 
             <div class="profile-form-group">
                 <label for="walletAddress">Wallet Address</label>
+
                 <input id="walletAddress"
                        class="panel-input"
                        type="text"
+                       autocomplete="new-password"
                        placeholder="Enter your wallet address"
                        required />
             </div>
@@ -82,34 +89,76 @@
         <div class="profile-header">
             <div>
                 <h3>KYC Verification</h3>
-                <p>Upload the documents that are rejected or missing for verification.</p>
+                <p>Upload only the documents that are missing or rejected.</p>
             </div>
         </div>
 
         <div id="kycMessage" class="profile-alert" style="display:none;"></div>
 
-        <form id="kycForm" class="profile-form">
+        <form id="kycForm" class="profile-form" autocomplete="off">
+
             <!-- National ID -->
             <div id="nationalIdGroup" class="profile-form-group">
                 <label for="nationalIdImage">National ID Image</label>
-                <input id="nationalIdImage"
-                       class="panel-input"
-                       type="file"
-                       accept="image/*" />
+
+                <div class="kyc-file-picker">
+                    <input id="nationalIdImage"
+                           class="kyc-file-input"
+                           type="file"
+                           accept="image/*" />
+
+                    <label for="nationalIdImage" class="kyc-file-btn">
+                        Choose File
+                    </label>
+
+                    <span id="nationalIdFileName" class="kyc-file-name">
+                        No file chosen
+                    </span>
+                </div>
+
                 <span id="nationalIdStatus" class="profile-status"></span>
+
+                <div id="nationalIdRejectReasonBox"
+                     class="kyc-reject-reason-box"
+                     style="display:none;">
+                    <strong>National ID Reject Reason</strong>
+                    <p id="nationalIdRejectReasonText"></p>
+                </div>
             </div>
 
             <!-- Selfie -->
             <div id="selfieGroup" class="profile-form-group">
                 <label for="selfieImage">Selfie Image</label>
-                <input id="selfieImage"
-                       class="panel-input"
-                       type="file"
-                       accept="image/*" />
+
+                <div class="kyc-file-picker">
+                    <input id="selfieImage"
+                           class="kyc-file-input"
+                           type="file"
+                           accept="image/*" />
+
+                    <label for="selfieImage" class="kyc-file-btn">
+                        Choose File
+                    </label>
+
+                    <span id="selfieFileName" class="kyc-file-name">
+                        No file chosen
+                    </span>
+                </div>
+
                 <span id="selfieStatus" class="profile-status"></span>
+
+                <div id="selfieRejectReasonBox"
+                     class="kyc-reject-reason-box"
+                     style="display:none;">
+                    <strong>Selfie Reject Reason</strong>
+                    <p id="selfieRejectReasonText"></p>
+                </div>
             </div>
 
-            <button id="submitKycBtn" type="submit" class="panel-primary-btn">
+            <button id="submitKycBtn"
+                    type="submit"
+                    class="panel-primary-btn kyc-submit-hidden"
+                    hidden>
                 Submit KYC
             </button>
         </form>
@@ -126,21 +175,25 @@
 
         <div id="passwordMessage" class="profile-alert" style="display:none;"></div>
 
-        <form id="passwordForm" class="profile-form">
+        <form id="passwordForm" class="profile-form" autocomplete="off">
             <div class="profile-form-group">
                 <label for="currentPassword">Current Password</label>
+
                 <input id="currentPassword"
                        class="panel-input"
                        type="password"
+                       autocomplete="new-password"
                        placeholder="Enter current password"
                        required />
             </div>
 
             <div class="profile-form-group">
                 <label for="newPassword">New Password</label>
+
                 <input id="newPassword"
                        class="panel-input"
                        type="password"
+                       autocomplete="new-password"
                        placeholder="Enter new password"
                        required />
             </div>
@@ -184,6 +237,14 @@
         const nationalIdStatus = document.getElementById("nationalIdStatus");
         const selfieStatus = document.getElementById("selfieStatus");
 
+        const nationalIdFileName = document.getElementById("nationalIdFileName");
+        const selfieFileName = document.getElementById("selfieFileName");
+
+        const nationalIdRejectReasonBox = document.getElementById("nationalIdRejectReasonBox");
+        const nationalIdRejectReasonText = document.getElementById("nationalIdRejectReasonText");
+        const selfieRejectReasonBox = document.getElementById("selfieRejectReasonBox");
+        const selfieRejectReasonText = document.getElementById("selfieRejectReasonText");
+
         const passwordForm = document.getElementById("passwordForm");
         const currentPassword = document.getElementById("currentPassword");
         const newPassword = document.getElementById("newPassword");
@@ -191,59 +252,274 @@
         const passwordMessage = document.getElementById("passwordMessage");
 
         // ---------------------
-        // Load Profile
+        // Helpers
         // ---------------------
-        function setupKycDocument(doc, group, input, statusElement, label) {
+        function normalizeValue(value) {
+            return String(value || "")
+                .trim()
+                .toLowerCase()
+                .replaceAll("_", "")
+                .replaceAll("-", "")
+                .replaceAll(" ", "");
+        }
+
+        function isApproved(status) {
+            const value = normalizeValue(status);
+            return value === "approved" || value === "2";
+        }
+
+        function isPending(status) {
+            const value = normalizeValue(status);
+            return value === "pending" || value === "0" || value === "1";
+        }
+
+        function isRejected(status) {
+            const value = normalizeValue(status);
+            return value === "rejected" || value === "3";
+        }
+
+        function isNationalId(documentType) {
+            const value = normalizeValue(documentType);
+
+            return value === "nationalid" ||
+                value === "nationalidimage" ||
+                value === "nationalcard" ||
+                value === "nationalidcard";
+        }
+
+        function isSelfie(documentType) {
+            const value = normalizeValue(documentType);
+
+            return value === "selfie" ||
+                value === "selfieimage" ||
+                value === "selfiewithid";
+        }
+
+        function getBestKycDocument(docs, type) {
+            const filtered = (docs || []).filter(doc => {
+                if (type === "NationalId") {
+                    return isNationalId(doc.documentType);
+                }
+
+                if (type === "Selfie") {
+                    return isSelfie(doc.documentType);
+                }
+
+                return false;
+            });
+
+            if (!filtered.length) {
+                return null;
+            }
+
+            const approved = filtered.find(doc => isApproved(doc.status));
+            if (approved) return approved;
+
+            const pending = filtered.find(doc => isPending(doc.status));
+            if (pending) return pending;
+
+            const rejected = filtered.find(doc => isRejected(doc.status));
+            if (rejected) return rejected;
+
+            return filtered[0];
+        }
+
+        function canUploadDocument(doc) {
+            if (!doc) {
+                return true;
+            }
+
+            return isRejected(doc.status);
+        }
+
+        function setSubmitKycVisible(isVisible) {
+            if (isVisible) {
+                submitKycBtn.hidden = false;
+                submitKycBtn.classList.remove("kyc-submit-hidden");
+                submitKycBtn.style.setProperty("display", "inline-flex", "important");
+                return;
+            }
+
+            submitKycBtn.hidden = true;
+            submitKycBtn.classList.add("kyc-submit-hidden");
+            submitKycBtn.style.setProperty("display", "none", "important");
+        }
+
+        function setFilePickerVisible(input, isVisible) {
+            const filePicker = input.closest(".kyc-file-picker");
+
+            if (!filePicker) {
+                return;
+            }
+
+            filePicker.style.display = isVisible ? "flex" : "none";
+        }
+
+        function clearFileInput(input, fileNameElement) {
             input.value = "";
 
+            if (fileNameElement) {
+                fileNameElement.innerText = "No file chosen";
+                fileNameElement.classList.remove("has-file");
+            }
+        }
+
+        function showRejectReason(reason, box, textElement) {
+            const value = String(reason || "").trim();
+
+            if (!box || !textElement || !value) {
+                hideRejectReason(box, textElement);
+                return;
+            }
+
+            box.style.display = "block";
+            textElement.innerText = value;
+        }
+
+        function hideRejectReason(box, textElement) {
+            if (!box || !textElement) {
+                return;
+            }
+
+            box.style.display = "none";
+            textElement.innerText = "";
+        }
+
+        function setupFileNamePreview(input, fileNameElement) {
+            input.addEventListener("change", function () {
+                const file = input.files && input.files[0];
+
+                if (!file) {
+                    fileNameElement.innerText = "No file chosen";
+                    fileNameElement.classList.remove("has-file");
+                    return;
+                }
+
+                fileNameElement.innerText = file.name;
+                fileNameElement.classList.add("has-file");
+            });
+        }
+
+        function renderKycDocument(doc, options) {
+            const {
+                group,
+                input,
+                fileNameElement,
+                statusElement,
+                label,
+                rejectReasonBox,
+                rejectReasonText
+            } = options;
+
+            group.style.display = "grid";
+            hideRejectReason(rejectReasonBox, rejectReasonText);
+            clearFileInput(input, fileNameElement);
+
             if (!doc) {
-                group.style.display = "grid";
-                input.style.display = "block";
+                setFilePickerVisible(input, true);
+
                 input.disabled = false;
                 input.required = true;
 
-                statusElement.innerText = `${label} Missing or Rejected`;
+                statusElement.innerText = `${label} Missing`;
                 statusElement.className = "profile-status rejected";
                 return;
             }
 
-            statusElement.className = `profile-status ${doc.status.toLowerCase()}`;
+            if (isApproved(doc.status)) {
+                setFilePickerVisible(input, false);
 
-            if (doc.status === "Approved") {
-                group.style.display = "grid";
-                input.style.display = "none";
                 input.disabled = true;
                 input.required = false;
 
                 statusElement.innerText = `${label} Approved`;
+                statusElement.className = "profile-status approved";
                 return;
             }
 
-            if (doc.status === "Pending") {
-                group.style.display = "grid";
-                input.style.display = "none";
+            if (isPending(doc.status)) {
+                setFilePickerVisible(input, false);
+
                 input.disabled = true;
                 input.required = false;
 
                 statusElement.innerText = `${label} Pending Review`;
+                statusElement.className = "profile-status pending";
                 return;
             }
 
-            if (doc.status === "Rejected") {
-                group.style.display = "grid";
-                input.style.display = "block";
+            if (isRejected(doc.status)) {
+                setFilePickerVisible(input, true);
+
                 input.disabled = false;
                 input.required = true;
 
                 statusElement.innerText = `${label} Rejected`;
                 statusElement.className = "profile-status rejected";
+
+                showRejectReason(
+                    doc.rejectReason,
+                    rejectReasonBox,
+                    rejectReasonText
+                );
+
                 return;
             }
+
+            setFilePickerVisible(input, true);
+
+            input.disabled = false;
+            input.required = true;
+
+            statusElement.innerText = `${label} Missing`;
+            statusElement.className = "profile-status rejected";
         }
+
+        function updateKycSubmitButton(data, nationalDoc, selfieDoc) {
+            if (isApproved(data.kycStatus)) {
+                setSubmitKycVisible(false);
+                return;
+            }
+
+            const nationalApproved = nationalDoc && isApproved(nationalDoc.status);
+            const selfieApproved = selfieDoc && isApproved(selfieDoc.status);
+
+            if (nationalApproved && selfieApproved) {
+                setSubmitKycVisible(false);
+                return;
+            }
+
+            const nationalCanUpload = canUploadDocument(nationalDoc);
+            const selfieCanUpload = canUploadDocument(selfieDoc);
+
+            setSubmitKycVisible(nationalCanUpload || selfieCanUpload);
+        }
+
+        function showAlert(element, message, isSuccess) {
+            element.innerText = message;
+            element.className = isSuccess ? "profile-alert success" : "profile-alert error";
+            element.style.display = "block";
+        }
+
+        function hideAlert(element) {
+            element.innerText = "";
+            element.style.display = "none";
+        }
+
+        // ---------------------
+        // Load Profile
+        // ---------------------
         async function loadProfile() {
             try {
                 const result = await api("/api/profile");
-                const data = result.data;
+
+                if (!result.success) {
+                    profileMessage.innerText = result.message || "Could not load profile.";
+                    profileMessage.style.display = "block";
+                    return;
+                }
+
+                const data = result.data || {};
 
                 firstName.innerText = data.firstName || "-";
                 lastName.innerText = data.lastName || "-";
@@ -259,48 +535,40 @@
                 }
 
                 const kycDocs = data.kycDocuments || [];
+                const nationalDoc = getBestKycDocument(kycDocs, "NationalId");
+                const selfieDoc = getBestKycDocument(kycDocs, "Selfie");
 
-                const nationalDoc = kycDocs.find(d => d.documentType === "NationalId");
-                const selfieDoc = kycDocs.find(d => d.documentType === "Selfie");
+                renderKycDocument(nationalDoc, {
+                    group: nationalIdGroup,
+                    input: nationalIdImage,
+                    fileNameElement: nationalIdFileName,
+                    statusElement: nationalIdStatus,
+                    label: "National ID",
+                    rejectReasonBox: nationalIdRejectReasonBox,
+                    rejectReasonText: nationalIdRejectReasonText
+                });
 
-                setupKycDocument(
-                    nationalDoc,
-                    nationalIdGroup,
-                    nationalIdImage,
-                    nationalIdStatus,
-                    "National ID"
-                );
+                renderKycDocument(selfieDoc, {
+                    group: selfieGroup,
+                    input: selfieImage,
+                    fileNameElement: selfieFileName,
+                    statusElement: selfieStatus,
+                    label: "Selfie",
+                    rejectReasonBox: selfieRejectReasonBox,
+                    rejectReasonText: selfieRejectReasonText
+                });
 
-                setupKycDocument(
-                    selfieDoc,
-                    selfieGroup,
-                    selfieImage,
-                    selfieStatus,
-                    "Selfie"
-                );
-                        const nationalCanUpload = !nationalDoc || nationalDoc.status === "Rejected" || nationalDoc.status === "Missing";
-        const selfieCanUpload = !selfieDoc || selfieDoc.status === "Rejected" || selfieDoc.status === "Missing";
-
-        if (nationalCanUpload || selfieCanUpload) {
-            submitKycBtn.style.display = "inline-flex";
-        } else {
-            submitKycBtn.style.display = "none";
-        }
-
-
-                if (!nationalCanUpload && !selfieCanUpload) {
-                    submitKycBtn.style.display = "none";
-                } else {
-                    submitKycBtn.style.display = "inline-flex";
-                }
+                updateKycSubmitButton(data, nationalDoc, selfieDoc);
 
                 profileMessage.style.display = "none";
                 profileContent.style.display = "grid";
+
             } catch (error) {
                 profileMessage.innerText = error.message || "Could not load profile.";
                 profileMessage.style.display = "block";
             }
         }
+
         // ---------------------
         // Wallet Address
         // ---------------------
@@ -321,7 +589,10 @@
             try {
                 const result = await api("/api/wallet/address/save", {
                     method: "POST",
-                    body: JSON.stringify({ network, address })
+                    body: JSON.stringify({
+                        network,
+                        address
+                    })
                 });
 
                 if (!result.success) {
@@ -330,6 +601,7 @@
                 }
 
                 showAlert(walletAddressMessage, result.message || "Wallet address saved successfully.", true);
+
             } catch (error) {
                 showAlert(walletAddressMessage, error.message || "Could not save wallet address.", false);
             } finally {
@@ -344,9 +616,17 @@
         kycForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
+            hideAlert(kycMessage);
+
             const formData = new FormData();
-            if (nationalIdImage.files[0]) formData.append("NationalIdImage", nationalIdImage.files[0]);
-            if (selfieImage.files[0]) formData.append("SelfieImage", selfieImage.files[0]);
+
+            if (!nationalIdImage.disabled && nationalIdImage.files[0]) {
+                formData.append("NationalIdImage", nationalIdImage.files[0]);
+            }
+
+            if (!selfieImage.disabled && selfieImage.files[0]) {
+                formData.append("SelfieImage", selfieImage.files[0]);
+            }
 
             if (formData.keys().next().done) {
                 showAlert(kycMessage, "Please upload at least one document.", false);
@@ -357,17 +637,23 @@
             submitKycBtn.innerText = "Submitting...";
 
             try {
-                const result = await api("/api/kyc/upload", { method: "POST", body: formData });
+                const result = await api("/api/kyc/upload", {
+                    method: "POST",
+                    body: formData
+                });
+
                 if (!result.success) {
                     showAlert(kycMessage, result.message || "Could not submit KYC.", false);
                     return;
                 }
+
                 showAlert(kycMessage, result.message || "KYC submitted successfully.", true);
 
-                nationalIdImage.value = "";
-                selfieImage.value = "";
+                clearFileInput(nationalIdImage, nationalIdFileName);
+                clearFileInput(selfieImage, selfieFileName);
 
                 await loadProfile();
+
             } catch (error) {
                 showAlert(kycMessage, error.message || "Could not submit KYC.", false);
             } finally {
@@ -401,7 +687,10 @@
             try {
                 const result = await api("/api/profile/change-password", {
                     method: "POST",
-                    body: JSON.stringify({ currentPassword: current, newPassword: next })
+                    body: JSON.stringify({
+                        currentPassword: current,
+                        newPassword: next
+                    })
                 });
 
                 if (!result.success) {
@@ -410,8 +699,10 @@
                 }
 
                 showAlert(passwordMessage, result.message || "Password changed successfully.", true);
+
                 currentPassword.value = "";
                 newPassword.value = "";
+
             } catch (error) {
                 showAlert(passwordMessage, error.message || "Could not change password.", false);
             } finally {
@@ -420,12 +711,13 @@
             }
         });
 
-        function showAlert(element, message, isSuccess) {
-            element.innerText = message;
-            element.className = isSuccess ? "profile-alert success" : "profile-alert error";
-            element.style.display = "block";
-        }
+        // ---------------------
+        // Init
+        // ---------------------
+        setupFileNamePreview(nationalIdImage, nationalIdFileName);
+        setupFileNamePreview(selfieImage, selfieFileName);
 
+        setSubmitKycVisible(false);
         loadProfile();
     </script>
 }

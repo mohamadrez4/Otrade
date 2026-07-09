@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Otrade.Application.Services;
 using Otrade.Application.Services.Security;
-
+using Otrade.Application.DTOs.Reports;
 namespace Otrade.web.Controllers.Api;
 
 [Authorize]
@@ -47,12 +47,13 @@ public class ReportController : ControllerBase
 
     [HttpGet("admin/detail")]
     public async Task<IActionResult> GetAdminDetailReport(
+        [FromQuery] AdminReportFilterRequest filter,
         [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin)
             return Forbid();
 
-        var result = await _reportService.GetAdminDetailReportAsync();
+        var result = await _reportService.GetAdminDetailReportAsync(filter);
 
         if (!result.Success)
             return BadRequest(result);

@@ -1,5 +1,5 @@
 ﻿namespace Otrade.Application.DTOs.Dashboard;
-
+using Otrade.Application.DTOs.Wallet;
 public class DashboardResponse
 {
     public decimal TotalAssets { get; set; }
@@ -13,7 +13,7 @@ public class DashboardResponse
     public decimal RequiredForNextRank { get; set; }
 
     public decimal NextRankProgressPercent { get; set; }
-
+    public CurrentInvestmentCapacityResponse? CurrentInvestmentCapacity { get; set; }
     public List<WalletBalanceDto> Wallets { get; set; } = new();
 }
 

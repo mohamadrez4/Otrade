@@ -26,16 +26,40 @@ public class WithdrawalDto
 
 public class WalletTransactionDto
 {
-    public string WalletType { get; set; } = string.Empty;
+    public long TransferId { get; set; }
+
+    public string Direction { get; set; } = string.Empty;
+
+    public string FromWalletType { get; set; } = string.Empty;
+
+    public string ToWalletType { get; set; } = string.Empty;
+
+    public string FromUid { get; set; } = string.Empty;
+
+    public string FromEmail { get; set; } = string.Empty;
+
+    public string ToUid { get; set; } = string.Empty;
+
+    public string ToEmail { get; set; } = string.Empty;
+
     public decimal Amount { get; set; }
-    public string Type { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
     public DateTime CreatedAt { get; set; }
 }
 
 public class ProfitDto
 {
     public decimal Amount { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    public string? SourceUserUid { get; set; }
+
+    public string? SourceUserEmail { get; set; }
+
+    public string? SourceUserFullName { get; set; }
 }
 
 public class BonusDto

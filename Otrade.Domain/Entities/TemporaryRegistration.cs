@@ -36,6 +36,18 @@ public class TemporaryRegistration
 
     public string? RejectReason { get; set; }
 
+    public string? EmailVerificationCode { get; set; }
+
+    public DateTime? EmailVerificationExpireAt { get; set; }
+
+    public DateTime? EmailVerifiedAt { get; set; }
+
+    public string? RecoveryVerificationCode { get; set; }
+
+    public DateTime? RecoveryVerificationExpireAt { get; set; }
+
+    public string? TrackingToken { get; set; }
+
     public string? CompletionToken { get; set; }
 
     public DateTime ExpiresAt { get; set; }

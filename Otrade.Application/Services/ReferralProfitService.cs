@@ -63,17 +63,18 @@ public class ReferralProfitService
             BalanceBefore = before,
             BalanceAfter = after,
             Type = TransactionType.ReferralBonus,
-            Description = "Referral Profit",
-            CreatedAt =  DateTime.Now
+            Description = $"Referral Profit from UID {user.ReferralCode}",
+            CreatedAt = DateTime.Now
         });
 
         _context.ProfitLedgers.Add(new ProfitLedger
         {
             UserId = sponsor.UserId,
+            SourceUserId = fromUserId,
             ReferenceId = reference,
             Amount = bonus,
             Type = ProfitType.Referral,
-            CreatedAt =  DateTime.Now
+            CreatedAt = DateTime.Now
         });
 
         await _context.SaveChangesAsync();

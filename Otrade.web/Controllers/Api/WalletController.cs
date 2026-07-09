@@ -12,12 +12,61 @@ namespace Otrade.web.Controllers.Api;
 public class WalletController : ControllerBase
 {
     private readonly WalletService _walletService;
-
-    public WalletController(WalletService walletService)
+    private readonly InvestmentCapacityService _investmentCapacityService;
+    public WalletController(
+        WalletService walletService,
+        InvestmentCapacityService investmentCapacityService)
     {
         _walletService = walletService;
+        _investmentCapacityService = investmentCapacityService;
     }
 
+    [Authorize]
+    [HttpGet("internal-transfer/recipient")]
+    public async Task<IActionResult> FindInternalTransferRecipient(
+    [FromQuery] string query,
+    [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _walletService.FindInternalTransferRecipientAsync(
+            query,
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
+    [HttpPost("internal-transfer/send-code")]
+    public async Task<IActionResult> CreateInternalTransferVerification(
+    [FromBody] CreateInternalTransferVerificationRequest request,
+    [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _walletService.CreateInternalTransferVerificationAsync(
+            request,
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
+    [HttpPost("internal-transfer/confirm")]
+    public async Task<IActionResult> ConfirmInternalTransfer(
+    [FromBody] ConfirmInternalTransferRequest request,
+    [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _walletService.ConfirmInternalTransferAsync(
+            request,
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
     [HttpPost("transfer")]
     public async Task<IActionResult> Transfer(
         TransferRequest request,
@@ -76,14 +125,28 @@ public class WalletController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("withdrawals/my-pending")]
-    public async Task<IActionResult> GetMyPendingWithdrawals(
-    [FromServices] CurrentUserService currentUser)
+    [HttpGet("withdrawals/my-history")]
+    public async Task<IActionResult> GetMyWithdrawals(
+        [FromServices] CurrentUserService currentUser)
     {
-        var result = await _walletService.GetMyPendingWithdrawalsAsync(currentUser.UserId);
+        var result = await _walletService.GetMyWithdrawalsAsync(currentUser.UserId);
         return Ok(result);
     }
+    [Authorize]
+    [HttpPost("withdrawal/confirm")]
+    public async Task<IActionResult> ConfirmWithdrawal(
+    ConfirmWithdrawalRequest request,
+    [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _walletService.ConfirmWithdrawalRequestAsync(
+            request,
+            currentUser.UserId);
 
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
     [Authorize]
     [HttpPost("withdrawals/cancel/{id}")]
     public async Task<IActionResult> CancelWithdrawal(
@@ -124,6 +187,17 @@ public class WalletController : ControllerBase
     [FromServices] CurrentUserService currentUser)
     {
         var result = await _walletService.GetReferralOverviewAsync(currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
+    [HttpGet("investment-capacity/current")]
+    public async Task<IActionResult> GetCurrentInvestmentCapacity()
+    {
+        var result = await _investmentCapacityService.GetCurrentMonthCapacityAsync();
 
         if (!result.Success)
             return BadRequest(result);

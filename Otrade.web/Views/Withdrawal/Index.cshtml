@@ -22,6 +22,7 @@
     <form id="withdrawalForm" class="withdrawal-form">
         <div class="withdrawal-form-group">
             <label for="amount">Amount</label>
+
             <input id="amount"
                    name="amount"
                    type="number"
@@ -33,24 +34,80 @@
         </div>
 
         <button id="submitWithdrawalBtn" type="submit" class="panel-primary-btn">
-            Submit Withdrawal Request
+            Send Verification Code
         </button>
     </form>
+
+    <div id="withdrawalVerificationBox"
+         class="withdrawal-verification-box"
+         style="display:none;">
+
+        <div class="withdrawal-verification-header">
+            <h4>Email Verification</h4>
+            <p>
+                A 6-digit verification code has been sent to your email.
+                Enter the code below to submit your withdrawal request.
+            </p>
+        </div>
+
+        <div class="withdrawal-verification-summary">
+            <div>
+                <span>Amount</span>
+                <strong id="withdrawVerifyAmount">0.00 USDT</strong>
+            </div>
+
+            <div>
+                <span>Network</span>
+                <strong id="withdrawVerifyNetwork">-</strong>
+            </div>
+
+            <div>
+                <span>Wallet Address</span>
+                <strong id="withdrawVerifyAddress">-</strong>
+            </div>
+        </div>
+
+        <div class="withdrawal-code-field">
+            <label for="withdrawalVerificationCode">Verification Code</label>
+
+            <input id="withdrawalVerificationCode"
+                   type="text"
+                   maxlength="6"
+                   inputmode="numeric"
+                   autocomplete="one-time-code"
+                   class="panel-input withdrawal-code-input"
+                   placeholder="Enter 6-digit code" />
+        </div>
+
+        <div class="withdrawal-verification-actions">
+            <button type="button"
+                    id="resetWithdrawalVerificationBtn"
+                    class="withdrawal-secondary-btn">
+                Change Amount
+            </button>
+
+            <button type="button"
+                    id="confirmWithdrawalBtn"
+                    class="panel-primary-btn">
+                Confirm Withdrawal
+            </button>
+        </div>
+    </div>
 </div>
 
 <div class="panel-card mt-4">
     <div class="withdrawal-header">
         <div>
-            <h3>Pending Withdrawals</h3>
-            <p>You can cancel your pending withdrawal requests before admin approval.</p>
+            <h3>Withdrawal History</h3>
+            <p>You can cancel pending withdrawal requests before admin approval.</p>
         </div>
     </div>
 
-    <div id="pendingWithdrawalsMessage" class="withdrawal-message">
-        Loading pending withdrawals...
+    <div id="withdrawalsMessage" class="withdrawal-message">
+        Loading withdrawals...
     </div>
 
-    <div id="pendingWithdrawalsWrapper" class="withdrawal-table-wrapper" style="display:none;">
+    <div id="withdrawalsWrapper" class="withdrawal-table-wrapper" style="display:none;">
         <table class="withdrawal-table">
             <thead>
                 <tr>
@@ -58,10 +115,13 @@
                     <th>Network</th>
                     <th>Wallet Address</th>
                     <th>Amount</th>
+                    <th>Status</th>
+                    <th>Note</th>
                     <th class="text-end">Action</th>
                 </tr>
             </thead>
-            <tbody id="pendingWithdrawalsBody"></tbody>
+
+            <tbody id="withdrawalsBody"></tbody>
         </table>
     </div>
 </div>
@@ -70,26 +130,74 @@
     <script>
         let mainWalletBalance = 0;
 
+        let withdrawalVerificationId = null;
+        let withdrawalVerificationLocked = false;
+        let withdrawalVerifiedAmount = 0;
+
         const withdrawalForm = document.getElementById("withdrawalForm");
         const amountInput = document.getElementById("amount");
         const submitWithdrawalBtn = document.getElementById("submitWithdrawalBtn");
 
-        const pendingWithdrawalsMessage = document.getElementById("pendingWithdrawalsMessage");
-        const pendingWithdrawalsWrapper = document.getElementById("pendingWithdrawalsWrapper");
-        const pendingWithdrawalsBody = document.getElementById("pendingWithdrawalsBody");
+        const withdrawalVerificationBox = document.getElementById("withdrawalVerificationBox");
+        const withdrawalVerificationCode = document.getElementById("withdrawalVerificationCode");
+        const resetWithdrawalVerificationBtn = document.getElementById("resetWithdrawalVerificationBtn");
+        const confirmWithdrawalBtn = document.getElementById("confirmWithdrawalBtn");
 
-        withdrawalForm.addEventListener("submit", async function (e) {
+        const withdrawVerifyAmount = document.getElementById("withdrawVerifyAmount");
+        const withdrawVerifyNetwork = document.getElementById("withdrawVerifyNetwork");
+        const withdrawVerifyAddress = document.getElementById("withdrawVerifyAddress");
+
+        const withdrawalsMessage = document.getElementById("withdrawalsMessage");
+        const withdrawalsWrapper = document.getElementById("withdrawalsWrapper");
+        const withdrawalsBody = document.getElementById("withdrawalsBody");
+
+        withdrawalForm.addEventListener("submit", submitWithdrawalRequest);
+
+        resetWithdrawalVerificationBtn.addEventListener("click", resetWithdrawalVerification);
+
+        confirmWithdrawalBtn.addEventListener("click", confirmWithdrawalRequest);
+
+        withdrawalVerificationCode.addEventListener("input", function () {
+            this.value = this.value.replace(/\D/g, "").slice(0, 6);
+        });
+
+        withdrawalVerificationCode.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                confirmWithdrawalRequest();
+            }
+        });
+
+        async function submitWithdrawalRequest(e) {
             e.preventDefault();
 
-            const amount = parseFloat(amountInput.value);
+            if (withdrawalVerificationLocked) {
+                showNotification("Please confirm current verification or reset it first.", "warning");
+                return;
+            }
+
+            const amount = Number(amountInput.value || 0);
 
             if (!amount || amount <= 0) {
                 showNotification("Please enter a valid amount.", "warning");
                 return;
             }
 
+            if (amount > mainWalletBalance) {
+                showNotification("Amount is greater than your Main Wallet balance.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Send verification code for withdrawal of ${formatMoney(amount)} USDT?`,
+                "Withdrawal Verification"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
             submitWithdrawalBtn.disabled = true;
-            submitWithdrawalBtn.innerText = "Submitting...";
+            submitWithdrawalBtn.innerText = "Sending Code...";
 
             try {
                 const result = await api("/api/wallet/withdrawal/request", {
@@ -97,25 +205,137 @@
                     body: JSON.stringify({ amount })
                 });
 
-                if (!result.success) {
-                    showNotification(result.message || "Could not submit withdrawal request.", "error");
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not send verification code.", "error");
                     return;
                 }
 
-                showNotification(result.message || "Withdrawal request submitted successfully.", "success");
+                withdrawalVerificationId = result.data.verificationId;
+                withdrawalVerifiedAmount = Number(result.data.amount || amount);
 
-                amountInput.value = "";
+                withdrawVerifyAmount.innerText =
+                    formatMoney(withdrawalVerifiedAmount) + " USDT";
 
-                await loadWalletBalance();
-                await loadPendingWithdrawals();
+                withdrawVerifyNetwork.innerText =
+                    result.data.network || "-";
+
+                withdrawVerifyAddress.innerText =
+                    result.data.walletAddress || "-";
+
+                setWithdrawalVerificationLocked(true);
+
+                withdrawalVerificationBox.style.display = "block";
+
+                showNotification(result.message || "Verification code sent to your email.", "success");
+
+                setTimeout(() => {
+                    withdrawalVerificationCode.focus();
+                }, 100);
 
             } catch (error) {
-                showNotification(error.message || "Could not submit withdrawal request.", "error");
+                showNotification(error.message || "Could not send verification code.", "error");
             } finally {
                 submitWithdrawalBtn.disabled = false;
-                submitWithdrawalBtn.innerText = "Submit Withdrawal Request";
+                submitWithdrawalBtn.innerText = "Send Verification Code";
             }
-        });
+        }
+
+        async function confirmWithdrawalRequest() {
+            const code = withdrawalVerificationCode.value.trim();
+
+            if (!withdrawalVerificationId) {
+                showNotification("Verification request was not created.", "error");
+                return;
+            }
+
+            if (!code) {
+                showNotification("Verification code is required.", "error");
+                return;
+            }
+
+            if (code.length !== 6) {
+                showNotification("Verification code must be 6 digits.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Confirm withdrawal request of ${formatMoney(withdrawalVerifiedAmount)} USDT?`,
+                "Confirm Withdrawal"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            confirmWithdrawalBtn.disabled = true;
+            confirmWithdrawalBtn.innerText = "Confirming...";
+
+            try {
+                const result = await api("/api/wallet/withdrawal/confirm", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        verificationId: withdrawalVerificationId,
+                        code
+                    })
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Withdrawal confirmation failed.", "error");
+                    return;
+                }
+
+                showNotification(result.message || "Withdrawal request submitted.", "success");
+
+                resetWithdrawalFormAfterSuccess();
+
+                await loadWalletBalance();
+                await loadWithdrawals();
+
+            } catch (error) {
+                showNotification(error.message || "Withdrawal confirmation failed.", "error");
+            } finally {
+                confirmWithdrawalBtn.disabled = false;
+                confirmWithdrawalBtn.innerText = "Confirm Withdrawal";
+            }
+        }
+
+        function setWithdrawalVerificationLocked(isLocked) {
+            withdrawalVerificationLocked = isLocked;
+
+            amountInput.disabled = isLocked;
+            submitWithdrawalBtn.style.display = isLocked ? "none" : "inline-flex";
+        }
+
+        function resetWithdrawalVerification() {
+            withdrawalVerificationId = null;
+            withdrawalVerifiedAmount = 0;
+
+            setWithdrawalVerificationLocked(false);
+            hideWithdrawalVerificationBox();
+
+            showNotification("You can now change amount and request a new code.", "success");
+        }
+
+        function resetWithdrawalFormAfterSuccess() {
+            withdrawalVerificationId = null;
+            withdrawalVerifiedAmount = 0;
+
+            setWithdrawalVerificationLocked(false);
+
+            amountInput.value = "";
+
+            hideWithdrawalVerificationBox();
+        }
+
+        function hideWithdrawalVerificationBox() {
+            withdrawalVerificationBox.style.display = "none";
+
+            withdrawalVerificationCode.value = "";
+
+            withdrawVerifyAmount.innerText = "0.00 USDT";
+            withdrawVerifyNetwork.innerText = "-";
+            withdrawVerifyAddress.innerText = "-";
+        }
 
         async function loadWalletBalance() {
             try {
@@ -137,52 +357,79 @@
             }
         }
 
-        async function loadPendingWithdrawals() {
-            pendingWithdrawalsMessage.style.display = "block";
-            pendingWithdrawalsMessage.innerText = "Loading pending withdrawals...";
-            pendingWithdrawalsWrapper.style.display = "none";
-            pendingWithdrawalsBody.innerHTML = "";
+        async function loadWithdrawals() {
+            withdrawalsMessage.style.display = "block";
+            withdrawalsMessage.innerText = "Loading withdrawals...";
+            withdrawalsWrapper.style.display = "none";
+            withdrawalsBody.innerHTML = "";
 
             try {
-                const result = await api("/api/wallet/withdrawals/my-pending");
+                const result = await api("/api/wallet/withdrawals/my-history");
 
                 if (!result.success) {
-                    pendingWithdrawalsMessage.innerText =
-                        result.message || "Could not load pending withdrawals.";
+                    withdrawalsMessage.innerText =
+                        result.message || "Could not load withdrawals.";
                     return;
                 }
 
                 const items = result.data || [];
 
                 if (!items.length) {
-                    pendingWithdrawalsMessage.innerText = "No pending withdrawals found.";
+                    withdrawalsMessage.innerText = "No withdrawals found.";
                     return;
                 }
 
                 items.forEach(item => {
                     const row = document.createElement("tr");
+                    const status = String(item.status || "").toLowerCase();
+                    const note = item.adminNote || "-";
 
                     row.innerHTML = `
                         <td>${formatDate(item.createdAt)}</td>
-                        <td><span class="withdraw-network">${escapeHtml(item.network || "-")}</span></td>
-                        <td class="withdraw-wallet-address">${escapeHtml(item.walletAddress || "-")}</td>
-                        <td class="withdraw-amount">${formatMoney(item.amount)} USDT</td>
+
+                        <td>
+                            <span class="withdraw-network">
+                                ${escapeHtml(item.network || "-")}
+                            </span>
+                        </td>
+
+                        <td class="withdraw-wallet-address">
+                            ${escapeHtml(item.walletAddress || "-")}
+                        </td>
+
+                        <td class="withdraw-amount">
+                            ${formatMoney(item.amount)} USDT
+                        </td>
+
+                        <td>
+                            <span class="withdraw-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="withdraw-note ${note !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(note)}
+                            </span>
+                        </td>
+
                         <td class="text-end">
-                            <button class="withdraw-cancel-btn"
-                                    onclick="cancelWithdrawal(${item.withdrawalId})">
-                                Cancel
-                            </button>
+                            ${
+                                item.canCancel
+                                    ? `<button class="withdraw-cancel-btn" onclick="cancelWithdrawal(${item.withdrawalId})">Cancel</button>`
+                                    : "-"
+                            }
                         </td>
                     `;
 
-                    pendingWithdrawalsBody.appendChild(row);
+                    withdrawalsBody.appendChild(row);
                 });
 
-                pendingWithdrawalsMessage.style.display = "none";
-                pendingWithdrawalsWrapper.style.display = "block";
+                withdrawalsMessage.style.display = "none";
+                withdrawalsWrapper.style.display = "block";
 
             } catch {
-                pendingWithdrawalsMessage.innerText = "Could not load pending withdrawals.";
+                withdrawalsMessage.innerText = "Could not load withdrawals.";
             }
         }
 
@@ -207,7 +454,7 @@
                 showNotification(result.message || "Withdrawal canceled successfully.", "success");
 
                 await loadWalletBalance();
-                await loadPendingWithdrawals();
+                await loadWithdrawals();
 
             } catch {
                 showNotification("Could not cancel withdrawal.", "error");
@@ -217,7 +464,7 @@
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+                maximumFractionDigits: 8
             });
         }
 
@@ -240,7 +487,10 @@
                 .replaceAll("'", "&#039;");
         }
 
+        hideWithdrawalVerificationBox();
+        setWithdrawalVerificationLocked(false);
+
         loadWalletBalance();
-        loadPendingWithdrawals();
+        loadWithdrawals();
     </script>
-}
+}   

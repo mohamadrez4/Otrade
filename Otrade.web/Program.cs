@@ -75,6 +75,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<WalletService>();
 builder.Services.AddScoped<JobLockservice>();
 builder.Services.AddScoped<MainInvestBonusService>();
+builder.Services.AddScoped<InvestmentCapacityService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<RankService>();
 builder.Services.AddScoped<ReportService>();

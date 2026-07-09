@@ -52,11 +52,14 @@ public class OtradeDbContext : DbContext
 
     // ================= SYSTEM =================
     public DbSet<SystemSetting> SystemSettings { get; set; }
+    public DbSet<InvestmentCapacity> InvestmentCapacities { get; set; }
     public DbSet<TemporaryRegistration> TemporaryRegistrations { get; set; }
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<JobLock> JobLocks { get; set; }
     public DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; }
+    public DbSet<InternalTransferVerification> InternalTransferVerifications => Set<InternalTransferVerification>();
+    public DbSet<WithdrawalVerification> WithdrawalVerifications => Set<WithdrawalVerification>();
     public DbSet<UserWalletAddress> UserWalletAddresses { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -199,7 +202,29 @@ public class OtradeDbContext : DbContext
         });
         modelBuilder.Entity<WalletTransfer>(entity =>
         {
+            entity.ToTable("WalletTransfers");
+
             entity.HasKey(x => x.TransferId);
+
+            entity.Property(x => x.Amount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.Description)
+                .HasMaxLength(500);
+
+            entity.HasOne(x => x.FromWallet)
+                .WithMany()
+                .HasForeignKey(x => x.FromWalletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.ToWallet)
+                .WithMany()
+                .HasForeignKey(x => x.ToWalletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.FromWalletId);
+            entity.HasIndex(x => x.ToWalletId);
+            entity.HasIndex(x => x.CreatedAt);
         });
         modelBuilder.Entity<TicketMessage>(entity =>
         {
@@ -218,7 +243,8 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.Status)
                 .HasConversion<string>()
                 .HasMaxLength(30);
-             
+            entity.Property(x => x.AdminNote)
+                .HasMaxLength(1000);
 
         });
 
@@ -226,7 +252,17 @@ public class OtradeDbContext : DbContext
         {
             entity.ToTable("Withdrawals");
 
-            entity.Property(x => x.Amount).HasPrecision(18, 8);
+            entity.Property(x => x.Amount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.WalletAddress)
+                .HasMaxLength(300);
+
+            entity.Property(x => x.Network)
+                .HasMaxLength(50);
+
+            entity.Property(x => x.AdminNote)
+                .HasMaxLength(1000);
 
             entity.Property(x => x.Status)
                 .HasConversion<string>()
@@ -241,6 +277,8 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.Status)
                     .HasConversion<string>()
                     .HasMaxLength(20);
+            entity.Property(x => x.RejectReason)
+                   .HasMaxLength(1000);
             entity.Property(x => x.DocumentType)
                     .HasConversion<string>()
                     .HasMaxLength(30);
@@ -289,6 +327,80 @@ public class OtradeDbContext : DbContext
 
             entity.HasIndex(x => x.UserId);
         });
+        modelBuilder.Entity<InternalTransferVerification>(entity =>
+        {
+            entity.ToTable("InternalTransferVerifications");
+
+            entity.HasKey(x => x.InternalTransferVerificationId);
+
+            entity.Property(x => x.Amount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.Description)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.CodeHash)
+                .IsRequired()
+                .HasMaxLength(300);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.HasOne(x => x.SenderUser)
+                .WithMany()
+                .HasForeignKey(x => x.SenderUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.ReceiverUser)
+                .WithMany()
+                .HasForeignKey(x => x.ReceiverUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.SenderUserId,
+                x.Status,
+                x.CreatedAt
+            });
+        });
+        modelBuilder.Entity<WithdrawalVerification>(entity =>
+        {
+            entity.ToTable("WithdrawalVerifications");
+
+            entity.HasKey(x => x.WithdrawalVerificationId);
+
+            entity.Property(x => x.Amount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.WalletAddress)
+                .IsRequired()
+                .HasMaxLength(300);
+
+            entity.Property(x => x.Network)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(x => x.CodeHash)
+                .IsRequired()
+                .HasMaxLength(300);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.Status,
+                x.CreatedAt
+            });
+        });
         modelBuilder.Entity<SystemSetting>(entity =>
         {
             entity.ToTable("SystemSettings");
@@ -335,10 +447,14 @@ public class OtradeDbContext : DbContext
 
             entity.Property(x => x.RejectReason)
                 .HasMaxLength(500);
-
+            entity.Property(x => x.EmailVerificationCode)
+                .HasMaxLength(10);
             entity.Property(x => x.CompletionToken)
                 .HasMaxLength(200);
-
+            entity.Property(x => x.TrackingToken)
+                .HasMaxLength(200);
+            entity.Property(x => x.RecoveryVerificationCode)
+                .HasMaxLength(10);
             entity.HasIndex(x => x.Email);
 
             entity.HasIndex(x => new { x.Status, x.CreatedAt });
@@ -348,7 +464,9 @@ public class OtradeDbContext : DbContext
             entity.HasIndex(x => x.DepositTxId)
                 .IsUnique()
                 .HasFilter("[DepositTxId] IS NOT NULL");
-
+            entity.HasIndex(x => x.TrackingToken)
+                .IsUnique()
+                .HasFilter("[TrackingToken] IS NOT NULL");
             entity.HasIndex(x => x.CompletionToken)
                 .IsUnique()
                 .HasFilter("[CompletionToken] IS NOT NULL");
@@ -367,6 +485,34 @@ public class OtradeDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.CompletedUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<InvestmentCapacity>(entity =>
+        {
+            entity.ToTable("InvestmentCapacities");
+
+            entity.HasKey(x => x.CapacityId);
+
+            entity.Property(x => x.MonthStart)
+                .HasColumnType("date")
+                .IsRequired();
+
+            entity.Property(x => x.TotalCapacity)
+                .HasPrecision(18, 8)
+                .IsRequired();
+
+            entity.Property(x => x.UsedCapacity)
+                .HasPrecision(18, 8)
+                .HasDefaultValue(0)
+                .IsRequired();
+
+            entity.Property(x => x.IsActive)
+                .HasDefaultValue(true)
+                .IsRequired();
+
+            entity.HasIndex(x => x.MonthStart)
+                .IsUnique();
+
+            entity.HasIndex(x => new { x.IsActive, x.MonthStart });
         });
         modelBuilder.Entity<Rank>().HasData(
     new Rank
@@ -428,15 +574,33 @@ public class OtradeDbContext : DbContext
 
         modelBuilder.Entity<ProfitLedger>(entity =>
         {
+            entity.ToTable("ProfitLedgers");
+
             entity.HasKey(x => x.Id);
 
-            entity.HasOne(x => x.User)
-                  .WithMany()
-                  .HasForeignKey(x => x.UserId)
-                  .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(x => x.Amount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.ReferenceId)
+                .HasMaxLength(100);
+
             entity.Property(x => x.Type)
-            .HasConversion<string>()
-            .HasMaxLength(30);
+                .HasConversion<string>()
+                .HasMaxLength(30);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.SourceUser)
+                .WithMany()
+                .HasForeignKey(x => x.SourceUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.UserId);
+            entity.HasIndex(x => x.SourceUserId);
+            entity.HasIndex(x => x.CreatedAt);
         });
 
         modelBuilder.Entity<JobLock>()

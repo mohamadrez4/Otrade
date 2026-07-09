@@ -21,7 +21,10 @@
             <span>Pending Withdrawals</span>
             <strong id="pendingWithdrawalsCount" class="admin-kpi-highlight">0</strong>
         </div>
-
+        <div class="panel-card admin-kpi-card">
+            <span>Pending Pre-Registrations</span>
+            <strong id="pendingPreRegistrationsCount" class="admin-kpi-highlight">0</strong>
+        </div>
         <div class="panel-card admin-kpi-card">
             <span>Total Deposits</span>
             <strong id="totalDeposits">$0.00</strong>
@@ -48,7 +51,53 @@
         </div>
 
     </div>
+    <div class="panel-card admin-wallet-summary-card">
 
+        <div class="admin-wallet-summary-header">
+            <div>
+                <span class="admin-wallet-summary-eyebrow">Financial Overview</span>
+                <h3>Wallet Summary</h3>
+                <p>Total balance across all users and all wallet types.</p>
+            </div>
+
+            <button type="button" class="admin-wallet-refresh-btn" onclick="loadWalletSummary()">
+                Refresh
+            </button>
+        </div>
+
+        <div class="admin-wallet-total-box">
+            <span>Total Assets</span>
+            <strong id="adminTotalAssets">$0.00</strong>
+        </div>
+
+        <div class="admin-wallet-summary-grid">
+            <div>
+                <span>Main Wallet</span>
+                <strong id="adminTotalMain">$0.00</strong>
+            </div>
+
+            <div>
+                <span>Invest Wallet</span>
+                <strong id="adminTotalInvest">$0.00</strong>
+            </div>
+
+            <div>
+                <span>Profit Wallet</span>
+                <strong id="adminTotalProfit">$0.00</strong>
+            </div>
+
+            <div>
+                <span>Referral Wallet</span>
+                <strong id="adminTotalReferral">$0.00</strong>
+            </div>
+        </div>
+
+        <div class="admin-wallet-summary-footer">
+            <span id="adminTotalWallets">Wallets: 0</span>
+            <span id="adminUsersWithBalance">Users with balance: 0</span>
+        </div>
+
+    </div>
     <div class="panel-card">
         <div class="admin-section-header">
             <h3>System Overview</h3>
@@ -67,6 +116,7 @@
         const totalUsers = document.getElementById("totalUsers");
         const pendingDepositsCount = document.getElementById("pendingDepositsCount");
         const pendingWithdrawalsCount = document.getElementById("pendingWithdrawalsCount");
+        const pendingPreRegistrationsCount = document.getElementById("pendingPreRegistrationsCount");
         const totalDeposits = document.getElementById("totalDeposits");
         const totalWithdrawals = document.getElementById("totalWithdrawals");
         const totalInvestmentProfits = document.getElementById("totalInvestmentProfits");
@@ -88,7 +138,7 @@
                 totalUsers.innerText = data.totalUsers || 0;
                 pendingDepositsCount.innerText = data.pendingDepositsCount || 0;
                 pendingWithdrawalsCount.innerText = data.pendingWithdrawalsCount || 0;
-
+                pendingPreRegistrationsCount.innerText = data.pendingPreRegistrationsCount || 0;
                 totalDeposits.innerText = formatMoney(data.totalDeposits);
                 totalWithdrawals.innerText = formatMoney(data.totalWithdrawals);
                 totalInvestmentProfits.innerText = formatMoney(data.totalInvestmentProfits);
@@ -109,7 +159,64 @@
                 maximumFractionDigits: 2
             });
         }
+             document.addEventListener("DOMContentLoaded", async function () {
+                
+            await loadWalletSummary();
+        });
 
+        async function loadWalletSummary() {
+            try {
+                const result = await api("/api/admin/wallet-summary", {
+                    method: "GET"
+                });
+
+                if (!result.success) {
+                    showNotification(result.message || "Could not load wallet summary.", "error");
+                    return;
+                }
+
+                fillWalletSummary(result.data);
+
+            } catch (error) {
+                showNotification(error.message || "Could not load wallet summary.", "error");
+            }
+        }
+
+        function fillWalletSummary(data) {
+            if (!data) {
+                return;
+            }
+
+            document.getElementById("adminTotalAssets").innerText =
+                formatAdminMoney(data.totalAssets.toFixed(2));
+
+            document.getElementById("adminTotalMain").innerText =
+                formatAdminMoney(data.totalMainWallet.toFixed(2));
+
+            document.getElementById("adminTotalInvest").innerText =
+                formatAdminMoney(data.totalInvestWallet.toFixed(2));
+
+            document.getElementById("adminTotalProfit").innerText =
+                formatAdminMoney(data.totalProfitWallet.toFixed(2));
+
+            document.getElementById("adminTotalReferral").innerText =
+                formatAdminMoney(data.totalReferralWallet.toFixed(2));
+
+            document.getElementById("adminTotalWallets").innerText =
+                "Wallets: " + Number(data.totalWallets || 0).toLocaleString("en-US");
+
+            document.getElementById("adminUsersWithBalance").innerText =
+                "Users with balance: " + Number(data.usersWithBalance || 0).toLocaleString("en-US");
+        }
+
+        function formatAdminMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
         loadAdminDashboard();
     </script>
 }

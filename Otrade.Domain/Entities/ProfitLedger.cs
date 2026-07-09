@@ -1,4 +1,5 @@
 ﻿using Otrade.Domain.Entities;
+using Otrade.Domain.Enums;
 
 public class ProfitLedger
 {
@@ -6,12 +7,17 @@ public class ProfitLedger
 
     public long UserId { get; set; }
 
-    public string ReferenceId { get; set; } // جلوگیری از دوباره‌کاری
+    public long? SourceUserId { get; set; }
+
+    public string ReferenceId { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
 
-    public ProfitType Type { get; set; } // Investment / Referral
+    public ProfitType Type { get; set; }
 
     public DateTime CreatedAt { get; set; }
-    public User User { get; set; }
+
+    public User User { get; set; } = null!;
+
+    public User? SourceUser { get; set; }
 }

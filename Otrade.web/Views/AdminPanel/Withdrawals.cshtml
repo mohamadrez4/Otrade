@@ -8,7 +8,7 @@
     <div class="panel-card">
         <div class="admin-section-header">
             <h3>Pending Withdrawals</h3>
-            <p>Review, approve, or reject pending withdrawal requests.</p>
+            <p>Review, approve, or reject pending withdrawal requests. Rejection requires a reason.</p>
         </div>
 
         <div id="withdrawalsMessage" class="admin-message">
@@ -16,7 +16,7 @@
         </div>
 
         <div id="withdrawalsTableWrapper" class="admin-table-wrapper" style="display:none;">
-            <table class="admin-table">
+            <table class="admin-table admin-withdrawals-table">
                 <thead>
                     <tr>
                         <th>User Email</th>
@@ -27,11 +27,55 @@
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
+
                 <tbody id="withdrawalsTableBody"></tbody>
             </table>
         </div>
     </div>
 
+</div>
+
+<div class="admin-modal-backdrop" id="rejectWithdrawalModal" style="display:none;">
+    <div class="admin-modal">
+        <div class="admin-modal-header">
+            <h4>Reject Withdrawal</h4>
+
+            <button type="button" onclick="closeRejectWithdrawalModal()">
+                ×
+            </button>
+        </div>
+
+        <div class="admin-modal-body">
+            <input type="hidden" id="rejectWithdrawalId" />
+
+            <label>Reject Reason</label>
+
+            <textarea id="rejectWithdrawalReason"
+                      class="panel-input admin-reject-textarea"
+                      maxlength="1000"
+                      rows="5"
+                      placeholder="Explain why this withdrawal is rejected..."></textarea>
+
+            <small class="admin-modal-help">
+                This reason will be shown to the user and sent by email.
+            </small>
+        </div>
+
+        <div class="admin-modal-actions">
+            <button type="button"
+                    class="admin-modal-cancel"
+                    onclick="closeRejectWithdrawalModal()">
+                Cancel
+            </button>
+
+            <button type="button"
+                    class="admin-modal-danger"
+                    id="confirmRejectWithdrawalBtn"
+                    onclick="confirmRejectWithdrawal()">
+                Reject Withdrawal
+            </button>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -65,23 +109,52 @@
                     const row = document.createElement("tr");
 
                     row.innerHTML = `
-                        <td>${item.userEmail || "-"}</td>
-                        <td>${formatMoney(item.amount)}</td>
                         <td>
-                            <span class="admin-status neutral">${item.network || "-"}</span>
+                            <span class="admin-user-email">
+                                ${escapeHtml(item.userEmail || "-")}
+                            </span>
                         </td>
-                        <td class="admin-wallet-address">${item.walletAddress || "-"}</td>
-                        <td>${formatDate(item.createdAt)}</td>
-                        <td class="text-end">
-                            <button class="admin-action-btn approve"
-                                    onclick="approveWithdrawal(${item.withdrawalId})">
-                                Approve
-                            </button>
 
-                            <button class="admin-action-btn reject"
-                                    onclick="rejectWithdrawal(${item.withdrawalId})">
-                                Reject
-                            </button>
+                        <td>
+                            <span class="admin-money">
+                                ${formatMoney(item.amount)}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="admin-status neutral">
+                                ${escapeHtml(item.network || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="admin-tx-cell">
+                                <span title="${escapeHtml(item.walletAddress || "")}">
+                                    ${escapeHtml(item.walletAddress || "-")}
+                                </span>
+
+                                ${
+                                    item.walletAddress
+                                        ? `<button type="button" onclick="copyAdminText('${escapeForJs(item.walletAddress)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>${formatDate(item.createdAt)}</td>
+
+                        <td class="text-end">
+                            <div class="admin-row-actions">
+                                <button class="admin-action-btn approve"
+                                        onclick="approveWithdrawal(${item.withdrawalId})">
+                                    Approve
+                                </button>
+
+                                <button class="admin-action-btn reject"
+                                        onclick="openRejectWithdrawalModal(${item.withdrawalId})">
+                                    Reject
+                                </button>
+                            </div>
                         </td>
                     `;
 
@@ -90,16 +163,18 @@
 
                 withdrawalsMessage.style.display = "none";
                 withdrawalsTableWrapper.style.display = "block";
+
             } catch (error) {
                 withdrawalsMessage.innerText = error.message || "Could not load pending withdrawals.";
             }
         }
 
         async function approveWithdrawal(withdrawalId) {
-             const confirmed = await showConfirm(
-            "Are you sure you want to approve this withdrawal?",
-            "Approve Withdrawal"
-        );
+            const confirmed = await showConfirm(
+                "Are you sure you want to approve this withdrawal?",
+                "Approve Withdrawal"
+            );
+
             if (!confirmed) {
                 return;
             }
@@ -110,41 +185,105 @@
                 });
 
                 if (!result.success) {
-                     showNotification(result.message || "Could not approve withdrawal.","error");
-                  
+                    showNotification(result.message || "Could not approve withdrawal.", "error");
                     return;
                 }
 
+                showNotification("Withdrawal approved successfully.", "success");
+
                 await loadPendingWithdrawals();
+
             } catch (error) {
-                showNotification(result.message || "Could not approve withdrawal.","error");
+                showNotification(error.message || "Could not approve withdrawal.", "error");
             }
         }
 
-        async function rejectWithdrawal(withdrawalId) {
-            const confirmed = await showConfirm(
-            "Are you sure you want to reject this withdrawal?",
-            "Reject Withdrawal"
-        );
-            if (!confirmed) {
+        function openRejectWithdrawalModal(withdrawalId) {
+            document.getElementById("rejectWithdrawalId").value = withdrawalId;
+            document.getElementById("rejectWithdrawalReason").value = "";
+            document.getElementById("rejectWithdrawalModal").style.display = "flex";
+
+            setTimeout(() => {
+                document.getElementById("rejectWithdrawalReason").focus();
+            }, 80);
+        }
+
+        function closeRejectWithdrawalModal() {
+            document.getElementById("rejectWithdrawalModal").style.display = "none";
+            document.getElementById("rejectWithdrawalId").value = "";
+            document.getElementById("rejectWithdrawalReason").value = "";
+        }
+
+        async function confirmRejectWithdrawal() {
+            const withdrawalId = Number(document.getElementById("rejectWithdrawalId").value);
+            const reason = document.getElementById("rejectWithdrawalReason").value.trim();
+
+            if (!withdrawalId) {
+                showNotification("Withdrawal was not selected.", "error");
                 return;
             }
 
+            if (!reason) {
+                showNotification("Reject reason is required.", "error");
+                return;
+            }
+
+            if (reason.length > 1000) {
+                showNotification("Reject reason cannot be more than 1000 characters.", "error");
+                return;
+            }
+
+            const btn = document.getElementById("confirmRejectWithdrawalBtn");
+
+            btn.disabled = true;
+            btn.innerText = "Rejecting...";
+
             try {
                 const result = await api(`/api/admin/withdrawals/reject/${withdrawalId}`, {
-                    method: "POST"
+                    method: "POST",
+                    body: JSON.stringify({
+                        reason
+                    })
                 });
 
                 if (!result.success) {
-                    showNotification(result.message || "Could not reject withdrawal.","error");
-                   
+                    showNotification(result.message || "Could not reject withdrawal.", "error");
                     return;
                 }
 
+                showNotification("Withdrawal rejected successfully.", "success");
+
+                closeRejectWithdrawalModal();
                 await loadPendingWithdrawals();
+
             } catch (error) {
-                showNotification(error.message || "Could not reject withdrawal.","error");
-                
+                showNotification(error.message || "Could not reject withdrawal.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Reject Withdrawal";
+            }
+        }
+
+        async function copyAdminText(text) {
+            if (!text) return;
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification("Copied to clipboard.", "success");
+            } catch {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                showNotification("Copied to clipboard.", "success");
             }
         }
 
@@ -153,7 +292,7 @@
 
             return "$" + number.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 2
+                maximumFractionDigits: 8
             });
         }
 
@@ -165,6 +304,24 @@
                 month: "short",
                 day: "2-digit"
             });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function escapeForJs(value) {
+            return String(value || "")
+                .replaceAll("\\", "\\\\")
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"')
+                .replaceAll("\n", "")
+                .replaceAll("\r", "");
         }
 
         loadPendingWithdrawals();

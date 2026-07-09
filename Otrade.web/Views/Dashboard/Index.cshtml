@@ -38,6 +38,30 @@
         </div>
     </div>
 
+    <div class="panel-card dashboard-capacity-card" id="dashboardCapacityCard">
+        <div class="dashboard-capacity-header">
+            <div>
+                <span class="dashboard-capacity-eyebrow">Investment Capacity</span>
+                <h3 id="dashboardCapacityMonth">Current Month</h3>
+                <p id="dashboardCapacityMessage">
+                    Only remaining monthly capacity is shown here.
+                </p>
+            </div>
+
+            <a href="/wallets" class="dashboard-capacity-action">
+                Transfer to Invest
+            </a>
+        </div>
+
+        <div class="dashboard-capacity-remaining-box">
+            <span>Capacity Remaining</span>
+            <strong id="dashboardCapacityRemaining">0.00 USDT</strong>
+        </div>
+
+        <div class="dashboard-capacity-footer">
+            <span id="dashboardCapacityStatus">-</span>
+        </div>
+    </div>
     <div class="info-grid">
         <div class="panel-card">
             <span class="card-label">Current Rank</span>
@@ -97,6 +121,7 @@
                 (data.nextRankProgressPercent ?? 100) + "%";
 
             fillWallets(data.wallets);
+            fillInvestmentCapacity(data.currentInvestmentCapacity);
         });
 
         function fillWallets(wallets) {
@@ -117,7 +142,50 @@
                     document.getElementById("referralWallet").innerText = balance;
             });
         }
+        function fillInvestmentCapacity(capacity) {
+            const card = document.getElementById("dashboardCapacityCard");
+            const monthText = document.getElementById("dashboardCapacityMonth");
+            const messageText = document.getElementById("dashboardCapacityMessage");
+            const remainingText = document.getElementById("dashboardCapacityRemaining");
+            const statusText = document.getElementById("dashboardCapacityStatus");
 
+            card.classList.remove("not-configured", "inactive", "full");
+
+            if (!capacity || !capacity.isConfigured) {
+                card.classList.add("not-configured");
+
+                monthText.innerText = "Not Configured";
+                messageText.innerText = "Admin has not configured investment capacity for the current month yet.";
+                remainingText.innerText = "0.00 USDT";
+                statusText.innerText = "Not Configured";
+
+                return;
+            }
+
+            const remaining = Number(capacity.remainingCapacity || 0);
+
+            monthText.innerText = capacity.monthLabel || "Current Month";
+            remainingText.innerText = formatMoney(remaining) + " USDT";
+
+            if (!capacity.isActive) {
+                card.classList.add("inactive");
+                messageText.innerText = "Investment capacity for this month is currently inactive.";
+                statusText.innerText = "Inactive";
+                return;
+            }
+
+            if (remaining <= 0) {
+                card.classList.add("full");
+                messageText.innerText = "Investment capacity for this month is full.";
+                statusText.innerText = "Full";
+                return;
+            }
+
+            messageText.innerText =
+                "Only remaining monthly investment capacity is visible to users.";
+
+            statusText.innerText = "Active";
+        }
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,

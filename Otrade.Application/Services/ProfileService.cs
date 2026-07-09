@@ -31,6 +31,7 @@ public class ProfileService
             {
                 x.DocumentId,
                 DocumentType = x.DocumentType.ToString(),
+                x.RejectReason,
                 Status = x.Status.ToString(),
                 x.CreatedAt
             })

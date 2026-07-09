@@ -15,7 +15,7 @@
             Loading settings...
         </div>
 
-        <form id="settingsForm" class="admin-settings-form" style="display:none;">
+        <form id="settingsForm" autocomplete="off" class="admin-settings-form" style="display:none;">
 
             <div class="admin-settings-grid">
 
@@ -107,7 +107,29 @@
 
                 <div class="admin-setting-group">
                     <label>Initial Registration Expire Hours</label>
-                    <input id="InitialRegistrationExpireHours" class="panel-input" type="number" min="1" step="1" />
+                    <input id="InitialRegistrationExpireHours"
+                           class="panel-input"
+                           type="number"
+                           min="1"
+                           max="720"
+                           step="1"
+                           placeholder="72" />
+                    <small class="setting-help-text">
+                        Pre-registration request remains valid for this many hours.
+                    </small>
+                </div>
+                <div class="admin-setting-group">
+                    <label>Pre-Registration Wait Minutes</label>
+                    <input id="PreRegistrationWaitMinutes"
+                           class="panel-input"
+                           type="number"
+                           min="1"
+                           max="120"
+                           step="1"
+                           placeholder="15" />
+                    <small class="setting-help-text">
+                        User waits on the approval page for this many minutes before the page stops polling automatically.
+                    </small>
                 </div>
             </div>
 
@@ -144,7 +166,8 @@
             "NotificationTelegramEnabled",
             "KycMaxFileSizeMB",
             "KycAllowedExtensions",
-            "InitialRegistrationExpireHours"
+            "InitialRegistrationExpireHours",
+            "PreRegistrationWaitMinutes"
         ];
 
         async function loadSettings() {
@@ -184,7 +207,42 @@
                 settingsMessage.innerText = error.message || "Could not load settings.";
             }
         }
+                function validateSettingsBeforeSave(settings) {
+            const getValue = (key) => {
+                return settings.find(x => x.key === key)?.value?.trim() || "";
+            };
 
+            const siteWalletAddress = getValue("SiteWalletAddress");
+            const network = getValue("Network");
+            const initialRegistrationExpireHours = Number(getValue("InitialRegistrationExpireHours"));
+            const preRegistrationWaitMinutes = Number(getValue("PreRegistrationWaitMinutes"));
+
+            if (!siteWalletAddress) {
+                showNotification("Site wallet address is required.", "error");
+                return false;
+            }
+
+            if (!network) {
+                showNotification("Network is required.", "error");
+                return false;
+            }
+
+            if (!initialRegistrationExpireHours ||
+                initialRegistrationExpireHours < 1 ||
+                initialRegistrationExpireHours > 720) {
+                showNotification("Initial registration expire hours must be between 1 and 720.", "error");
+                return false;
+            }
+
+            if (!preRegistrationWaitMinutes ||
+                preRegistrationWaitMinutes < 1 ||
+                preRegistrationWaitMinutes > 120) {
+                showNotification("Pre-registration wait minutes must be between 1 and 120.", "error");
+                return false;
+            }
+
+            return true;
+        }
         settingsForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
@@ -194,6 +252,9 @@
                     value: document.getElementById(key).value
                 };
             });
+                if (!validateSettingsBeforeSave(settings)) {
+                    return;
+                }
 
             saveSettingsBtn.disabled = true;
             saveSettingsBtn.innerText = "Saving...";

@@ -12,7 +12,11 @@ public class Deposit
 
     public DepositStatus Status { get; set; }
 
+    public string? AdminNote { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? ProcessedAt { get; set; }
 
     public User User { get; set; }
 }

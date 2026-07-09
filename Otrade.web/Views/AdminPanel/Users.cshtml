@@ -8,12 +8,18 @@
     <div class="panel-card">
         <div class="admin-section-header">
             <h3>Users</h3>
-            <p>View and manage platform users, ranks, wallets, and KYC status.</p>
+            <p>View and manage platform users, ranks, wallets, sponsors, referral codes, and KYC status.</p>
         </div>
 
         <div class="admin-filter-row">
-            <input id="searchInput" class="panel-input" type="text" placeholder="Search by email or name" />
-            <button id="searchBtn" class="panel-primary-btn">Search</button>
+            <input id="searchInput"
+                   class="panel-input"
+                   type="text"
+                   placeholder="Search by email, name, referral code, or sponsor" />
+
+            <button id="searchBtn" class="panel-primary-btn">
+                Search
+            </button>
         </div>
 
         <div id="usersMessage" class="admin-message">
@@ -21,10 +27,11 @@
         </div>
 
         <div id="usersTableWrapper" class="admin-table-wrapper" style="display:none;">
-            <table class="admin-table">
+            <table class="admin-table admin-users-table">
                 <thead>
                     <tr>
                         <th>Email</th>
+                        <th>Referral Code</th>
                         <th>Full Name</th>
                         <th>Rank</th>
                         <th>KYC Status</th>
@@ -35,6 +42,7 @@
                         <th>Sponsor</th>
                     </tr>
                 </thead>
+
                 <tbody id="usersTableBody"></tbody>
             </table>
         </div>
@@ -53,9 +61,16 @@
         let currentPage = 1;
         const pageSize = 20;
 
-        searchBtn.addEventListener("click", function() {
+        searchBtn.addEventListener("click", function () {
             currentPage = 1;
             loadUsers();
+        });
+
+        searchInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                currentPage = 1;
+                loadUsers();
+            }
         });
 
         async function loadUsers() {
@@ -65,17 +80,22 @@
             usersTableBody.innerHTML = "";
 
             const search = searchInput.value.trim();
+
             let url = `/api/admin/users?page=${currentPage}&pageSize=${pageSize}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
 
             try {
                 const result = await api(url);
+
                 if (!result.success) {
                     usersMessage.innerText = result.message || "Could not load users.";
                     return;
                 }
 
-                const data = result.data;
+                const data = result.data || {};
                 const items = data.items || [];
 
                 if (!items.length) {
@@ -87,16 +107,56 @@
                     const row = document.createElement("tr");
 
                     row.innerHTML = `
-                        <td>${user.email || "-"}</td>
-                        <td>${user.firstName} ${user.lastName}</td>
-                        <td>${user.currentRank?.name || "-"}</td>
-                        <td>${user.kycStatus}</td>
-                        <td>${user.wallets?.main || 0}</td>
-                        <td>${user.wallets?.invest || 0}</td>
-                        <td>${user.wallets?.profit || 0}</td>
-                        <td>${user.wallets?.referral || 0}</td>
-                        <td>${user.sponsorEmail || "-"}</td>
+                        <td>
+                            <span class="admin-user-email">
+                                ${escapeHtml(user.email || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="admin-ref-code">
+                                ${escapeHtml(user.referralCode || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            ${escapeHtml(buildFullName(user))}
+                        </td>
+
+                        <td>
+                            ${escapeHtml(user.currentRank?.name || "-")}
+                        </td>
+
+                        <td>
+                            <span class="admin-kyc-status ${String(user.kycStatus || "").toLowerCase()}">
+                                ${escapeHtml(user.kycStatus || "-")}
+                            </span>
+                        </td>
+
+                        <td>${formatMoney(user.wallets?.main || 0)}</td>
+                        <td>${formatMoney(user.wallets?.invest || 0)}</td>
+                        <td>${formatMoney(user.wallets?.profit || 0)}</td>
+                        <td>${formatMoney(user.wallets?.referral || 0)}</td>
+
+           <td>
+            <div class="admin-sponsor-cell">
+                <strong>${escapeHtml(user.sponsorEmail || "-")}</strong>
+
+                ${
+                    user.sponsorFullName
+                        ? `<span class="admin-sponsor-name">${escapeHtml(user.sponsorFullName)}</span>`
+                        : ""
+                }
+
+                ${
+                    user.sponsorReferralCode
+                        ? `<span>UID: ${escapeHtml(user.sponsorReferralCode)}</span>`
+                        : ""
+                }
+            </div>
+        </td>
                     `;
+
                     usersTableBody.appendChild(row);
                 });
 
@@ -108,7 +168,31 @@
             }
         }
 
+        function buildFullName(user) {
+            const firstName = user.firstName || "";
+            const lastName = user.lastName || "";
+            const fullName = `${firstName} ${lastName}`.trim();
 
+            return fullName || "-";
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
         loadUsers();
     </script>

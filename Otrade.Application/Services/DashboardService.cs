@@ -3,7 +3,8 @@ using Otrade.Application.Common;
 using Otrade.Application.DTOs.Dashboard;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
-
+using Otrade.Application.DTOs.Wallet;
+using System.Globalization;
 namespace Otrade.Application.Services;
 
 public class DashboardService
@@ -55,7 +56,7 @@ public class DashboardService
                     progressPercent = 100;
             }
         }
-
+        var currentInvestmentCapacity = await GetCurrentInvestmentCapacityAsync();
         var response = new DashboardResponse
         {
             TotalAssets = totalAssets,
@@ -64,6 +65,7 @@ public class DashboardService
             NextRank = nextRank?.Name,
             RequiredForNextRank = requiredForNext,
             NextRankProgressPercent = progressPercent,
+            CurrentInvestmentCapacity = currentInvestmentCapacity,
             Wallets = wallets.Select(w => new WalletBalanceDto
             {
                 WalletId = w.WalletId,
@@ -92,5 +94,46 @@ public class DashboardService
                 descendantIds.Contains(x.UserId) &&
                 x.WalletType == WalletType.Invest)
             .SumAsync(x => (decimal?)x.Balance) ?? 0;
+    }
+    private async Task<CurrentInvestmentCapacityResponse> GetCurrentInvestmentCapacityAsync()
+    {
+        var now = DateTime.Now;
+
+        var monthStart = new DateTime(
+            now.Year,
+            now.Month,
+            1);
+
+        var capacity = await _context.InvestmentCapacities
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.MonthStart == monthStart);
+
+        if (capacity == null)
+        {
+            return new CurrentInvestmentCapacityResponse
+            {
+                IsConfigured = false,
+                IsActive = false,
+                Year = monthStart.Year,
+                Month = monthStart.Month,
+                MonthLabel = monthStart.ToString("yyyy MMMM", CultureInfo.InvariantCulture),
+                RemainingCapacity = 0
+            };
+        }
+
+        var remaining = capacity.TotalCapacity - capacity.UsedCapacity;
+
+        if (remaining < 0)
+            remaining = 0;
+
+        return new CurrentInvestmentCapacityResponse
+        {
+            IsConfigured = true,
+            IsActive = capacity.IsActive,
+            Year = capacity.MonthStart.Year,
+            Month = capacity.MonthStart.Month,
+            MonthLabel = capacity.MonthStart.ToString("yyyy MMMM", CultureInfo.InvariantCulture),
+            RemainingCapacity = remaining
+        };
     }
 }

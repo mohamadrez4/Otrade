@@ -25,6 +25,23 @@ public class AuthController : Controller
     {
         return View();
     }
+    [HttpGet("/auth/pre-registration-wait")]
+    public IActionResult PreRegistrationWait()
+    {
+        return View();
+    }
+
+    [HttpGet("/auth/complete-pre-registration")]
+    public IActionResult CompletePreRegistration()
+    {
+        return View();
+    }
+
+    [HttpGet("/auth/recover-pre-registration")]
+    public IActionResult RecoverPreRegistration()
+    {
+        return View();
+    }
     public AuthController(
         AuthService authService,
         PreRegistrationService preRegistrationService)
@@ -33,11 +50,95 @@ public class AuthController : Controller
         _preRegistrationService = preRegistrationService;
     }
     [HttpPost]
+    [Route("api/auth/pre-register/recover/verify")]
+    public async Task<IActionResult> VerifyRecoverPreRegistration(
+    [FromBody] VerifyRecoverPreRegistrationRequest request)
+    {
+        var result = await _preRegistrationService.VerifyRecoveryAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [HttpGet]
+    [Route("api/auth/pre-register/deposit-info")]
+    public async Task<IActionResult> GetPreRegistrationDepositInfo()
+    {
+        var result = await _preRegistrationService.GetDepositInfoAsync();
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [HttpPost]
+    [Route("api/auth/pre-register/wait-status")]
+    public async Task<IActionResult> GetPreRegistrationWaitStatus(
+    [FromBody] PreRegistrationWaitStatusRequest request)
+    {
+        var result = await _preRegistrationService.GetWaitStatusAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [Route("api/auth/pre-register/recover")]
+    public async Task<IActionResult> RecoverPreRegistration(
+        [FromBody] RecoverPreRegistrationRequest request)
+    {
+        var result = await _preRegistrationService.RecoverAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [HttpPost]
+    [Route("api/auth/pre-register/complete")]
+    public async Task<IActionResult> CompletePreRegistration(
+    [FromBody] CompletePreRegistrationRequest request)
+    {
+        var result = await _preRegistrationService.CompleteAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [HttpPost]
+    [Route("api/auth/pre-register/deposit")]
+    public async Task<IActionResult> SubmitPreRegistrationDeposit(
+    [FromBody] SubmitPreRegistrationDepositRequest request)
+    {
+        var result = await _preRegistrationService.SubmitDepositAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [HttpPost]
     [Route("api/auth/pre-register/start")]
     public async Task<IActionResult> StartPreRegistration(
     [FromBody] StartPreRegistrationRequest request)
     {
         var result = await _preRegistrationService.StartAsync(request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [HttpPost]
+    [Route("api/auth/pre-register/verify-email")]
+    public async Task<IActionResult> VerifyPreRegistrationEmail(
+    [FromBody] VerifyPreRegistrationEmailRequest request)
+    {
+        var result = await _preRegistrationService.VerifyEmailAsync(request);
 
         if (!result.Success)
             return BadRequest(result);

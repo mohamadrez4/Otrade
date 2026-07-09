@@ -147,28 +147,90 @@
                 return;
             }
 
-            if (type === "transfers") {
-                reportsTableHead.innerHTML = `
-                    <tr>
-                        <th>Date</th>
-                        <th>Wallet</th>
-                        <th>Type</th>
-                        <th class="text-end">Amount</th>
-                    </tr>
-                `;
+        if (type === "transfers") {
+            reportsTableHead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Direction</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Wallet Path</th>
+                    <th>Description</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
 
-                items.forEach(item => {
-                    appendRow(`
-                        <td>${formatDate(item.createdAt)}</td>
-                        <td>${item.walletType || "-"}</td>
-                        <td><span class="report-status neutral">${item.type || "-"}</span></td>
-                        <td class="text-end">${formatMoney(item.amount)}</td>
-                    `);
-                });
+            items.forEach(item => {
+                appendRow(`
+                    <td>${formatDate(item.createdAt)}</td>
 
-                return;
-            }
+                    <td>
+                        <span class="report-status neutral">
+                            ${escapeHtml(item.direction || "-")}
+                        </span>
+                    </td>
 
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.fromUid || "-")}</strong>
+                            <span>${escapeHtml(item.fromEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.toUid || "-")}</strong>
+                            <span>${escapeHtml(item.toEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        ${escapeHtml(item.fromWalletType || "-")}
+                        →
+                        ${escapeHtml(item.toWalletType || "-")}
+                    </td>
+
+                    <td>${escapeHtml(item.description || "-")}</td>
+
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+
+            return;
+        }
+                if (type === "referralProfits") {
+            reportsTableHead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Source User</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
+
+            items.forEach(item => {
+                appendRow(`
+                    <td>${formatDate(item.createdAt)}</td>
+
+                    <td>
+                        <span class="report-status success">
+                            Referral Profit
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.sourceUserUid || "-")}</strong>
+                            <span>${escapeHtml(item.sourceUserEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+
+            return;
+        }
             reportsTableHead.innerHTML = `
                 <tr>
                     <th>Date</th>
@@ -230,6 +292,14 @@
                 month: "short",
                 day: "2-digit"
             });
+        }
+                function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
         }
 
         loadReports();

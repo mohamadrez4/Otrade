@@ -13,7 +13,20 @@ public class EmailTemplateService : IEmailTemplateService
             <p>This code expires in 10 minutes.</p>
         ";
     }
-
+    public string GetWithdrawalVerificationEmail(decimal amount,string walletAddress,string network,string code,int expiresInMinutes)
+    {
+        return $@"
+        <h2>Withdrawal Verification</h2>
+        <p>You requested a withdrawal from your Main Wallet.</p>
+        <p>Amount: {amount:F2} USDT</p>
+        <p>Network: {network}</p>
+        <p>Wallet Address: {walletAddress}</p>
+        <p>Your verification code is:</p>
+        <h1 style='letter-spacing:4px'>{code}</h1>
+        <p>This code expires in {expiresInMinutes} minutes.</p>
+        <p>If you did not request this withdrawal, please contact support immediately.</p>
+    ";
+    }
     public string GetDepositNotification(string userEmail, decimal amount, string txId)
     {
         return $@"
@@ -33,7 +46,16 @@ public class EmailTemplateService : IEmailTemplateService
             <p>Wallet Address: {walletAddress}</p>
         ";
     }
-
+    public string GetWithdrawalSubmittedEmail(decimal amount, string walletAddress)
+    {
+        return $@"
+        <h2>Withdrawal Request Submitted</h2>
+        <p>Your withdrawal request has been submitted successfully.</p>
+        <p>Amount: {amount:F2} USDT</p>
+        <p>Wallet Address: {walletAddress}</p>
+        <p>Status: Pending admin review</p>
+    ";
+    }
     public string GetTicketCreatedEmail(string userEmail, string subject)
     {
         return $@"
@@ -85,6 +107,23 @@ public class EmailTemplateService : IEmailTemplateService
             <p>Reason: {reason}</p>
         ";
     }
+    public string GetWithdrawalCanceledEmail(decimal amount)
+    {
+        return $@"
+        <h2>Withdrawal Canceled</h2>
+        <p>Your withdrawal request has been canceled.</p>
+        <p>Amount: {amount:F2} USDT</p>
+        <p>The reserved amount has been returned to your Main Wallet.</p>
+    ";
+    }
+    public string GetDepositRejectedEmail(decimal? amount, string reason)
+    {
+        return $@"
+            <h2>Deposit Rejected</h2>
+            <p>Your Deposit of {amount:F2} USDT has been rejected.</p>
+            <p>Reason: {reason}</p>
+        ";
+    }
     public string GetPasswordResetEmail(string code)
     {
         return $@"
@@ -120,5 +159,34 @@ public class EmailTemplateService : IEmailTemplateService
                 Otrade Security System
             </small>
         </div>";
+    }
+    public string GetInternalTransferVerificationEmail(
+    decimal amount,
+    string receiverDisplay,
+    string code,
+    int expiresInMinutes)
+    {
+        return $@"
+        <h2>Internal Transfer Verification</h2>
+        <p>You requested an internal transfer from your Main Wallet.</p>
+        <p>Receiver: {receiverDisplay}</p>
+        <p>Amount: {amount:F2} USDT</p>
+        <p>Your verification code is:</p>
+        <h1 style='letter-spacing:4px'>{code}</h1>
+        <p>This code expires in {expiresInMinutes} minutes.</p>
+        <p>If you did not request this transfer, please ignore this email and contact support.</p>
+    ";
+    }
+
+    public string GetInternalTransferCompletedEmail(
+        decimal amount,
+        string receiverDisplay)
+    {
+        return $@"
+        <h2>Internal Transfer Completed</h2>
+        <p>Your internal transfer has been completed successfully.</p>
+        <p>Receiver: {receiverDisplay}</p>
+        <p>Amount: {amount:F2} USDT</p>
+    ";
     }
 }

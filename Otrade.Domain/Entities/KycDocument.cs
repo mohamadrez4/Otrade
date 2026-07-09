@@ -11,7 +11,11 @@ public class KycDocument
     public KycDocumentType DocumentType { get; set; } // NationalID / Selfie
 
     public string FilePath { get; set; }
+    public string? RejectReason { get; set; }
 
+    public DateTime? ReviewedAt { get; set; }
+
+    public long? ReviewedByAdminId { get; set; }
     public KycStatus Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
