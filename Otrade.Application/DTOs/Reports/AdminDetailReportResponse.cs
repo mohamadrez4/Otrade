@@ -9,6 +9,7 @@ public class AdminDetailReportResponse
     public List<AdminProfitDto> InvestmentProfits { get; set; } = new();
     public List<AdminProfitDto> ReferralProfits { get; set; } = new();
     public List<AdminBonusDto> MainInvestBonuses { get; set; } = new();
+    public List<AdminKycReportDto> Kycs { get; set; } = new();
 }
 
 // جزئیات Deposit برای Admin
@@ -112,4 +113,33 @@ public class AdminBonusDto
     public string ToUserEmail { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+public class AdminKycReportDto
+{
+    public long DocumentId { get; set; }
+
+    public long UserId { get; set; }
+
+    public string UserEmail { get; set; } = string.Empty;
+
+    public string UserUid { get; set; } = string.Empty;
+
+    public string UserFullName { get; set; } = string.Empty;
+
+    public string DocumentType { get; set; } = string.Empty;
+
+    public string Status { get; set; } = string.Empty;
+
+    public string? RejectReason { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
+    public long? ReviewedByAdminId { get; set; }
+
+    public string? ReviewedByAdminEmail { get; set; }
+
+    public string? ReviewedByAdminUid { get; set; }
 }

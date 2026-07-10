@@ -136,6 +136,7 @@
             <button class="report-tab" data-target="investmentProfits">Investment Profits</button>
             <button class="report-tab" data-target="referralProfits">Referral Profits</button>
             <button class="report-tab" data-target="mainInvestBonuses">Main → Invest Bonuses</button>
+            <button class="report-tab" data-target="kycs">KYC</button>
         </div>
 
         <div id="adminReportsMessage" class="admin-message">
@@ -592,6 +593,85 @@
 
             return;
         }
+           if (type === "kycs") {
+            adminReportsTableHead.innerHTML = `
+                <tr>
+                    <th>User</th>
+                    <th>Document</th>
+                    <th>Status</th>
+                    <th>Reject Reason</th>
+                    <th>Created At</th>
+                    <th>Reviewed At</th>
+                    <th>Reviewed By</th>
+                    <th class="text-end">File</th>
+                </tr>
+            `;
+
+            items.forEach(item => {
+                const status = String(item.status || "").toLowerCase();
+                const rejectReason = item.rejectReason || "-";
+
+                appendRow(`
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.userUid || "-")}</strong>
+                            <span>${escapeHtml(item.userEmail || "-")}</span>
+                            ${
+                                item.userFullName
+                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="admin-status neutral">
+                            ${escapeHtml(item.documentType || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="admin-status ${escapeHtml(status)}">
+                            ${escapeHtml(item.status || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="admin-report-note ${rejectReason !== "-" ? "has-note" : ""}">
+                            ${escapeHtml(rejectReason)}
+                        </span>
+                    </td>
+
+                    <td>${formatDate(item.createdAt)}</td>
+
+                    <td>${formatDate(item.reviewedAt)}</td>
+
+                    <td>
+                        ${
+                            item.reviewedByAdminEmail || item.reviewedByAdminUid
+                                ? `
+                                    <div class="report-user-cell compact">
+                                        <strong>${escapeHtml(item.reviewedByAdminUid || "-")}</strong>
+                                        <span>${escapeHtml(item.reviewedByAdminEmail || "-")}</span>
+                                    </div>
+                                  `
+                                : "-"
+                        }
+                    </td>
+
+                    <td class="text-end">
+                        <button type="button"
+                                class="admin-action-btn approve"
+                                onclick="viewKycReportFile(${item.documentId})">
+                            View
+                        </button>
+                    </td>
+                `);
+            });
+
+            return;
+        }
+        
         adminReportsTableHead.innerHTML = `
             <tr>
                 <th>User</th>
@@ -692,6 +772,51 @@
             if (type === "referralProfits") return "Referral Profit";
             if (type === "mainInvestBonuses") return "Main → Invest Bonus";
             return type || "-";
+        }
+                async function viewKycReportFile(documentId) {
+            if (!documentId) {
+                showNotification("Document was not selected.", "error");
+                return;
+            }
+
+            const token = localStorage.getItem("token");
+
+            if (!token) {
+                window.location.href = "/auth/login";
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/kyc/document/${documentId}/file`, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem("token");
+                    window.location.href = "/auth/login";
+                    return;
+                }
+
+                if (!response.ok) {
+                    showNotification("Could not load KYC document.", "error");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+
+                window.open(url, "_blank");
+
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(url);
+                }, 60000);
+
+            } catch {
+                showNotification("Could not load KYC document.", "error");
+            }
         }
         initializeReportDatePickers();
         loadAdminReports();

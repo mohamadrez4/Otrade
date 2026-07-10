@@ -224,11 +224,13 @@ public class ReportService
             !statusText.Equals("All", StringComparison.OrdinalIgnoreCase);
 
         DepositStatus parsedStatus = DepositStatus.Pending;
+        KycStatus parsedKycStatus = KycStatus.Pending;
         var statusParsed = false;
-
+        var kycStatusParsed = false;
         if (hasStatusFilter)
         {
             statusParsed = Enum.TryParse(statusText, true, out parsedStatus);
+            kycStatusParsed = Enum.TryParse(statusText, true, out parsedKycStatus);
         }
 
         var depositsQuery = _context.Deposits
@@ -333,6 +335,97 @@ public class ReportService
             })
             .ToListAsync();
 
+        var kycsQuery = _context.KycDocuments
+            .AsNoTracking()
+            .Include(x => x.User)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            kycsQuery = kycsQuery.Where(x =>
+                x.User.Email.ToLower().Contains(email) ||
+                x.User.ReferralCode.ToLower().Contains(email) ||
+                x.User.FirstName.ToLower().Contains(email) ||
+                x.User.LastName.ToLower().Contains(email) ||
+                x.DocumentType.ToString().ToLower().Contains(email));
+        }
+
+        if (fromDate.HasValue)
+            kycsQuery = kycsQuery.Where(x => x.CreatedAt >= fromDate.Value);
+
+        if (toDateExclusive.HasValue)
+            kycsQuery = kycsQuery.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+        if (hasStatusFilter && kycStatusParsed)
+            kycsQuery = kycsQuery.Where(x => x.Status == parsedKycStatus);
+
+        var kycsRaw = await kycsQuery
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(500)
+            .Select(x => new
+            {
+                x.DocumentId,
+                x.UserId,
+
+                UserEmail = x.User.Email,
+                UserUid = x.User.ReferralCode,
+                UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+
+                DocumentType = x.DocumentType.ToString(),
+                Status = x.Status.ToString(),
+                x.RejectReason,
+                x.CreatedAt,
+                x.ReviewedAt,
+                x.ReviewedByAdminId
+            })
+            .ToListAsync();
+
+        var reviewerIds = kycsRaw
+            .Where(x => x.ReviewedByAdminId.HasValue)
+            .Select(x => x.ReviewedByAdminId!.Value)
+            .Distinct()
+            .ToList();
+
+        var reviewers = await _context.Users
+            .AsNoTracking()
+            .Where(x => reviewerIds.Contains(x.UserId))
+            .Select(x => new
+            {
+                x.UserId,
+                x.Email,
+                x.ReferralCode
+            })
+            .ToDictionaryAsync(x => x.UserId);
+
+        var kycs = kycsRaw
+            .Select(x =>
+            {
+                reviewers.TryGetValue(
+                    x.ReviewedByAdminId ?? 0,
+                    out var reviewer);
+
+                return new AdminKycReportDto
+                {
+                    DocumentId = x.DocumentId,
+                    UserId = x.UserId,
+
+                    UserEmail = x.UserEmail,
+                    UserUid = x.UserUid,
+                    UserFullName = x.UserFullName,
+
+                    DocumentType = x.DocumentType,
+                    Status = x.Status,
+                    RejectReason = x.RejectReason,
+
+                    CreatedAt = x.CreatedAt,
+                    ReviewedAt = x.ReviewedAt,
+
+                    ReviewedByAdminId = x.ReviewedByAdminId,
+                    ReviewedByAdminEmail = reviewer?.Email,
+                    ReviewedByAdminUid = reviewer?.ReferralCode
+                };
+            })
+            .ToList();
         var transfersQuery = _context.WalletTransfers
       .AsNoTracking()
       .Include(x => x.FromWallet)
@@ -536,7 +629,8 @@ public class ReportService
             Transfers = transfers,
             InvestmentProfits = investmentProfits,
             ReferralProfits = referralProfits,
-            MainInvestBonuses = mainInvestBonuses
+            MainInvestBonuses = mainInvestBonuses,
+            Kycs = kycs
         };
 
         return ResponseFactory.Success(response);

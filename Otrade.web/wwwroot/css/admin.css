@@ -2640,3 +2640,32 @@ span.flatpickr-weekday {
         grid-template-columns: 1fr;
     }
 }
+.report-user-cell.compact {
+    min-width: 130px;
+}
+
+    .report-user-cell.compact strong {
+        font-size: 11px;
+    }
+
+    .report-user-cell.compact span {
+        font-size: 11px;
+    }
+
+.admin-status.approved {
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.10);
+    border: 1px solid rgba(17, 233, 161, 0.20);
+}
+
+.admin-status.rejected {
+    color: #F87171;
+    background: rgba(248, 113, 113, 0.10);
+    border: 1px solid rgba(248, 113, 113, 0.20);
+}
+
+.admin-status.pending {
+    color: #FBBF24;
+    background: rgba(251, 191, 36, 0.10);
+    border: 1px solid rgba(251, 191, 36, 0.20);
+}
