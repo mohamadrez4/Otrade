@@ -14,7 +14,13 @@ public class AdminDetailReportResponse
 // جزئیات Deposit برای Admin
 public class AdminDepositDto
 {
+    public long DepositId { get; set; }
+
     public string UserEmail { get; set; } = string.Empty;
+
+    public string UserUid { get; set; } = string.Empty;
+
+    public string UserFullName { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
 
@@ -22,13 +28,23 @@ public class AdminDepositDto
 
     public string Status { get; set; } = string.Empty;
 
+    public string? AdminNote { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? ProcessedAt { get; set; }
 }
 
 // جزئیات Withdrawal برای Admin
 public class AdminWithdrawalDto
 {
+    public long WithdrawalId { get; set; }
+
     public string UserEmail { get; set; } = string.Empty;
+
+    public string UserUid { get; set; } = string.Empty;
+
+    public string UserFullName { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
 
@@ -38,7 +54,11 @@ public class AdminWithdrawalDto
 
     public string Status { get; set; } = string.Empty;
 
+    public string? AdminNote { get; set; }
+
     public DateTime CreatedAt { get; set; }
+
+    public DateTime? ProcessedAt { get; set; }
 }
 
 // جزئیات WalletTransaction برای Admin

@@ -59,12 +59,12 @@
             <div class="reports-filter-grid">
 
                 <div class="reports-filter-field">
-                    <label>Email / UID</label>
+                    <label>Email / UID / Tx Hash / Wallet</label>
                     <input id="reportEmailFilter"
                            class="panel-input"
                            type="text"
                            autocomplete="off"
-                           placeholder="Search by email or UID" />
+                           placeholder="Search email, UID, name, tx hash, or wallet address" />
                 </div>
 
 
@@ -349,20 +349,39 @@
         if (type === "deposits") {
             adminReportsTableHead.innerHTML = `
                 <tr>
-                    <th>User Email</th>
+                    <th>User</th>
                     <th>Tx Hash</th>
                     <th>Status</th>
+                    <th>Note</th>
                     <th>Created At</th>
+                    <th>Processed At</th>
                     <th class="text-end">Amount</th>
                 </tr>
             `;
 
             items.forEach(item => {
+                const status = String(item.status || "").toLowerCase();
+                const note = item.adminNote || "-";
+
                 appendRow(`
-                    <td>${escapeHtml(item.userEmail)}</td>
                     <td>
-                        <div class="admin-tx-cell">
-                            <span>${escapeHtml(item.txId || "-")}</span>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.userUid || "-")}</strong>
+                            <span>${escapeHtml(item.userEmail || "-")}</span>
+                            ${
+                                item.userFullName
+                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="admin-tx-cell wide">
+                            <span title="${escapeHtml(item.txId || "")}">
+                                ${escapeHtml(item.txId || "-")}
+                            </span>
+
                             ${
                                 item.txId
                                     ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
@@ -370,12 +389,23 @@
                             }
                         </div>
                     </td>
+
                     <td>
-                        <span class="admin-status ${String(item.status).toLowerCase()}">
-                            ${escapeHtml(item.status)}
+                        <span class="admin-status ${escapeHtml(status)}">
+                            ${escapeHtml(item.status || "-")}
                         </span>
                     </td>
+
+                    <td>
+                        <span class="admin-report-note ${note !== "-" ? "has-note" : ""}">
+                            ${escapeHtml(note)}
+                        </span>
+                    </td>
+
                     <td>${formatDate(item.createdAt)}</td>
+
+                    <td>${formatDate(item.processedAt)}</td>
+
                     <td class="text-end">${formatMoney(item.amount)}</td>
                 `);
             });
@@ -386,22 +416,46 @@
         if (type === "withdrawals") {
             adminReportsTableHead.innerHTML = `
                 <tr>
-                    <th>User Email</th>
+                    <th>User</th>
                     <th>Network</th>
                     <th>Wallet Address</th>
                     <th>Status</th>
+                    <th>Note</th>
                     <th>Created At</th>
+                    <th>Processed At</th>
                     <th class="text-end">Amount</th>
                 </tr>
             `;
 
             items.forEach(item => {
+                const status = String(item.status || "").toLowerCase();
+                const note = item.adminNote || "-";
+
                 appendRow(`
-                    <td>${escapeHtml(item.userEmail)}</td>
-                    <td>${escapeHtml(item.network || "-")}</td>
                     <td>
-                        <div class="admin-tx-cell">
-                            <span>${escapeHtml(item.walletAddress || "-")}</span>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.userUid || "-")}</strong>
+                            <span>${escapeHtml(item.userEmail || "-")}</span>
+                            ${
+                                item.userFullName
+                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="admin-status neutral">
+                            ${escapeHtml(item.network || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="admin-tx-cell wide">
+                            <span title="${escapeHtml(item.walletAddress || "")}">
+                                ${escapeHtml(item.walletAddress || "-")}
+                            </span>
+
                             ${
                                 item.walletAddress
                                     ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
@@ -409,19 +463,29 @@
                             }
                         </div>
                     </td>
+
                     <td>
-                        <span class="admin-status ${String(item.status).toLowerCase()}">
-                            ${escapeHtml(item.status)}
+                        <span class="admin-status ${escapeHtml(status)}">
+                            ${escapeHtml(item.status || "-")}
                         </span>
                     </td>
+
+                    <td>
+                        <span class="admin-report-note ${note !== "-" ? "has-note" : ""}">
+                            ${escapeHtml(note)}
+                        </span>
+                    </td>
+
                     <td>${formatDate(item.createdAt)}</td>
+
+                    <td>${formatDate(item.processedAt)}</td>
+
                     <td class="text-end">${formatMoney(item.amount)}</td>
                 `);
             });
 
             return;
         }
-
         if (type === "transfers") {
             adminReportsTableHead.innerHTML = `
                 <tr>
@@ -568,10 +632,10 @@
         function formatMoney(value) {
             const number = Number(value || 0);
 
-            return "$" + number.toLocaleString("en-US", {
+            return number.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+                maximumFractionDigits: 8
+            }) + " USDT";
         }
 
         function formatDate(value) {

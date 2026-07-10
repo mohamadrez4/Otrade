@@ -2533,3 +2533,46 @@ span.flatpickr-weekday {
         max-width: 240px;
     }
 }
+.report-user-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 160px;
+}
+
+    .report-user-cell strong {
+        color: #11E9A1;
+        font-size: 12px;
+        font-weight: 950;
+        direction: ltr;
+    }
+
+    .report-user-cell span {
+        color: #FFFFFF;
+        font-size: 12px;
+        direction: ltr;
+    }
+
+    .report-user-cell small {
+        color: #94A3B8;
+        font-size: 11px;
+    }
+
+.admin-tx-cell.wide {
+    max-width: 430px;
+}
+
+.admin-report-note {
+    display: inline-block;
+    max-width: 260px;
+    color: #94A3B8;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+    .admin-report-note.has-note {
+        color: #FFFFFF;
+    }

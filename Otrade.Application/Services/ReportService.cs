@@ -222,7 +222,14 @@ public class ReportService
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(email))
-            depositsQuery = depositsQuery.Where(x => x.User.Email.ToLower().Contains(email));
+        {
+            depositsQuery = depositsQuery.Where(x =>
+                x.User.Email.ToLower().Contains(email) ||
+                x.User.ReferralCode.ToLower().Contains(email) ||
+                x.User.FirstName.ToLower().Contains(email) ||
+                x.User.LastName.ToLower().Contains(email) ||
+                x.TxId.ToLower().Contains(email));
+        }
 
         if (fromDate.HasValue)
             depositsQuery = depositsQuery.Where(x => x.CreatedAt >= fromDate.Value);
@@ -244,11 +251,18 @@ public class ReportService
             .Take(500)
             .Select(x => new AdminDepositDto
             {
+                DepositId = x.DepositId,
+
                 UserEmail = x.User.Email,
+                UserUid = x.User.ReferralCode,
+                UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+
                 Amount = x.Amount,
                 TxId = x.TxId,
                 Status = x.Status.ToString(),
-                CreatedAt = x.CreatedAt
+                AdminNote = x.AdminNote,
+                CreatedAt = x.CreatedAt,
+                ProcessedAt = x.ProcessedAt
             })
             .ToListAsync();
 
@@ -258,7 +272,15 @@ public class ReportService
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(email))
-            withdrawalsQuery = withdrawalsQuery.Where(x => x.User.Email.ToLower().Contains(email));
+        {
+            withdrawalsQuery = withdrawalsQuery.Where(x =>
+                x.User.Email.ToLower().Contains(email) ||
+                x.User.ReferralCode.ToLower().Contains(email) ||
+                x.User.FirstName.ToLower().Contains(email) ||
+                x.User.LastName.ToLower().Contains(email) ||
+                x.WalletAddress.ToLower().Contains(email) ||
+                x.Network.ToLower().Contains(email));
+        }
 
         if (fromDate.HasValue)
             withdrawalsQuery = withdrawalsQuery.Where(x => x.CreatedAt >= fromDate.Value);
@@ -280,12 +302,19 @@ public class ReportService
             .Take(500)
             .Select(x => new AdminWithdrawalDto
             {
+                WithdrawalId = x.WithdrawalId,
+
                 UserEmail = x.User.Email,
+                UserUid = x.User.ReferralCode,
+                UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+
                 Amount = x.Amount,
                 WalletAddress = x.WalletAddress,
                 Network = x.Network,
                 Status = x.Status.ToString(),
-                CreatedAt = x.CreatedAt
+                AdminNote = x.AdminNote,
+                CreatedAt = x.CreatedAt,
+                ProcessedAt = x.ProcessedAt
             })
             .ToListAsync();
 
