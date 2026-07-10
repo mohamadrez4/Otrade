@@ -10,6 +10,7 @@ using Otrade.Application.Services.Security;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
+using System.Data;
 using System.Security.Cryptography.X509Certificates;
 namespace Otrade.Application.Services
 {
@@ -147,16 +148,21 @@ namespace Otrade.Application.Services
                 emailBody);
             return ResponseFactory.Success(true, "Deposit rejected");
         }
-        public async Task<ApiResponse<List<WithdrawalPending>>>GetPendingWithdrawalsAsync()
+        public async Task<ApiResponse<List<WithdrawalPending>>> GetPendingWithdrawalsAsync()
         {
             var withdrawals = await _context.Withdrawals
+                .AsNoTracking()
                 .Include(x => x.User)
                 .Where(x => x.Status == DepositStatus.Pending)
                 .OrderByDescending(x => x.CreatedAt)
                 .Select(x => new WithdrawalPending
                 {
                     WithdrawalId = x.WithdrawalId,
+
                     UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+                    UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+
                     Amount = x.Amount,
                     WalletAddress = x.WalletAddress,
                     Network = x.Network,
@@ -168,6 +174,9 @@ namespace Otrade.Application.Services
         }
         public async Task<ApiResponse<bool>> ApproveWithdrawalAsync(long withdrawalId)
         {
+            await using var transaction = await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
+
             var withdrawal = await _context.Withdrawals
                 .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.WithdrawalId == withdrawalId);
@@ -178,10 +187,14 @@ namespace Otrade.Application.Services
             if (withdrawal.Status != DepositStatus.Pending)
                 return ResponseFactory.Fail<bool>("Withdrawal is not pending");
 
+            var now = DateTime.Now;
+
             withdrawal.Status = DepositStatus.Approved;
-            withdrawal.ProcessedAt = DateTime.Now;
+            withdrawal.ProcessedAt = now;
+            withdrawal.AdminNote = "Approved by admin";
 
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             var emailBody = _emailTemplateService.GetWithdrawalApprovedEmail(
                 withdrawal.Amount);
@@ -193,7 +206,6 @@ namespace Otrade.Application.Services
 
             return ResponseFactory.Success(true, "Withdrawal approved");
         }
-
         public async Task<ApiResponse<bool>> RejectWithdrawalAsync(
            long withdrawalId,
            string reason)
