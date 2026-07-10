@@ -19,22 +19,37 @@ public class ReportService
     public async Task<ApiResponse<UserReportResponse>> GetUserReportAsync(long userId)
     {
         var deposits = await _context.Deposits
-            .Where(x => x.UserId == userId )
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => new DepositDto
             {
+                DepositId = x.DepositId,
                 Amount = x.Amount,
+                TxId = x.TxId,
                 Status = x.Status.ToString(),
-                CreatedAt = x.CreatedAt
-            }).ToListAsync();
+                AdminNote = x.AdminNote,
+                CreatedAt = x.CreatedAt,
+                ProcessedAt = x.ProcessedAt
+            })
+            .ToListAsync();
 
         var withdrawals = await _context.Withdrawals
+            .AsNoTracking()
             .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => new WithdrawalDto
             {
+                WithdrawalId = x.WithdrawalId,
                 Amount = x.Amount,
+                WalletAddress = x.WalletAddress,
+                Network = x.Network,
                 Status = x.Status.ToString(),
-                CreatedAt = x.CreatedAt
-            }).ToListAsync();
+                AdminNote = x.AdminNote,
+                CreatedAt = x.CreatedAt,
+                ProcessedAt = x.ProcessedAt
+            })
+            .ToListAsync();
 
         var transferRows = await _context.WalletTransfers
             .AsNoTracking()

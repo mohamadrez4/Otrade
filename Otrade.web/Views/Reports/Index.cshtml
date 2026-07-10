@@ -92,13 +92,13 @@
         }
 
         function fillSummary(data) {
-            const depositsSum = data.deposits
-                    .filter(x => x.status === 'Approved')
-                    .reduce((total, x) => total + x.amount, 0);
+        const depositsSum = (data.deposits || [])
+            .filter(x => String(x.status || "").toLowerCase() === "approved")
+            .reduce((total, x) => total + Number(x.amount || 0), 0);
 
-            const withdrawalsSum = data.withdrawals
-                    .filter(x => x.status === 'Approved')
-                    .reduce((total, x) => total + x.amount, 0);
+        const withdrawalsSum = (data.withdrawals || [])
+            .filter(x => String(x.status || "").toLowerCase() === "approved")
+            .reduce((total, x) => total + Number(x.amount || 0), 0);
             const investmentProfitSum = sum(data.investmentProfits);
             const referralProfitSum = sum(data.referralProfits);
             const bonusSum = sum(data.mainInvestBonuses);
@@ -127,26 +127,120 @@
             reportsMessage.style.display = "none";
             reportsTableWrapper.style.display = "block";
 
-            if (type === "deposits" || type === "withdrawals") {
-                reportsTableHead.innerHTML = `
-                    <tr>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th class="text-end">Amount</th>
-                    </tr>
-                `;
+        if (type === "deposits") {
+            reportsTableHead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Tx Hash</th>
+                    <th>Status</th>
+                    <th>Note</th>
+                    <th>Processed At</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
 
-                items.forEach(item => {
-                    appendRow(`
-                        <td>${formatDate(item.createdAt)}</td>
-                        <td><span class="report-status ${item.status.toLowerCase()}">${item.status}</span></td>
-                        <td class="text-end">${formatMoney(item.amount)}</td>
-                    `);
-                });
+            items.forEach(item => {
+                const status = String(item.status || "").toLowerCase();
+                const note = item.adminNote || "-";
 
-                return;
-            }
+                appendRow(`
+                    <td>${formatDate(item.createdAt)}</td>
 
+                    <td>
+                        <div class="report-copy-cell">
+                            <span title="${escapeHtml(item.txId || "")}">
+                                ${escapeHtml(item.txId || "-")}
+                            </span>
+
+                            ${
+                                item.txId
+                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="report-status ${escapeHtml(status)}">
+                            ${escapeHtml(item.status || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="report-note ${note !== "-" ? "has-note" : ""}">
+                            ${escapeHtml(note)}
+                        </span>
+                    </td>
+
+                    <td>${formatDate(item.processedAt)}</td>
+
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+
+            return;
+        }
+
+        if (type === "withdrawals") {
+            reportsTableHead.innerHTML = `
+                <tr>
+                    <th>Date</th>
+                    <th>Network</th>
+                    <th>Wallet Address</th>
+                    <th>Status</th>
+                    <th>Note</th>
+                    <th>Processed At</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            `;
+
+            items.forEach(item => {
+                const status = String(item.status || "").toLowerCase();
+                const note = item.adminNote || "-";
+
+                appendRow(`
+                    <td>${formatDate(item.createdAt)}</td>
+
+                    <td>
+                        <span class="report-status neutral">
+                            ${escapeHtml(item.network || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="report-copy-cell">
+                            <span title="${escapeHtml(item.walletAddress || "")}">
+                                ${escapeHtml(item.walletAddress || "-")}
+                            </span>
+
+                            ${
+                                item.walletAddress
+                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="report-status ${escapeHtml(status)}">
+                            ${escapeHtml(item.status || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <span class="report-note ${note !== "-" ? "has-note" : ""}">
+                            ${escapeHtml(note)}
+                        </span>
+                    </td>
+
+                    <td>${formatDate(item.processedAt)}</td>
+
+                    <td class="text-end">${formatMoney(item.amount)}</td>
+                `);
+            });
+
+            return;
+        }
         if (type === "transfers") {
             reportsTableHead.innerHTML = `
                 <tr>
@@ -278,12 +372,11 @@
         function formatMoney(value) {
             const number = Number(value || 0);
 
-            return "$" + number.toLocaleString("en-US", {
+            return number.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+                maximumFractionDigits: 8
+            }) + " USDT";
         }
-
         function formatDate(value) {
             if (!value) return "-";
 
@@ -292,6 +385,39 @@
                 month: "short",
                 day: "2-digit"
             });
+        }
+                async function copyReportText(value) {
+            if (!value) {
+                showNotification("Nothing to copy.", "warning");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(value);
+                showNotification("Copied to clipboard.", "success");
+            } catch {
+                const textarea = document.createElement("textarea");
+                textarea.value = value;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                showNotification("Copied to clipboard.", "success");
+            }
+        }
+                function escapeForJs(value) {
+            return String(value || "")
+                .replaceAll("\\", "\\\\")
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"')
+                .replaceAll("\n", "")
+                .replaceAll("\r", "");
         }
                 function escapeHtml(value) {
             return String(value || "")

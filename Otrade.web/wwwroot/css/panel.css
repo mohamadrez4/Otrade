@@ -3521,3 +3521,62 @@ select.panel-input:focus {
     .deposit-note.has-note {
         color: #FFFFFF;
     }
+/* User Reports - Deposit / Withdrawal Details */
+.report-copy-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 360px;
+}
+
+    .report-copy-cell span {
+        display: block;
+        color: #94A3B8;
+        direction: ltr;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .report-copy-cell button {
+        border: 1px solid rgba(17, 233, 161, 0.18);
+        background: rgba(17, 233, 161, 0.07);
+        color: #11E9A1;
+        border-radius: 10px;
+        height: 30px;
+        padding: 0 10px;
+        font-size: 11px;
+        font-weight: 900;
+    }
+
+        .report-copy-cell button:hover {
+            border-color: #11E9A1;
+        }
+
+.report-note {
+    display: inline-block;
+    max-width: 280px;
+    color: #94A3B8;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+    .report-note.has-note {
+        color: #FFFFFF;
+    }
+
+.reports-table-wrapper {
+    overflow-x: auto;
+}
+
+.reports-table td {
+    vertical-align: middle;
+}
+.report-status.canceled {
+    color: #94A3B8;
+    background: rgba(148, 163, 184, 0.10);
+    border: 1px solid rgba(148, 163, 184, 0.20);
+}
