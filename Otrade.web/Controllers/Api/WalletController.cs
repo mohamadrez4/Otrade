@@ -98,6 +98,19 @@ public class WalletController : ControllerBase
         return Ok(result);
     }
     [Authorize]
+    [HttpGet("deposits/my-history")]
+    public async Task<IActionResult> GetMyDeposits(
+    [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _walletService.GetMyDepositsAsync(
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
     [HttpGet("deposit/info")]
     public async Task<IActionResult> GetDepositInfo()
     {

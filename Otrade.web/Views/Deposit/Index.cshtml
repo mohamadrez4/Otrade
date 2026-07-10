@@ -4,14 +4,15 @@
 
 <div class="panel-card">
     <div class="deposit-header">
-       
         <div>
             <h3>Deposit Request</h3>
             <p>
-                Submit your deposit amount and transaction ID. Your request will be reviewed by the admin.
+                Submit your deposit amount and transaction hash. Your request will be reviewed by the admin.
+                The approved amount will be credited to your Main Wallet.
             </p>
         </div>
     </div>
+
     <div id="depositWalletBox" class="deposit-wallet-box" style="display:none;">
         <p class="deposit-wallet-title">
             Please use the wallet address below to complete your deposit.
@@ -33,29 +34,30 @@
             </button>
         </div>
     </div>
-    <div id="depositMessage" class="deposit-message" style="display:none;"></div>
 
     <form id="depositForm" class="deposit-form">
 
         <div class="deposit-form-group">
             <label for="amount">Amount</label>
+
             <input id="amount"
                    name="amount"
                    type="number"
                    min="1"
-                   step="0.01"
+                   step="0.00000001"
                    class="panel-input"
                    placeholder="Enter deposit amount"
                    required />
         </div>
 
         <div class="deposit-form-group">
-            <label for="txId">Transaction ID</label>
+            <label for="txId">Transaction Hash</label>
+
             <input id="txId"
                    name="txId"
                    type="text"
                    class="panel-input"
-                   placeholder="Enter transaction ID"
+                   placeholder="Enter full transaction hash"
                    required />
         </div>
 
@@ -66,34 +68,84 @@
     </form>
 </div>
 
+<div class="panel-card mt-4">
+    <div class="deposit-header">
+        <div>
+            <h3>Deposit History</h3>
+            <p>
+                Track your deposit requests, status, admin note, and transaction hash.
+            </p>
+        </div>
+    </div>
+
+    <div id="depositsMessage" class="deposit-history-message">
+        Loading deposits...
+    </div>
+
+    <div id="depositsWrapper" class="deposit-history-wrapper" style="display:none;">
+        <table class="deposit-history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Tx Hash</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Note</th>
+                    <th>Processed At</th>
+                </tr>
+            </thead>
+
+            <tbody id="depositsBody"></tbody>
+        </table>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         const depositForm = document.getElementById("depositForm");
         const amountInput = document.getElementById("amount");
         const txIdInput = document.getElementById("txId");
         const submitDepositBtn = document.getElementById("submitDepositBtn");
-        const depositMessage = document.getElementById("depositMessage");
+
         const depositWalletBox = document.getElementById("depositWalletBox");
         const depositNetwork = document.getElementById("depositNetwork");
         const depositWalletAddress = document.getElementById("depositWalletAddress");
         const copyDepositAddressBtn = document.getElementById("copyDepositAddressBtn");
 
+        const depositsMessage = document.getElementById("depositsMessage");
+        const depositsWrapper = document.getElementById("depositsWrapper");
+        const depositsBody = document.getElementById("depositsBody");
+
         let siteWalletAddress = "";
-        depositForm.addEventListener("submit", async function (e) {
+
+        depositForm.addEventListener("submit", submitDepositRequest);
+
+        copyDepositAddressBtn.addEventListener("click", function () {
+            copyText(siteWalletAddress);
+        });
+
+        async function submitDepositRequest(e) {
             e.preventDefault();
 
-            hideMessage();
-
-            const amount = parseFloat(amountInput.value);
+            const amount = Number(amountInput.value || 0);
             const txId = txIdInput.value.trim();
 
             if (!amount || amount <= 0) {
-                showMessage("Please enter a valid amount.", false);
+                showNotification("Please enter a valid amount.", "warning");
                 return;
             }
 
             if (!txId) {
-                showMessage("Please enter the transaction ID.", false);
+                showNotification("Please enter the transaction hash.", "warning");
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Submit deposit request for ${formatMoney(amount)} USDT?`,
+                "Submit Deposit"
+            );
+
+            if (!confirmed) {
                 return;
             }
 
@@ -109,26 +161,36 @@
                     })
                 });
 
-                if (!result.success) {
-                    showMessage(result.message || "Could not submit deposit request.", false);
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not submit deposit request.", "error");
                     return;
                 }
 
-                showMessage(result.message || "Deposit request submitted successfully.", true);
+                showNotification(result.message || "Deposit request submitted successfully.", "success");
 
                 amountInput.value = "";
                 txIdInput.value = "";
+
+                await loadDeposits();
+
             } catch (error) {
-                showMessage(error.message || "Could not submit deposit request.", false);
+                showNotification(error.message || "Could not submit deposit request.", "error");
             } finally {
                 submitDepositBtn.disabled = false;
                 submitDepositBtn.innerText = "Submit Deposit Request";
             }
-        });
+        }
+
         async function loadDepositInfo() {
             try {
                 const result = await api("/api/wallet/deposit/info");
-                const data = result.data;
+
+                if (!result || !result.success) {
+                    depositWalletBox.style.display = "none";
+                    return;
+                }
+
+                const data = result.data || {};
 
                 siteWalletAddress = data.siteWalletAddress || data.SiteWalletAddress || "";
                 const network = data.network || data.Network || "";
@@ -137,43 +199,149 @@
                 depositWalletAddress.innerText = siteWalletAddress || "-";
 
                 depositWalletBox.style.display = "block";
-            } catch (error) {
+
+            } catch {
                 depositWalletBox.style.display = "none";
             }
         }
 
-        copyDepositAddressBtn.addEventListener("click", function () {
+        async function loadDeposits() {
+            depositsMessage.style.display = "block";
+            depositsMessage.innerText = "Loading deposits...";
+            depositsWrapper.style.display = "none";
+            depositsBody.innerHTML = "";
 
-            const textarea = document.createElement("textarea");
-            textarea.value = siteWalletAddress;
+            try {
+                const result = await api("/api/wallet/deposits/my-history");
 
-            document.body.appendChild(textarea);
-            textarea.select();
+                if (!result || !result.success) {
+                    depositsMessage.innerText = result?.message || "Could not load deposits.";
+                    return;
+                }
 
-            document.execCommand("copy");
+                const items = result.data || [];
 
-            document.body.removeChild(textarea);
+                if (!items.length) {
+                    depositsMessage.innerText = "No deposits found.";
+                    return;
+                }
 
-             copyDepositAddressBtn.innerText = "Copied!";
+                items.forEach(item => {
+                    const row = document.createElement("tr");
+                    const status = String(item.status || "").toLowerCase();
+                    const note = item.adminNote || "-";
 
-            setTimeout(() => {
-                copyDepositAddressBtn.innerText = "Copy";
-            }, 1000);
-        });
+                    row.innerHTML = `
+                        <td>${formatDate(item.createdAt)}</td>
 
+                        <td>
+                            <div class="deposit-tx-cell">
+                                <span title="${escapeHtml(item.txId || "")}">
+                                    ${escapeHtml(item.txId || "-")}
+                                </span>
 
-        function showMessage(message, isSuccess) {
-            depositMessage.innerText = message;
-            depositMessage.className = isSuccess
-                ? "deposit-message success"
-                : "deposit-message error";
-            depositMessage.style.display = "block";
+                                ${
+                                    item.txId
+                                        ? `<button type="button" onclick="copyText('${escapeForJs(item.txId)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="deposit-amount">
+                                ${formatMoney(item.amount)} USDT
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="deposit-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="deposit-note ${note !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(note)}
+                            </span>
+                        </td>
+
+                        <td>${formatDate(item.processedAt)}</td>
+                    `;
+
+                    depositsBody.appendChild(row);
+                });
+
+                depositsMessage.style.display = "none";
+                depositsWrapper.style.display = "block";
+
+            } catch {
+                depositsMessage.innerText = "Could not load deposits.";
+            }
         }
 
-        function hideMessage() {
-            depositMessage.style.display = "none";
-            depositMessage.innerText = "";
+        async function copyText(value) {
+            if (!value) {
+                showNotification("Nothing to copy.", "warning");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(value);
+                showNotification("Copied to clipboard.", "success");
+            } catch {
+                const textarea = document.createElement("textarea");
+                textarea.value = value;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+
+                document.execCommand("copy");
+                document.body.removeChild(textarea);
+
+                showNotification("Copied to clipboard.", "success");
+            }
         }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function escapeForJs(value) {
+            return String(value || "")
+                .replaceAll("\\", "\\\\")
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"')
+                .replaceAll("\n", "")
+                .replaceAll("\r", "");
+        }
+
         loadDepositInfo();
+        loadDeposits();
     </script>
 }

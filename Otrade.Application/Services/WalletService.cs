@@ -971,7 +971,26 @@ public class WalletService
 
         return ResponseFactory.Success(true, "Withdrawal request canceled");
     }
+    public async Task<ApiResponse<List<UserDepositHistoryDto>>> GetMyDepositsAsync(long userId)
+    {
+        var deposits = await _context.Deposits
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new UserDepositHistoryDto
+            {
+                DepositId = x.DepositId,
+                Amount = x.Amount,
+                TxId = x.TxId,
+                Status = x.Status.ToString(),
+                AdminNote = x.AdminNote,
+                CreatedAt = x.CreatedAt,
+                ProcessedAt = x.ProcessedAt
+            })
+            .ToListAsync();
 
+        return ResponseFactory.Success(deposits);
+    }
     private static string GenerateInternalTransferCode()
     {
         return RandomNumberGenerator
