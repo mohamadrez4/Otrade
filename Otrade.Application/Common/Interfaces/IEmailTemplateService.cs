@@ -9,6 +9,7 @@ public interface IEmailTemplateService
     string GetWithdrawalNotification(string userEmail, decimal amount, string walletAddress);
     string GetTicketCreatedEmail(string userEmail, string subject);
     string GetTicketReplyEmail(string ticketSubject, string replyMessage);
+    string GetKycSubmittedAdminEmail(string userEmail,string userUid,string userFullName,string uploadedDocuments);
     string GetKycApprovedEmail();
     string GetKycRejectedEmail(string reason);
     string GetWithdrawalVerificationEmail(decimal amount,string walletAddress,string network,string code,int expiresInMinutes);

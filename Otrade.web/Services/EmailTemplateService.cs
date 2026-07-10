@@ -82,7 +82,25 @@ public class EmailTemplateService : IEmailTemplateService
             <p>Reply: {replyMessage}</p>
         ";
     }
+    public string GetKycSubmittedAdminEmail(
+    string userEmail,
+    string userUid,
+    string userFullName,
+    string uploadedDocuments)
+    {
+        return $@"
+        <h2>New KYC Submission</h2>
 
+        <p>A user has submitted KYC document(s) for review.</p>
+
+        <p><strong>UID:</strong> {userUid}</p>
+        <p><strong>Email:</strong> {userEmail}</p>
+        <p><strong>Full Name:</strong> {userFullName}</p>
+        <p><strong>Uploaded Documents:</strong> {uploadedDocuments}</p>
+
+        <p>Please review the documents in the Admin KYC panel.</p>
+    ";
+    }
     public string GetKycApprovedEmail()
     {
         return $@"
