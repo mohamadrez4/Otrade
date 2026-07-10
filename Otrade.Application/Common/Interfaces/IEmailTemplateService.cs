@@ -4,6 +4,7 @@ public interface IEmailTemplateService
 {
     string GetVerificationEmail(string code);
     string GetDepositNotification(string userEmail, decimal amount, string txId);
+    string GetDepositApprovedEmail(decimal requestedAmount, decimal approvedAmount);
     string GetDepositRejectedEmail(decimal? amount, string reason);
     string GetWithdrawalNotification(string userEmail, decimal amount, string walletAddress);
     string GetTicketCreatedEmail(string userEmail, string subject);

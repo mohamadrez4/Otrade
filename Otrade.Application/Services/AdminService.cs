@@ -38,17 +38,20 @@ namespace Otrade.Application.Services
             _notificationQueue= notificationQueue;
         }
 
-        public async Task<ApiResponse<List<DepositsPending>>>GetPendingDepositsAsync()
+        public async Task<ApiResponse<List<DepositsPending>>> GetPendingDepositsAsync()
         {
             var deposits = await _context.Deposits
+                .AsNoTracking()
                 .Include(x => x.User)
                 .Where(x => x.Status == DepositStatus.Pending)
                 .OrderByDescending(x => x.CreatedAt)
                 .Select(x => new DepositsPending
                 {
-                    depositId = x.DepositId,
+                    DepositId = x.DepositId,
                     Email = x.User.Email,
-                    TxId=x.TxId,
+                    UserUid = x.User.ReferralCode,
+                    UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+                    TxId = x.TxId,
                     Amount = x.Amount,
                     CreatedAt = x.CreatedAt
                 })
@@ -64,6 +67,7 @@ namespace Otrade.Application.Services
                 return ResponseFactory.Fail<bool>("Approved amount must be greater than zero");
 
             var deposit = await _context.Deposits
+                .Include(x => x.User)
                 .FirstOrDefaultAsync(x => x.DepositId == depositId);
 
             if (deposit == null)
@@ -78,11 +82,12 @@ namespace Otrade.Application.Services
                     x.WalletType == WalletType.Main);
 
             if (wallet == null)
-                return ResponseFactory.Fail<bool>("Wallet not found");
+                return ResponseFactory.Fail<bool>("Main wallet not found");
 
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             var now = DateTime.Now;
+            var requestedAmount = deposit.Amount;
 
             var before = wallet.Balance;
             var after = before + approvedAmount;
@@ -92,9 +97,9 @@ namespace Otrade.Application.Services
             deposit.Amount = approvedAmount;
             deposit.Status = DepositStatus.Approved;
             deposit.ProcessedAt = now;
-            deposit.AdminNote = $"Approved amount: {approvedAmount}";
+            deposit.AdminNote = $"Requested: {requestedAmount}, Approved: {approvedAmount}";
 
-            var tx = new WalletTransaction
+            _context.WalletTransactions.Add(new WalletTransaction
             {
                 UserId = deposit.UserId,
                 WalletId = wallet.WalletId,
@@ -102,16 +107,23 @@ namespace Otrade.Application.Services
                 BalanceBefore = before,
                 BalanceAfter = after,
                 Type = TransactionType.Deposit,
-                Description = $"Deposit approved (TxId: {deposit.TxId})",
+                Description = $"Deposit approved. Requested: {requestedAmount}, Approved: {approvedAmount}, TxId: {deposit.TxId}",
                 CreatedAt = now
-            };
-
-            _context.WalletTransactions.Add(tx);
+            });
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return ResponseFactory.Success(true, "Deposit approved");
+            var emailBody = _emailTemplateService.GetDepositApprovedEmail(
+                requestedAmount,
+                approvedAmount);
+
+            await _notificationQueue.QueueEmailAsync(
+                deposit.User.Email,
+                "Deposit Approved",
+                emailBody);
+
+            return ResponseFactory.Success(true, "Deposit approved and credited to Main Wallet");
         }
         public async Task<ApiResponse<bool>> RejectDepositAsync(
             long depositId,

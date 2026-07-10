@@ -36,7 +36,16 @@ public class EmailTemplateService : IEmailTemplateService
             <p>TXID: {txId}</p>
         ";
     }
-
+    public string GetDepositApprovedEmail(decimal requestedAmount, decimal approvedAmount)
+    {
+        return $@"
+        <h2>Deposit Approved</h2>
+        <p>Your deposit request has been approved.</p>
+        <p>Requested Amount: {requestedAmount:F2} USDT</p>
+        <p>Approved Amount: {approvedAmount:F2} USDT</p>
+        <p>The approved amount has been credited to your Main Wallet.</p>
+    ";
+    }
     public string GetWithdrawalNotification(string userEmail, decimal amount, string walletAddress)
     {
         return $@"
