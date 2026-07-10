@@ -26,14 +26,17 @@ public class ProfileService
             .FirstOrDefaultAsync(x => x.UserId == userId);
 
         var kycDocuments = await _context.KycDocuments
+            .AsNoTracking()
             .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAt)
             .Select(x => new
             {
                 x.DocumentId,
                 DocumentType = x.DocumentType.ToString(),
                 x.RejectReason,
                 Status = x.Status.ToString(),
-                x.CreatedAt
+                x.CreatedAt,
+                x.ReviewedAt
             })
             .ToListAsync();
 

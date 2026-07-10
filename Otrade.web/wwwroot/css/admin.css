@@ -2576,3 +2576,67 @@ span.flatpickr-weekday {
     .admin-report-note.has-note {
         color: #FFFFFF;
     }
+.admin-user-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 160px;
+}
+
+    .admin-user-cell strong {
+        color: #11E9A1;
+        font-size: 12px;
+        font-weight: 950;
+        direction: ltr;
+    }
+
+    .admin-user-cell span {
+        color: #FFFFFF;
+        font-size: 12px;
+        direction: ltr;
+    }
+
+    .admin-user-cell small {
+        color: #94A3B8;
+        font-size: 11px;
+    }
+
+.admin-kyc-reject-summary {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+    .admin-kyc-reject-summary div {
+        border: 1px solid #1C2532;
+        background: rgba(255, 255, 255, 0.025);
+        border-radius: 15px;
+        padding: 12px 13px;
+        min-width: 0;
+    }
+
+    .admin-kyc-reject-summary span {
+        display: block;
+        color: #94A3B8;
+        font-size: 11px;
+        font-weight: 800;
+        margin-bottom: 7px;
+    }
+
+    .admin-kyc-reject-summary strong {
+        display: block;
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 900;
+        direction: ltr;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+@media (max-width: 768px) {
+    .admin-kyc-reject-summary {
+        grid-template-columns: 1fr;
+    }
+}

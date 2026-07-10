@@ -55,9 +55,12 @@ public class KycService
 
             if (nationalDoc != null)
             {
-                // اگر مدرک رد شده بود یا موجود است → فقط بروزرسانی مسیر و وضعیت
                 nationalDoc.FilePath = path;
                 nationalDoc.Status = KycStatus.Pending;
+                nationalDoc.RejectReason = null;
+                nationalDoc.ReviewedAt = null;
+                nationalDoc.ReviewedByAdminId = null;
+                nationalDoc.CreatedAt = DateTime.Now;
             }
             else
             {
@@ -85,6 +88,10 @@ public class KycService
             {
                 selfieDoc.FilePath = path;
                 selfieDoc.Status = KycStatus.Pending;
+                selfieDoc.RejectReason = null;
+                selfieDoc.ReviewedAt = null;
+                selfieDoc.ReviewedByAdminId = null;
+                selfieDoc.CreatedAt = DateTime.Now;
             }
             else
             {

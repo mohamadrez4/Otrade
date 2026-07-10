@@ -290,6 +290,7 @@ namespace Otrade.Application.Services
         public async Task<ApiResponse<List<PendingKycDto>>>GetPendingKycsAsync()
         {
             var kycs = await _context.KycDocuments
+                .AsNoTracking()
                 .Include(x => x.User)
                 .Where(x => x.Status == KycStatus.Pending)
                 .OrderByDescending(x => x.CreatedAt)
@@ -298,9 +299,11 @@ namespace Otrade.Application.Services
                     DocumentId = x.DocumentId,
                     UserId = x.UserId,
                     UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+                    UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
                     DocumentType = x.DocumentType.ToString(),
                     Status = x.Status.ToString(),
-                    FilePath = x.FilePath,
+                    FilePath = x.FilePath,  
                     CreatedAt = x.CreatedAt
                 })
                 .ToListAsync();

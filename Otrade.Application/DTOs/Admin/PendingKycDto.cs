@@ -7,7 +7,9 @@ public class PendingKycDto
     public long UserId { get; set; }
 
     public string UserEmail { get; set; } = string.Empty;
+    public string UserUid { get; set; } = string.Empty;
 
+    public string UserFullName { get; set; } = string.Empty;
     public string DocumentType { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;

@@ -8,7 +8,10 @@
     <div class="panel-card">
         <div class="admin-section-header">
             <h3>Pending KYC Documents</h3>
-            <p>Approve or reject user KYC documents individually.</p>
+            <p>
+                Review user identity documents. Each document is approved or rejected individually.
+                User KYC becomes approved only when both National ID and Selfie are approved.
+            </p>
         </div>
 
         <div id="kycMessage" class="admin-message">
@@ -19,7 +22,7 @@
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>User Email</th>
+                        <th>User</th>
                         <th>Document Type</th>
                         <th>Status</th>
                         <th>Created At</th>
@@ -27,18 +30,27 @@
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
+
                 <tbody id="kycTableBody"></tbody>
             </table>
         </div>
     </div>
 
 </div>
+
 <div class="admin-modal-backdrop" id="rejectKycModal" style="display:none;">
     <div class="admin-modal">
         <div class="admin-modal-header">
-            <h4>Reject KYC Document</h4>
+            <div>
+                <h4>Reject KYC Document</h4>
+                <p>
+                    Enter the rejection reason. This reason will be saved and sent to the user.
+                </p>
+            </div>
 
-            <button type="button" onclick="closeRejectKycModal()">
+            <button type="button"
+                    class="admin-modal-close"
+                    onclick="closeRejectKycModal()">
                 ×
             </button>
         </div>
@@ -46,28 +58,41 @@
         <div class="admin-modal-body">
             <input type="hidden" id="rejectKycDocumentId" />
 
-            <label>Reject Reason</label>
+            <div class="admin-kyc-reject-summary">
+                <div>
+                    <span>User</span>
+                    <strong id="rejectKycUser">-</strong>
+                </div>
+
+                <div>
+                    <span>Document</span>
+                    <strong id="rejectKycDocumentType">-</strong>
+                </div>
+            </div>
+
+            <label class="admin-modal-label" for="rejectKycReason">
+                Reject Reason
+            </label>
 
             <textarea id="rejectKycReason"
-                      class="panel-input kyc-reject-textarea"
-                      rows="5"
+                      class="admin-modal-textarea"
                       maxlength="1000"
                       placeholder="Explain why this document is rejected..."></textarea>
 
-            <small class="kyc-reject-help">
-                This reason will be saved and sent to the user by email.
+            <small class="admin-modal-help">
+                The user will see this note in Profile and can upload the rejected document again.
             </small>
         </div>
 
         <div class="admin-modal-actions">
             <button type="button"
-                    class="admin-modal-cancel"
+                    class="admin-secondary-btn"
                     onclick="closeRejectKycModal()">
                 Cancel
             </button>
 
             <button type="button"
-                    class="admin-modal-danger"
+                    class="admin-action-btn reject"
                     id="confirmRejectKycBtn"
                     onclick="confirmRejectKyc()">
                 Reject KYC
@@ -75,11 +100,21 @@
         </div>
     </div>
 </div>
+
 @section Scripts {
     <script>
         const kycMessage = document.getElementById("kycMessage");
         const kycTableWrapper = document.getElementById("kycTableWrapper");
         const kycTableBody = document.getElementById("kycTableBody");
+
+        const rejectKycModal = document.getElementById("rejectKycModal");
+        const rejectKycDocumentId = document.getElementById("rejectKycDocumentId");
+        const rejectKycReason = document.getElementById("rejectKycReason");
+        const rejectKycUser = document.getElementById("rejectKycUser");
+        const rejectKycDocumentType = document.getElementById("rejectKycDocumentType");
+        const confirmRejectKycBtn = document.getElementById("confirmRejectKycBtn");
+
+        let pendingKycCache = [];
 
         async function loadPendingKycs() {
             kycMessage.style.display = "block";
@@ -90,34 +125,66 @@
             try {
                 const result = await api("/api/admin/kyc/pending");
 
-                if (!result.success || !result.data.length) {
+                if (!result || !result.success) {
+                    kycMessage.innerText = result?.message || "Could not load pending KYC documents.";
+                    return;
+                }
+
+                pendingKycCache = result.data || [];
+
+                if (!pendingKycCache.length) {
                     kycMessage.innerText = "No pending KYC documents.";
                     return;
                 }
 
-                result.data.forEach(doc => {
+                pendingKycCache.forEach(doc => {
                     const row = document.createElement("tr");
+                    const status = String(doc.status || "").toLowerCase();
 
                     row.innerHTML = `
-                        <td>${doc.userEmail || "-"}</td>
-                        <td>${doc.documentType || "-"}</td>
                         <td>
-                            <span class="admin-status ${doc.status.toLowerCase()}">
-                                ${doc.status}
+                            <div class="admin-user-cell">
+                                <strong>${escapeHtml(doc.userUid || "-")}</strong>
+                                <span>${escapeHtml(doc.userEmail || "-")}</span>
+                                ${
+                                    doc.userFullName
+                                        ? `<small>${escapeHtml(doc.userFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="admin-status neutral">
+                                ${escapeHtml(doc.documentType || "-")}
                             </span>
                         </td>
-                        <td>${formatDate(doc.createdAt)}</td>
+
                         <td>
-                                   <button class="admin-action-btn approve"
-                                     onclick="viewKycFile(${doc.documentId})">
-                                     View
-                                   </button>
+                            <span class="admin-status ${escapeHtml(status)}">
+                                ${escapeHtml(doc.status || "-")}
+                            </span>
                         </td>
+
+                        <td>${formatDate(doc.createdAt)}</td>
+
+                        <td>
+                            <button class="admin-action-btn approve"
+                                    onclick="viewKycFile(${doc.documentId})">
+                                View
+                            </button>
+                        </td>
+
                         <td class="text-end">
                             <button class="admin-action-btn approve"
-                                onclick="approveKyc(${doc.documentId})">Approve</button>
+                                    onclick="approveKyc(${doc.documentId})">
+                                Approve
+                            </button>
+
                             <button class="admin-action-btn reject"
-                                onclick="openRejectKycModal(${doc.documentId})">Reject</button>
+                                    onclick="openRejectKycModal(${doc.documentId})">
+                                Reject
+                            </button>
                         </td>
                     `;
 
@@ -133,48 +200,72 @@
         }
 
         async function approveKyc(documentId) {
+            const doc = pendingKycCache.find(x => x.documentId === documentId);
+
             const confirmed = await showConfirm(
-            "Approve this document?",
-            "Approve Document"
-        );
-            if (!confirmed) return;
+                `Approve ${doc?.documentType || "this document"} for UID ${doc?.userUid || "-"}?`,
+                "Approve KYC Document"
+            );
+
+            if (!confirmed) {
+                return;
+            }
 
             try {
-                const result = await api(`/api/admin/kyc/document/${documentId}/approve`, { method: "POST" });
+                const result = await api(`/api/admin/kyc/document/${documentId}/approve`, {
+                    method: "POST"
+                });
 
-                if (!result.success) {
-                    showNotification(result.message || "Could not approve document.","error");
-                    
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not approve document.", "error");
                     return;
                 }
-                showNotification("Document approved successfully.","success");
-                
-                loadPendingKycs();
+
+                showNotification(result.message || "Document approved successfully.", "success");
+
+                await loadPendingKycs();
+
             } catch (error) {
-                showNotification(error.message || "Could not approve document.","error");
-                
+                showNotification(error.message || "Could not approve document.", "error");
             }
         }
 
         function openRejectKycModal(documentId) {
-            document.getElementById("rejectKycDocumentId").value = documentId;
-            document.getElementById("rejectKycReason").value = "";
-            document.getElementById("rejectKycModal").style.display = "flex";
+            const doc = pendingKycCache.find(x => x.documentId === documentId);
+
+            if (!doc) {
+                showNotification("Document not found.", "error");
+                return;
+            }
+
+            rejectKycDocumentId.value = doc.documentId;
+            rejectKycReason.value = "";
+
+            rejectKycUser.innerText =
+                `${doc.userUid || "-"} / ${doc.userEmail || "-"}`;
+
+            rejectKycDocumentType.innerText =
+                doc.documentType || "-";
+
+            rejectKycModal.style.display = "flex";
 
             setTimeout(() => {
-                document.getElementById("rejectKycReason").focus();
-            }, 80);
+                rejectKycReason.focus();
+            }, 100);
         }
 
         function closeRejectKycModal() {
-            document.getElementById("rejectKycModal").style.display = "none";
-            document.getElementById("rejectKycDocumentId").value = "";
-            document.getElementById("rejectKycReason").value = "";
+            rejectKycModal.style.display = "none";
+
+            rejectKycDocumentId.value = "";
+            rejectKycReason.value = "";
+            rejectKycUser.innerText = "-";
+            rejectKycDocumentType.innerText = "-";
         }
 
         async function confirmRejectKyc() {
-            const documentId = Number(document.getElementById("rejectKycDocumentId").value);
-            const reason = document.getElementById("rejectKycReason").value.trim();
+            const documentId = Number(rejectKycDocumentId.value);
+            const reason = rejectKycReason.value.trim();
 
             if (!documentId) {
                 showNotification("Document was not selected.", "error");
@@ -182,32 +273,41 @@
             }
 
             if (!reason) {
-                showNotification("Reject reason is required.", "error");
+                showNotification("Reject reason is required.", "warning");
                 return;
             }
 
             if (reason.length > 1000) {
-                showNotification("Reject reason cannot be more than 1000 characters.", "error");
+                showNotification("Reject reason cannot be more than 1000 characters.", "warning");
                 return;
             }
 
-            const btn = document.getElementById("confirmRejectKycBtn");
+            const confirmed = await showConfirm(
+                "Reject this KYC document and notify the user?",
+                "Reject KYC Document"
+            );
 
-            btn.disabled = true;
-            btn.innerText = "Rejecting...";
+            if (!confirmed) {
+                return;
+            }
+
+            confirmRejectKycBtn.disabled = true;
+            confirmRejectKycBtn.innerText = "Rejecting...";
 
             try {
                 const result = await api(`/api/admin/kyc/document/${documentId}/reject`, {
                     method: "POST",
-                    body: JSON.stringify({ reason })
+                    body: JSON.stringify({
+                        reason
+                    })
                 });
 
-                if (!result.success) {
-                    showNotification(result.message || "Could not reject document.", "error");
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not reject document.", "error");
                     return;
                 }
 
-                showNotification("Document rejected successfully.", "success");
+                showNotification(result.message || "Document rejected successfully.", "success");
 
                 closeRejectKycModal();
 
@@ -216,19 +316,12 @@
             } catch (error) {
                 showNotification(error.message || "Could not reject document.", "error");
             } finally {
-                btn.disabled = false;
-                btn.innerText = "Reject KYC";
+                confirmRejectKycBtn.disabled = false;
+                confirmRejectKycBtn.innerText = "Reject KYC";
             }
         }
-        function formatDate(value) {
-            if (!value) return "-";
-            return new Date(value).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "2-digit"
-            });
-        }
-                async function viewKycFile(documentId) {
+
+        async function viewKycFile(documentId) {
             const token = localStorage.getItem("token");
 
             if (!token) {
@@ -250,9 +343,8 @@
                     return;
                 }
 
-                if (!response.ok) 
-                {
-                    showNotification("Could not load document.","error");
+                if (!response.ok) {
+                    showNotification("Could not load document.", "error");
                     return;
                 }
 
@@ -264,11 +356,37 @@
                 setTimeout(() => {
                     window.URL.revokeObjectURL(url);
                 }, 60000);
-            } catch (error) {
-                showNotification("Could not load document.","error");
-               
+
+            } catch {
+                showNotification("Could not load document.", "error");
             }
         }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        rejectKycModal.addEventListener("click", function (e) {
+            if (e.target === rejectKycModal) {
+                closeRejectKycModal();
+            }
+        });
+
         loadPendingKycs();
     </script>
 }
