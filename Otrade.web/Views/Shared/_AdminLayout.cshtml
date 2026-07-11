@@ -107,6 +107,7 @@
             }
         });
                 document.addEventListener("DOMContentLoaded", async function () {
+            await refreshAdminSession();
             await loadAdminAccess();
         });
 
@@ -154,8 +155,15 @@
 
             roleBadge.textContent = access.adminRole || "Admin";
         }
-               
-        async function openHangfireDashboard() {
+                async function refreshAdminSession() {
+            try {
+                await api("/admin/session", {
+                    method: "POST"
+                });
+            } catch {
+            }
+        }
+                async function openHangfireDashboard() {
             try {
                 const result = await api("/admin/hangfire/session", {
                     method: "POST"

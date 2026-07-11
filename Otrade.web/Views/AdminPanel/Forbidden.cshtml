@@ -1,0 +1,34 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="admin-page-header">
+    <div>
+        <h1>Access Denied</h1>
+        <p>You do not have permission to access this section.</p>
+    </div>
+</div>
+
+<div class="admin-card admin-forbidden-card">
+    <div class="admin-forbidden-icon">
+        !
+    </div>
+
+    <h2>Permission Required</h2>
+
+    <p>
+        Your current admin role does not allow access to this page.
+        Please contact the system owner if you think this is a mistake.
+    </p>
+
+    <div class="admin-forbidden-actions">
+        <a href="/admin/dashboard" class="admin-action-btn approve">
+            Back to Dashboard
+        </a>
+
+        <a href="/dashboard" class="admin-action-btn neutral">
+            User Panel
+        </a>
+    </div>
+</div>

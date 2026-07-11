@@ -2719,3 +2719,44 @@ span.flatpickr-weekday {
     font-size: 12px;
     font-weight: 700;
 }
+.admin-forbidden-card {
+    max-width: 620px;
+    margin: 40px auto;
+    text-align: center;
+    padding: 34px;
+}
+
+.admin-forbidden-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #F87171;
+    background: rgba(248, 113, 113, 0.10);
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    font-size: 34px;
+    font-weight: 900;
+}
+
+.admin-forbidden-card h2 {
+    color: #FFFFFF;
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.admin-forbidden-card p {
+    color: #94A3B8;
+    font-size: 14px;
+    line-height: 1.8;
+    margin-bottom: 24px;
+}
+
+.admin-forbidden-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
