@@ -21,23 +21,21 @@ namespace Otrade.Application.Services
         private readonly IEmailTemplateService _emailTemplateService;
         private readonly EncryptionService _encryptionService;
         private readonly INotificationQueue _notificationQueue;
-        private readonly AdminAuditService _adminAuditService;
         public AdminService(OtradeDbContext context,
         IServiceScopeFactory scopeFactory,
         SystemSettingService systemSettingService,
         IEmailService emailService,
         IEmailTemplateService emailTemplateService,
          EncryptionService encryptionService,
-         INotificationQueue notificationQueue,
-         AdminAuditService adminAuditService)
+         INotificationQueue notificationQueue
+        )
         {
             _context = context;
 
             _settingService = systemSettingService;
             _emailTemplateService = emailTemplateService;
             _encryptionService = encryptionService;
-            _notificationQueue = notificationQueue;
-            _adminAuditService = adminAuditService;
+            _notificationQueue= notificationQueue;
         }
 
         public async Task<ApiResponse<List<DepositsPending>>> GetPendingDepositsAsync()
@@ -808,9 +806,8 @@ namespace Otrade.Application.Services
             return ResponseFactory.Success(response);
         }
         public async Task<ApiResponse<bool>> UpdateAdminRoleAsync(
-            long actorUserId,
-            long targetUserId,
-            string? adminRole)
+        long targetUserId,
+        string? adminRole)
         {
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.UserId == targetUserId);
@@ -821,12 +818,6 @@ namespace Otrade.Application.Services
             if (user.IsOwner)
                 return ResponseFactory.Fail<bool>("Owner role cannot be changed");
 
-            var oldRole = user.IsOwner
-                ? "Owner"
-                : user.IsAdmin
-                    ? user.AdminRole?.ToString() ?? "Admin"
-                    : "User";
-
             if (string.IsNullOrWhiteSpace(adminRole) ||
                 adminRole.Equals("User", StringComparison.OrdinalIgnoreCase) ||
                 adminRole.Equals("Normal", StringComparison.OrdinalIgnoreCase))
@@ -836,15 +827,6 @@ namespace Otrade.Application.Services
                 user.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
-
-                await _adminAuditService.LogAsync(
-                    actorUserId: actorUserId,
-                    action: "UpdateAdminRole",
-                    entityName: "User",
-                    entityId: user.UserId,
-                    targetUserId: user.UserId,
-                    oldValue: oldRole,
-                    newValue: "User");
 
                 return ResponseFactory.Success(true, "User admin role removed successfully");
             }
@@ -862,15 +844,6 @@ namespace Otrade.Application.Services
             user.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-
-            await _adminAuditService.LogAsync(
-                actorUserId: actorUserId,
-                action: "UpdateAdminRole",
-                entityName: "User",
-                entityId: user.UserId,
-                targetUserId: user.UserId,
-                oldValue: oldRole,
-                newValue: parsedRole.ToString());
 
             return ResponseFactory.Success(true, "Admin role updated successfully");
         }

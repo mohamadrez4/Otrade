@@ -56,7 +56,6 @@ public class OtradeDbContext : DbContext
     public DbSet<TemporaryRegistration> TemporaryRegistrations { get; set; }
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
-    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<JobLock> JobLocks { get; set; }
     public DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; }
     public DbSet<InternalTransferVerification> InternalTransferVerifications => Set<InternalTransferVerification>();
@@ -605,45 +604,7 @@ public class OtradeDbContext : DbContext
             entity.HasIndex(x => x.SourceUserId);
             entity.HasIndex(x => x.CreatedAt);
         });
-        modelBuilder.Entity<AdminAuditLog>(entity =>
-        {
-            entity.HasKey(x => x.AdminAuditLogId);
 
-            entity.Property(x => x.Action)
-                .HasMaxLength(100)
-                .IsRequired();
-
-            entity.Property(x => x.EntityName)
-                .HasMaxLength(100);
-
-            entity.Property(x => x.IpAddress)
-                .HasMaxLength(100);
-
-            entity.Property(x => x.UserAgent)
-                .HasMaxLength(500);
-
-            entity.Property(x => x.OldValue)
-                .HasColumnType("nvarchar(max)");
-
-            entity.Property(x => x.NewValue)
-                .HasColumnType("nvarchar(max)");
-
-            entity.HasOne(x => x.ActorUser)
-                .WithMany()
-                .HasForeignKey(x => x.ActorUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasOne(x => x.TargetUser)
-                .WithMany()
-                .HasForeignKey(x => x.TargetUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            entity.HasIndex(x => x.ActorUserId);
-
-            entity.HasIndex(x => x.TargetUserId);
-
-            entity.HasIndex(x => x.CreatedAt);
-        });
         modelBuilder.Entity<JobLock>()
             .HasKey(x => x.JobName);
         foreach (var foreignKey in modelBuilder.Model.GetEntityTypes()

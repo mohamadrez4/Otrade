@@ -383,7 +383,6 @@ public class AdminController : ControllerBase
             return Forbid();
 
         var result = await _adminService.UpdateAdminRoleAsync(
-            currentUser.UserId,
             userId,
             request.AdminRole);
 
