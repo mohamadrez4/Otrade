@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Otrade.Application.Common;
+using Otrade.Application.DTOs.Admin;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
 
@@ -52,11 +53,12 @@ public class AdminPermissionService
             AdminRole.Support => permission is
                 AdminPermission.ManageKyc or
                 AdminPermission.ManageTickets or
-                AdminPermission.ManageUsers,
+                AdminPermission.ViewReports,
 
             AdminRole.Backend => permission is
                 AdminPermission.ManageHangfire or
-                AdminPermission.ManageSettings ,
+                AdminPermission.ManageSettings or
+                AdminPermission.ViewReports,
             _ => false
         };
 
@@ -64,5 +66,75 @@ public class AdminPermissionService
             return ResponseFactory.Fail<bool>("You do not have permission for this action");
 
         return ResponseFactory.Success(true);
+    }
+    public async Task<ApiResponse<AdminAccessDto>> GetMyAccessAsync(long userId)
+    {
+        var user = await _context.Users
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .Select(x => new
+            {
+                x.UserId,
+                x.IsAdmin,
+                x.IsOwner,
+                x.AdminRole
+            })
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+            return ResponseFactory.Fail<AdminAccessDto>("User not found");
+
+        if (!user.IsAdmin && !user.IsOwner)
+            return ResponseFactory.Fail<AdminAccessDto>("Admin access required");
+
+        bool Has(AdminPermission permission)
+        {
+            if (user.IsOwner)
+                return true;
+
+            if (user.AdminRole == AdminRole.SuperAdmin)
+                return true;
+
+            return user.AdminRole switch
+            {
+                AdminRole.Finance => permission is
+                    AdminPermission.ManageDeposits or
+                    AdminPermission.ManageWithdrawals or
+                    AdminPermission.ViewReports,
+
+                AdminRole.Support => permission is
+                    AdminPermission.ManageKyc or
+                    AdminPermission.ManageTickets or
+                    AdminPermission.ViewReports,
+
+                AdminRole.Backend=>permission is
+                    AdminPermission.ManageHangfire or
+                    AdminPermission.ManageSettings or
+                    AdminPermission.ViewReports,
+                _ => false
+            };
+        }
+
+        var dto = new AdminAccessDto
+        {
+            IsAdmin = user.IsAdmin,
+            IsOwner = user.IsOwner,
+            AdminRole = user.IsOwner
+                ? "Owner"
+                : user.AdminRole?.ToString() ?? "User",
+
+            ManageUsers = Has(AdminPermission.ManageUsers),
+            ManageSettings = Has(AdminPermission.ManageSettings),
+            ManageDeposits = Has(AdminPermission.ManageDeposits),
+            ManageWithdrawals = Has(AdminPermission.ManageWithdrawals),
+            ManageKyc = Has(AdminPermission.ManageKyc),
+            ViewReports = Has(AdminPermission.ViewReports),
+            ManageRanks = Has(AdminPermission.ManageRanks),
+            ManageTickets = Has(AdminPermission.ManageTickets),
+            ManageHangfire = Has(AdminPermission.ManageHangfire),
+            ManageAdminRoles = Has(AdminPermission.ManageAdminRoles)
+        };
+
+        return ResponseFactory.Success(dto);
     }
 }

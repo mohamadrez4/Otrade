@@ -2699,3 +2699,23 @@ span.flatpickr-weekday {
         color: #11E9A1;
         background: rgba(17, 233, 161, 0.10);
     }
+[data-permission] {
+    display: none !important;
+}
+
+    [data-permission].permission-visible {
+        display: flex !important;
+    }
+.admin-role-layout-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin: 8px 0 14px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(17, 233, 161, 0.20);
+    background: rgba(17, 233, 161, 0.08);
+    color: #11E9A1;
+    font-size: 12px;
+    font-weight: 700;
+}

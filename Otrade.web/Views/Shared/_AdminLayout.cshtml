@@ -27,51 +27,53 @@
             <div class="sidebar-logo">
                 <img src="~/images/logo.png" />
             </div>
-
+            <div class="admin-role-layout-badge" id="adminRoleBadge">
+                Admin
+            </div>
             <nav class="sidebar-nav">
 
-                <a href="/admin/dashboard" class="nav-item">
+                <a href="/admin/dashboard" class="nav-item" data-permission="viewReports">
                     <span>Admin Dashboard</span>
                 </a>
 
-                <a href="/admin/deposits" class="nav-item">
+                <a href="/admin/deposits" class="nav-item" data-permission="manageDeposits">
                     <span>Deposits</span>
                 </a>
-                <a href="/admin/pre-registrations" class="nav-item">
+                <a href="/admin/pre-registrations" class="nav-item" data-permission="manageDeposits">
                     <span>Pre-Registrations</span>
                 </a>
-                <a href="/admin/investment-capacity" class="nav-item">
+                <a href="/admin/investment-capacity" class="nav-item" data-permission="manageDeposits">
                     <span>Investment Capacity</span>
                 </a>
-                <a href="/admin/withdrawals" class="nav-item">
+                <a href="/admin/withdrawals" class="nav-item" data-permission="manageWithdrawals">
                     <span>Withdrawals</span>
                 </a>
 
-                <a href="/admin/kyc" class="nav-item">
+                <a href="/admin/kyc" class="nav-item" data-permission="manageKyc">
                     <span>KYC</span>
                 </a>
 
-                <a href="/admin/tickets" class="nav-item">
+                <a href="/admin/tickets" class="nav-item" data-permission="manageTickets">
                     <span>Tickets</span>
                 </a>
 
-                <a href="/admin/users" class="nav-item">
+                <a href="/admin/users" class="nav-item" data-permission="manageUsers">
                     <span>Users</span>
                 </a>
 
-                <a href="/admin/reports" class="nav-item">
+                <a href="/admin/reports" class="nav-item" data-permission="viewReports">
                     <span>Reports</span>
                 </a>
 
-                <a href="/admin/settings" class="nav-item">
+                <a href="/admin/settings" class="nav-item" data-permission="manageSettings">
                     <span>Settings</span>
                 </a>
 
-                <a href="/dashboard" class="nav-item">
+                <a href="/dashboard" class="nav-item" data-permission="viewReports">
                     <span>User Panel</span>
                 </a>
 
-                <a href="javascript:void(0)" onclick="openHangfireDashboard()">
+                <a href="javascript:void(0)" data-permission="manageHangfire" onclick="openHangfireDashboard()">
                     Hangfire
                 </a>
             </nav>
@@ -104,7 +106,56 @@
                 link.classList.add("active");
             }
         });
-               async function openHangfireDashboard() {
+                document.addEventListener("DOMContentLoaded", async function () {
+            await loadAdminAccess();
+        });
+
+        async function loadAdminAccess() {
+            try {
+                const result = await api("/api/admin/me/access", {
+                    method: "GET"
+                });
+
+                const access = result.data || result;
+
+                applyAdminAccess(access);
+                renderAdminRoleBadge(access);
+
+            } catch (error) {
+                showNotification(
+                    error.message || "Could not load admin permissions.",
+                    "error"
+                );
+
+                setTimeout(() => {
+                    window.location.href = "/auth/login";
+                }, 800);
+            }
+        }
+
+        function applyAdminAccess(access) {
+            document.querySelectorAll("[data-permission]").forEach(element => {
+                const permission = element.getAttribute("data-permission");
+
+                if (access && access[permission] === true) {
+                    element.classList.add("permission-visible");
+                } else {
+                    element.classList.remove("permission-visible");
+                }
+            });
+        }
+
+        function renderAdminRoleBadge(access) {
+            const roleBadge = document.getElementById("adminRoleBadge");
+
+            if (!roleBadge || !access) {
+                return;
+            }
+
+            roleBadge.textContent = access.adminRole || "Admin";
+        }
+               
+        async function openHangfireDashboard() {
             try {
                 const result = await api("/admin/hangfire/session", {
                     method: "POST"

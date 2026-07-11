@@ -35,7 +35,21 @@ public class AdminController : ControllerBase
         _investmentCapacityService = investmentCapacityService;
         _adminPermissionService = adminPermissionService;
     }
+    [Authorize]
+    [HttpGet("me/access")]
+    public async Task<IActionResult> GetMyAdminAccess(
+    [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+        var result = await _adminPermissionService.GetMyAccessAsync(
+            currentUser.UserId);
 
+        if (!result.Success)
+            return Forbid();
+
+        return Ok(result);
+    }
     [Authorize]
     [HttpGet("deposits/pending")]
     public async Task<IActionResult> GetPendingDeposits(
@@ -582,7 +596,7 @@ public class AdminController : ControllerBase
             return Forbid();
         var access = await _adminPermissionService.EnsurePermissionAsync(
             currentUser.UserId,
-            AdminPermission.ManageDeposits);
+            AdminPermission.ViewReports);
 
         if (!access.Success)
             return Forbid();
