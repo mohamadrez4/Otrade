@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Otrade.Application.DTOs.Reports;
 using Otrade.Application.Services;
 using Otrade.Application.Services.Security;
-using Otrade.Application.DTOs.Reports;
+using Otrade.Domain.Enums;
 namespace Otrade.web.Controllers.Api;
 
 [Authorize]
@@ -11,10 +12,11 @@ namespace Otrade.web.Controllers.Api;
 public class ReportController : ControllerBase
 {
     private readonly ReportService _reportService;
-
-    public ReportController(ReportService reportService)
+    private readonly AdminPermissionService _adminPermissionService;
+    public ReportController(ReportService reportService, AdminPermissionService adminPermissionService)
     {
         _reportService = reportService;
+        _adminPermissionService = adminPermissionService;
     }
 
     [HttpGet("user")]
@@ -36,7 +38,12 @@ public class ReportController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ViewReports);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _reportService.GetAdminReportAsync();
 
         if (!result.Success)
@@ -52,7 +59,12 @@ public class ReportController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ViewReports);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _reportService.GetAdminDetailReportAsync(filter);
 
         if (!result.Success)

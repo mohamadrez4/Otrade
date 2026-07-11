@@ -7,6 +7,7 @@ using Otrade.Application.DTOs.Ticket;
 using Otrade.Application.DTOs.Wallet;
 using Otrade.Application.Services;
 using Otrade.Application.Services.Security;
+using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
 
 namespace Otrade.web.Controllers.Api;
@@ -20,16 +21,19 @@ public class AdminController : ControllerBase
     private readonly OtradeDbContext _context;
     private readonly PreRegistrationService _preRegistrationService;
     private readonly InvestmentCapacityService _investmentCapacityService;
+    private readonly AdminPermissionService _adminPermissionService;
     public AdminController(
     AdminService adminService,
     OtradeDbContext context,
     PreRegistrationService preRegistrationService,
-    InvestmentCapacityService investmentCapacityService)
+    InvestmentCapacityService investmentCapacityService,
+    AdminPermissionService adminPermissionService)
     {
         _adminService = adminService;
         _context = context;
         _preRegistrationService = preRegistrationService;
         _investmentCapacityService = investmentCapacityService;
+        _adminPermissionService = adminPermissionService;
     }
 
     [Authorize]
@@ -39,6 +43,13 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+                currentUser.UserId,
+                AdminPermission.ManageDeposits);
+
+        if (!access.Success)
+            return Forbid();
+
 
         var result = await _adminService.GetPendingDepositsAsync();
 
@@ -54,7 +65,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.ApproveDepositAsync(
             id,
             request.ApprovedAmount);
@@ -74,7 +90,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.RejectDepositAsync(
             id,
             request.Reason);
@@ -92,7 +113,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageWithdrawals);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetPendingWithdrawalsAsync();
 
         if (!result.Success)
@@ -109,7 +135,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageWithdrawals);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.ApproveWithdrawalAsync(id);
 
         if (!result.Success)
@@ -127,7 +158,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageWithdrawals);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.RejectWithdrawalAsync(
             id,
             request.Reason);
@@ -144,7 +180,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageKyc);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetPendingKycsAsync();
 
         return Ok(result);
@@ -155,6 +196,12 @@ public class AdminController : ControllerBase
          [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin)
+            return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageKyc);
+
+        if (!access.Success)
             return Forbid();
         var result = await _adminService.ApproveKycDocumentAsync(
                     documentId,
@@ -173,6 +220,12 @@ public class AdminController : ControllerBase
         [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin)
+            return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageKyc);
+
+        if (!access.Success)
             return Forbid();
         var result = await _adminService.RejectKycDocumentAsync(
             documentId,
@@ -193,7 +246,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageTickets);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetOpenTicketsAsync();
 
         if (!result.Success)
@@ -211,7 +269,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageTickets);
 
+        if (!access.Success)
+            return Forbid();
         if (string.IsNullOrWhiteSpace(request.Message))
             return BadRequest(ResponseFactory.Fail<bool>("Message is required"));
 
@@ -234,7 +297,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageTickets);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.CloseTicketAsync(ticketId);
 
         if (!result.Success)
@@ -251,7 +319,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageTickets);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetTicketsAsync(request);
 
         if (!result.Success)
@@ -268,7 +341,12 @@ public class AdminController : ControllerBase
         [FromServices] CurrentUserService currentUser)
     {
         if (!currentUser.IsAdmin) return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageUsers);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetUsersAsync(page, pageSize, search);
 
         if (!result.Success) return BadRequest(result);
@@ -283,7 +361,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageSettings);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetSettingsAsync();
 
         if (!result.Success)
@@ -300,7 +383,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageSettings);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.SaveSettingsAsync(request);
 
         if (!result.Success)
@@ -316,7 +404,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageKyc);
 
+        if (!access.Success)
+            return Forbid();
         var doc = await _context.KycDocuments
             .FirstOrDefaultAsync(x => x.DocumentId == documentId);
 
@@ -351,7 +444,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _preRegistrationService.GetPendingForAdminAsync();
 
         if (!result.Success)
@@ -369,7 +467,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _preRegistrationService.ApproveAsync(
             id,
             request.ApprovedAmount,
@@ -390,7 +493,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _preRegistrationService.RejectAsync(
             id,
             request.Reason);
@@ -407,7 +515,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _investmentCapacityService.GetAdminListAsync();
 
         if (!result.Success)
@@ -424,7 +537,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _investmentCapacityService.SaveAsync(request);
 
         if (!result.Success)
@@ -439,7 +557,12 @@ public class AdminController : ControllerBase
     {
         if (!currentUser.IsAdmin)
             return Forbid();
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
 
+        if (!access.Success)
+            return Forbid();
         var result = await _adminService.GetWalletSummaryAsync();
 
         if (!result.Success)

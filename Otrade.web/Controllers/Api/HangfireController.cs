@@ -1,33 +1,53 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Otrade.Application.Services;
+using Otrade.Application.Services.Security;
+using Otrade.Domain.Enums;
 
 [ApiController]
 public class HangfireAccessController : ControllerBase
 {
+    private readonly AdminPermissionService _adminPermissionService;
+    private readonly IDataProtector _protector;
+
+    public HangfireAccessController(
+        AdminPermissionService adminPermissionService,
+        IDataProtectionProvider dataProtectionProvider)
+    {
+        _adminPermissionService = adminPermissionService;
+        _protector = dataProtectionProvider.CreateProtector("Otrade.Hangfire.Session");
+    }
+
     [Authorize]
     [HttpPost("/admin/hangfire/session")]
-    public IActionResult CreateSession()
+    public async Task<IActionResult> CreateSession(
+        [FromServices] CurrentUserService currentUser)
     {
-        var isAdmin = User.Claims.Any(c =>
-            c.Type.Equals("isAdmin", StringComparison.OrdinalIgnoreCase) &&
-            c.Value.Equals("true", StringComparison.OrdinalIgnoreCase));
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageHangfire);
 
-        var isOwner = User.Claims.Any(c =>
-            c.Type.Equals("isOwner", StringComparison.OrdinalIgnoreCase) &&
-            c.Value.Equals("true", StringComparison.OrdinalIgnoreCase));
-
-        if (!isAdmin && !isOwner)
+        if (!access.Success)
             return Forbid();
 
-        Response.Cookies.Append("HangfireAuth", "true", new CookieOptions
+        var expiresAt = DateTimeOffset.UtcNow.AddHours(2);
+
+        var ticket = $"{currentUser.UserId}|{expiresAt.UtcTicks}";
+        var protectedTicket = _protector.Protect(ticket);
+
+        Response.Cookies.Append("HangfireAuth", protectedTicket, new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
+            Secure = Request.IsHttps,
             SameSite = SameSiteMode.Lax,
-            Path = "/",
-            Expires = DateTimeOffset.Now.AddHours(2)
+            Path = "/hangfire",
+            Expires = expiresAt
         });
 
-        return Ok();
+        return Ok(new
+        {
+            redirectUrl = "/hangfire"
+        });
     }
 }

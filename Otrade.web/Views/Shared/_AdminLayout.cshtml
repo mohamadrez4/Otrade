@@ -71,7 +71,9 @@
                     <span>User Panel</span>
                 </a>
 
-                <a href="#" onclick="openHangfire(event)">Hangfire</a>
+                <a href="javascript:void(0)" onclick="openHangfireDashboard()">
+                    Hangfire
+                </a>
             </nav>
 
             <button class="logout-btn" onclick="logout()">Logout</button>
@@ -102,32 +104,20 @@
                 link.classList.add("active");
             }
         });
-        async function openHangfire(e) {
-            e.preventDefault();
+               async function openHangfireDashboard() {
+            try {
+                const result = await api("/admin/hangfire/session", {
+                    method: "POST"
+                });
 
-            const token = localStorage.getItem("token");
+                window.location.href = result?.redirectUrl || "/hangfire";
 
-            if (!token) {
-                showNotification("Please login again.","error");
-               
-                return;
+            } catch (error) {
+                showNotification(
+                    error.message || "You do not have permission to access Hangfire.",
+                    "error"
+                );
             }
-
-            const res = await fetch("/admin/hangfire/session", {
-                method: "POST",
-                headers: {
-                    "Authorization": "Bearer " + token
-                },
-                credentials: "include"
-            });
-
-            if (!res.ok) {
-                showNotification("Access denied.","error");
-                 
-                return;
-            }
-
-            window.open("/hangfire", "_blank");
         }
     </script>
 

@@ -1,17 +1,19 @@
 using Hangfire;
-using Otrade.BackgroundJobs.Jobs;
-using Otrade.BackgroundJobs.Scheduler;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Otrade.Application.Common.Interfaces;
 using Otrade.Application.Common.Locks;
 using Otrade.Application.Services;
 using Otrade.Application.Services.Security;
+using Otrade.BackgroundJobs.Jobs;
+using Otrade.BackgroundJobs.Scheduler;
 using Otrade.Persistence.Context;
+using Otrade.web.BackgroundServices;
+using Otrade.web.Security;
 using Otrade.Web.Services;
 using System.Text;
-using Otrade.web.BackgroundServices;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -92,6 +94,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<EncryptionService>();
 builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
 builder.Services.AddHostedService<NotificationBackgroundWorker>();
+builder.Services.AddScoped<AdminPermissionService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -114,7 +117,8 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[]
     {
-        new HangfireCookieAuthorizationFilter()
+        new HangfireDashboardAuthorizationFilter(
+            app.Services.GetRequiredService<IDataProtectionProvider>())
     }
 });
 app.MapStaticAssets();

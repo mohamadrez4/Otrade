@@ -93,7 +93,9 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.KycStatus)
                 .HasConversion<string>()
                 .HasMaxLength(20);
-
+            entity.Property(x => x.AdminRole)
+                .HasConversion<string>()
+                .HasMaxLength(30);
             // Sponsor FK
             entity.HasOne(x => x.Sponsor)
                 .WithMany()

@@ -1,4 +1,6 @@
-﻿namespace Otrade.Domain.Entities;
+﻿using Otrade.Domain.Enums;
+
+namespace Otrade.Domain.Entities;
 
 public class User
 {
@@ -25,7 +27,7 @@ public class User
     public bool IsOwner { get; set; }
 
     public bool IsAdmin { get; set; }
-
+    public AdminRole? AdminRole { get; set; }
     public KycStatus KycStatus { get; set; }
 
     public DateTime CreatedAt { get; set; }
