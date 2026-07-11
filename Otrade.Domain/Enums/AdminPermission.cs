@@ -10,5 +10,6 @@ public enum AdminPermission
     ViewReports = 6,
     ManageRanks = 7,
     ManageTickets = 8,
-    ManageHangfire= 9
+    ManageHangfire= 9,
+    ManageAdminRoles = 10
 }

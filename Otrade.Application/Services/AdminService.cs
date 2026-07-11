@@ -632,7 +632,9 @@ namespace Otrade.Application.Services
                     LastName = x.LastName,
                     ReferralCode = x.ReferralCode,
                     KycStatus = x.KycStatus.ToString(),
-
+                    IsAdmin = x.IsAdmin,
+                    IsOwner = x.IsOwner,
+                    AdminRole = x.AdminRole != null ? x.AdminRole.ToString() : null,
                     SponsorEmail = x.Sponsor != null
                         ? x.Sponsor.Email
                         : null,
@@ -802,6 +804,48 @@ namespace Otrade.Application.Services
             };
 
             return ResponseFactory.Success(response);
+        }
+        public async Task<ApiResponse<bool>> UpdateAdminRoleAsync(
+        long targetUserId,
+        string? adminRole)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.UserId == targetUserId);
+
+            if (user == null)
+                return ResponseFactory.Fail<bool>("User not found");
+
+            if (user.IsOwner)
+                return ResponseFactory.Fail<bool>("Owner role cannot be changed");
+
+            if (string.IsNullOrWhiteSpace(adminRole) ||
+                adminRole.Equals("User", StringComparison.OrdinalIgnoreCase) ||
+                adminRole.Equals("Normal", StringComparison.OrdinalIgnoreCase))
+            {
+                user.IsAdmin = false;
+                user.AdminRole = null;
+                user.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return ResponseFactory.Success(true, "User admin role removed successfully");
+            }
+
+            if (!Enum.TryParse<AdminRole>(
+                    adminRole,
+                    true,
+                    out var parsedRole))
+            {
+                return ResponseFactory.Fail<bool>("Invalid admin role");
+            }
+
+            user.IsAdmin = true;
+            user.AdminRole = parsedRole;
+            user.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return ResponseFactory.Success(true, "Admin role updated successfully");
         }
     }
 }

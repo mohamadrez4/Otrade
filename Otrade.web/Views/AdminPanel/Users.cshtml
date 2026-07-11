@@ -40,6 +40,7 @@
                         <th>Profit Wallet</th>
                         <th>Referral Wallet</th>
                         <th>Sponsor</th>
+                        <th>Admin Role</th>
                     </tr>
                 </thead>
 
@@ -155,6 +156,9 @@
                 }
             </div>
         </td>
+        <td>
+            ${renderAdminRoleSelect(user)}
+        </td>
                     `;
 
                     usersTableBody.appendChild(row);
@@ -167,7 +171,70 @@
                 usersMessage.innerText = error.message || "Could not load users.";
             }
         }
+                function renderAdminRoleSelect(user) {
+            if (user.isOwner) {
+                return `
+                    <span class="admin-role-badge owner">
+                        Owner
+                    </span>
+                `;
+            }
 
+            const currentRole = user.adminRole || "User";
+
+            return `
+                <select class="admin-role-select"
+                        onchange="updateAdminRole(${user.userId}, this.value)">
+                    <option value="" ${currentRole === "User" ? "selected" : ""}>
+                        User
+                    </option>
+                    <option value="SuperAdmin" ${currentRole === "SuperAdmin" ? "selected" : ""}>
+                        SuperAdmin
+                    </option>
+                    <option value="Finance" ${currentRole === "Finance" ? "selected" : ""}>
+                        Finance
+                    </option>
+                    <option value="Support" ${currentRole === "Support" ? "selected" : ""}>
+                        Support
+                    </option>
+                </select>
+            `;
+        }
+                async function updateAdminRole(userId, adminRole) {
+            const confirmed = await showConfirm(
+                "Are you sure you want to change this user's admin role?",
+                "Change Admin Role"
+            );
+
+            if (!confirmed) {
+                await loadUsers();
+                return;
+            }
+
+            try {
+                const result = await api(`/api/admin/users/${userId}/admin-role`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        adminRole: adminRole || null
+                    })
+                });
+
+                showNotification(
+                    result.message || "Admin role updated successfully.",
+                    "success"
+                );
+
+                await loadUsers();
+
+            } catch (error) {
+                showNotification(
+                    error.message || "Could not update admin role.",
+                    "error"
+                );
+
+                await loadUsers();
+            }
+        }
         function buildFullName(user) {
             const firstName = user.firstName || "";
             const lastName = user.lastName || "";

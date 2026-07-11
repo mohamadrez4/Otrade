@@ -355,6 +355,29 @@ public class AdminController : ControllerBase
     }
 
     [Authorize]
+    [HttpPost("users/{userId:long}/admin-role")]
+    public async Task<IActionResult> UpdateAdminRole(
+    long userId,
+    [FromBody] UpdateAdminRoleRequest request,
+    [FromServices] CurrentUserService currentUser)
+    {
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageAdminRoles);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _adminService.UpdateAdminRoleAsync(
+            userId,
+            request.AdminRole);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
     [HttpGet("settings")]
     public async Task<IActionResult> GetSettings(
     [FromServices] CurrentUserService currentUser)

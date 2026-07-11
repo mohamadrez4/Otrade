@@ -2669,3 +2669,33 @@ span.flatpickr-weekday {
     background: rgba(251, 191, 36, 0.10);
     border: 1px solid rgba(251, 191, 36, 0.20);
 }
+.admin-role-select {
+    min-width: 130px;
+    background: #0B0F14;
+    color: #FFFFFF;
+    border: 1px solid #1C2532;
+    border-radius: 10px;
+    padding: 8px 10px;
+    outline: none;
+    font-size: 12px;
+}
+
+    .admin-role-select:focus {
+        border-color: rgba(17, 233, 161, 0.55);
+        box-shadow: 0 0 0 3px rgba(17, 233, 161, 0.08);
+    }
+
+.admin-role-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(17, 233, 161, 0.20);
+}
+
+    .admin-role-badge.owner {
+        color: #11E9A1;
+        background: rgba(17, 233, 161, 0.10);
+    }

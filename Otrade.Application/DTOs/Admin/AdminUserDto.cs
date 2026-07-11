@@ -20,6 +20,12 @@
     public string? SponsorFullName { get; set; }
 
     public string? SponsorReferralCode { get; set; }
+
+    public bool IsAdmin { get; set; }
+
+    public bool IsOwner { get; set; }
+
+    public string? AdminRole { get; set; }
 }
 
 public class RankDto
