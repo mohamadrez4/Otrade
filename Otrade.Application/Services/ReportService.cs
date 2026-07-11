@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Otrade.Application.Common;
+using Otrade.Application.DTOs.Common;
 using Otrade.Application.DTOs.Reports;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
@@ -634,5 +635,517 @@ public class ReportService
         };
 
         return ResponseFactory.Success(response);
+    }
+    public async Task<ApiResponse<object>> GetAdminDetailReportPageAsync(
+        AdminReportFilterRequest filter)
+    {
+        filter ??= new AdminReportFilterRequest();
+
+        var type = filter.Type?.Trim();
+
+        if (string.IsNullOrWhiteSpace(type))
+            type = "deposits";
+
+        type = type.Trim();
+
+        var page = filter.Page <= 0 ? 1 : filter.Page;
+        var pageSize = filter.PageSize <= 0 ? 20 : filter.PageSize;
+
+        if (pageSize > 100)
+            pageSize = 100;
+
+        var email = filter.Email?.Trim().ToLowerInvariant();
+        var statusText = filter.Status?.Trim();
+        var fromDate = filter.FromDate?.Date;
+        var toDateExclusive = filter.ToDate?.Date.AddDays(1);
+        var minAmount = filter.MinAmount;
+        var maxAmount = filter.MaxAmount;
+
+        var hasStatusFilter =
+            !string.IsNullOrWhiteSpace(statusText) &&
+            !statusText.Equals("All", StringComparison.OrdinalIgnoreCase);
+
+        DepositStatus parsedStatus = DepositStatus.Pending;
+        KycStatus parsedKycStatus = KycStatus.Pending;
+
+        var statusParsed = false;
+        var kycStatusParsed = false;
+
+        if (hasStatusFilter)
+        {
+            statusParsed = Enum.TryParse(statusText, true, out parsedStatus);
+            kycStatusParsed = Enum.TryParse(statusText, true, out parsedKycStatus);
+        }
+
+        if (type.Equals("deposits", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.Deposits
+                .AsNoTracking()
+                .Include(x => x.User)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.User.Email.ToLower().Contains(email) ||
+                    x.User.ReferralCode.ToLower().Contains(email) ||
+                    x.User.FirstName.ToLower().Contains(email) ||
+                    x.User.LastName.ToLower().Contains(email) ||
+                    x.TxId.ToLower().Contains(email));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (minAmount.HasValue)
+                query = query.Where(x => x.Amount >= minAmount.Value);
+
+            if (maxAmount.HasValue)
+                query = query.Where(x => x.Amount <= maxAmount.Value);
+
+            if (hasStatusFilter && statusParsed)
+                query = query.Where(x => x.Status == parsedStatus);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new AdminDepositDto
+                {
+                    DepositId = x.DepositId,
+                    UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+                    UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+                    Amount = x.Amount,
+                    TxId = x.TxId,
+                    Status = x.Status.ToString(),
+                    AdminNote = x.AdminNote,
+                    CreatedAt = x.CreatedAt,
+                    ProcessedAt = x.ProcessedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("withdrawals", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.Withdrawals
+                .AsNoTracking()
+                .Include(x => x.User)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.User.Email.ToLower().Contains(email) ||
+                    x.User.ReferralCode.ToLower().Contains(email) ||
+                    x.User.FirstName.ToLower().Contains(email) ||
+                    x.User.LastName.ToLower().Contains(email) ||
+                    x.WalletAddress.ToLower().Contains(email) ||
+                    x.Network.ToLower().Contains(email));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (minAmount.HasValue)
+                query = query.Where(x => x.Amount >= minAmount.Value);
+
+            if (maxAmount.HasValue)
+                query = query.Where(x => x.Amount <= maxAmount.Value);
+
+            if (hasStatusFilter && statusParsed)
+                query = query.Where(x => x.Status == parsedStatus);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new AdminWithdrawalDto
+                {
+                    WithdrawalId = x.WithdrawalId,
+                    UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+                    UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+                    Amount = x.Amount,
+                    WalletAddress = x.WalletAddress,
+                    Network = x.Network,
+                    Status = x.Status.ToString(),
+                    AdminNote = x.AdminNote,
+                    CreatedAt = x.CreatedAt,
+                    ProcessedAt = x.ProcessedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("transfers", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.WalletTransfers
+                .AsNoTracking()
+                .Include(x => x.FromWallet)
+                    .ThenInclude(x => x.User)
+                .Include(x => x.ToWallet)
+                    .ThenInclude(x => x.User)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.FromWallet.User.Email.ToLower().Contains(email) ||
+                    x.ToWallet.User.Email.ToLower().Contains(email) ||
+                    x.FromWallet.User.ReferralCode.ToLower().Contains(email) ||
+                    x.ToWallet.User.ReferralCode.ToLower().Contains(email));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (minAmount.HasValue)
+                query = query.Where(x => x.Amount >= minAmount.Value);
+
+            if (maxAmount.HasValue)
+                query = query.Where(x => x.Amount <= maxAmount.Value);
+
+            var totalCount = await query.CountAsync();
+
+            var rows = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new
+                {
+                    x.TransferId,
+                    x.Amount,
+                    x.Description,
+                    x.CreatedAt,
+
+                    FromWalletType = x.FromWallet.WalletType,
+                    ToWalletType = x.ToWallet.WalletType,
+
+                    FromUserEmail = x.FromWallet.User.Email,
+                    FromUserUid = x.FromWallet.User.ReferralCode,
+
+                    ToUserEmail = x.ToWallet.User.Email,
+                    ToUserUid = x.ToWallet.User.ReferralCode
+                })
+                .ToListAsync();
+
+            var items = rows
+                .Select(x => new AdminWalletTransactionDto
+                {
+                    TransferId = x.TransferId,
+                    FromUserEmail = x.FromUserEmail,
+                    FromUserUid = x.FromUserUid,
+                    ToUserEmail = x.ToUserEmail,
+                    ToUserUid = x.ToUserUid,
+                    FromWalletType = x.FromWalletType.ToString(),
+                    ToWalletType = x.ToWalletType.ToString(),
+                    Amount = x.Amount,
+                    Description = x.Description,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToList();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("investmentProfits", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.ProfitLedgers
+                .AsNoTracking()
+                .Include(x => x.User)
+                .Where(x => x.Type == ProfitType.Investment)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.User.Email.ToLower().Contains(email) ||
+                    x.User.ReferralCode.ToLower().Contains(email) ||
+                    x.User.FirstName.ToLower().Contains(email) ||
+                    x.User.LastName.ToLower().Contains(email));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (minAmount.HasValue)
+                query = query.Where(x => x.Amount >= minAmount.Value);
+
+            if (maxAmount.HasValue)
+                query = query.Where(x => x.Amount <= maxAmount.Value);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new AdminProfitDto
+                {
+                    UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+                    ProfitType = "Investment Profit",
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("referralProfits", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.ProfitLedgers
+                .AsNoTracking()
+                .Include(x => x.User)
+                .Include(x => x.SourceUser)
+                .Where(x => x.Type == ProfitType.Referral)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.User.Email.ToLower().Contains(email) ||
+                    x.User.ReferralCode.ToLower().Contains(email) ||
+                    x.User.FirstName.ToLower().Contains(email) ||
+                    x.User.LastName.ToLower().Contains(email) ||
+                    (x.SourceUser != null && x.SourceUser.Email.ToLower().Contains(email)) ||
+                    (x.SourceUser != null && x.SourceUser.ReferralCode.ToLower().Contains(email)) ||
+                    (x.SourceUser != null && x.SourceUser.FirstName.ToLower().Contains(email)) ||
+                    (x.SourceUser != null && x.SourceUser.LastName.ToLower().Contains(email)));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (minAmount.HasValue)
+                query = query.Where(x => x.Amount >= minAmount.Value);
+
+            if (maxAmount.HasValue)
+                query = query.Where(x => x.Amount <= maxAmount.Value);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new AdminProfitDto
+                {
+                    UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+
+                    SourceUserEmail = x.SourceUser != null
+                        ? x.SourceUser.Email
+                        : null,
+
+                    SourceUserUid = x.SourceUser != null
+                        ? x.SourceUser.ReferralCode
+                        : null,
+
+                    SourceUserFullName = x.SourceUser != null
+                        ? (x.SourceUser.FirstName + " " + x.SourceUser.LastName).Trim()
+                        : null,
+
+                    ProfitType = "Referral Profit",
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("mainInvestBonuses", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.ReferralBonusRecords
+                .AsNoTracking()
+                .Include(x => x.FromUser)
+                .Include(x => x.ToUser)
+                .Where(x => x.Type == "MainToInvestBonus")
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.FromUser.Email.ToLower().Contains(email) ||
+                    x.ToUser.Email.ToLower().Contains(email) ||
+                    x.FromUser.ReferralCode.ToLower().Contains(email) ||
+                    x.ToUser.ReferralCode.ToLower().Contains(email));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (minAmount.HasValue)
+                query = query.Where(x => x.Amount >= minAmount.Value);
+
+            if (maxAmount.HasValue)
+                query = query.Where(x => x.Amount <= maxAmount.Value);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new AdminBonusDto
+                {
+                    FromUserEmail = x.FromUser.Email,
+                    ToUserEmail = x.ToUser.Email,
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("kycs", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.KycDocuments
+                .AsNoTracking()
+                .Include(x => x.User)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                query = query.Where(x =>
+                    x.User.Email.ToLower().Contains(email) ||
+                    x.User.ReferralCode.ToLower().Contains(email) ||
+                    x.User.FirstName.ToLower().Contains(email) ||
+                    x.User.LastName.ToLower().Contains(email) ||
+                    x.DocumentType.ToString().ToLower().Contains(email));
+            }
+
+            if (fromDate.HasValue)
+                query = query.Where(x => x.CreatedAt >= fromDate.Value);
+
+            if (toDateExclusive.HasValue)
+                query = query.Where(x => x.CreatedAt < toDateExclusive.Value);
+
+            if (hasStatusFilter && kycStatusParsed)
+                query = query.Where(x => x.Status == parsedKycStatus);
+
+            var totalCount = await query.CountAsync();
+
+            var rows = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new
+                {
+                    x.DocumentId,
+                    x.UserId,
+
+                    UserEmail = x.User.Email,
+                    UserUid = x.User.ReferralCode,
+                    UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
+
+                    DocumentType = x.DocumentType.ToString(),
+                    Status = x.Status.ToString(),
+                    x.RejectReason,
+                    x.CreatedAt,
+                    x.ReviewedAt,
+                    x.ReviewedByAdminId
+                })
+                .ToListAsync();
+
+            var reviewerIds = rows
+                .Where(x => x.ReviewedByAdminId.HasValue)
+                .Select(x => x.ReviewedByAdminId!.Value)
+                .Distinct()
+                .ToList();
+
+            var reviewers = await _context.Users
+                .AsNoTracking()
+                .Where(x => reviewerIds.Contains(x.UserId))
+                .Select(x => new
+                {
+                    x.UserId,
+                    x.Email,
+                    x.ReferralCode
+                })
+                .ToDictionaryAsync(x => x.UserId);
+
+            var items = rows
+                .Select(x =>
+                {
+                    reviewers.TryGetValue(
+                        x.ReviewedByAdminId ?? 0,
+                        out var reviewer);
+
+                    return new AdminKycReportDto
+                    {
+                        DocumentId = x.DocumentId,
+                        UserId = x.UserId,
+                        UserEmail = x.UserEmail,
+                        UserUid = x.UserUid,
+                        UserFullName = x.UserFullName,
+                        DocumentType = x.DocumentType,
+                        Status = x.Status,
+                        RejectReason = x.RejectReason,
+                        CreatedAt = x.CreatedAt,
+                        ReviewedAt = x.ReviewedAt,
+                        ReviewedByAdminId = x.ReviewedByAdminId,
+                        ReviewedByAdminEmail = reviewer?.Email,
+                        ReviewedByAdminUid = reviewer?.ReferralCode
+                    };
+                })
+                .ToList();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        return ResponseFactory.Fail<object>("Invalid report type.");
+    }
+
+    private static PagedResponse<T> CreatePagedResponse<T>(
+        int page,
+        int pageSize,
+        int totalCount,
+        List<T> items)
+    {
+        return new PagedResponse<T>
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Items = items
+        };
     }
 }

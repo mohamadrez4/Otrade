@@ -54,6 +54,7 @@
             <h3>Detailed Reports</h3>
             <p>Review detailed financial and activity reports across the platform.</p>
         </div>
+
         <div class="reports-filter-card">
 
             <div class="reports-filter-grid">
@@ -66,8 +67,6 @@
                            autocomplete="off"
                            placeholder="Search email, UID, name, tx hash, or wallet address" />
                 </div>
-
-
 
                 <div class="reports-filter-field">
                     <label>From Date</label>
@@ -86,6 +85,7 @@
                            autocomplete="off"
                            placeholder="Select end date" />
                 </div>
+
                 <div class="reports-filter-field">
                     <label>Status</label>
                     <select id="reportStatusFilter" class="panel-input">
@@ -96,6 +96,7 @@
                         <option value="Canceled">Canceled</option>
                     </select>
                 </div>
+
                 <div class="reports-filter-field">
                     <label>Min Amount</label>
                     <input id="reportMinAmountFilter"
@@ -129,6 +130,7 @@
             </div>
 
         </div>
+
         <div class="reports-tabs">
             <button class="report-tab active" data-target="deposits">Deposits</button>
             <button class="report-tab" data-target="withdrawals">Withdrawals</button>
@@ -149,14 +151,57 @@
                 <tbody id="adminReportsTableBody"></tbody>
             </table>
         </div>
+
+        <div id="adminReportsPagination" class="admin-pagination" style="display:none;">
+            <button id="adminReportsPrevBtn"
+                    class="reports-filter-clear"
+                    type="button">
+                Previous
+            </button>
+
+            <span id="adminReportsPageInfo"></span>
+
+            <button id="adminReportsNextBtn"
+                    class="reports-filter-clear"
+                    type="button">
+                Next
+            </button>
+        </div>
     </div>
 
 </div>
 
-@section Scripts { 
+@section Scripts {
     <script>
         let reportFromDatePicker = null;
         let reportToDatePicker = null;
+
+        let summaryData = null;
+        let currentTab = "deposits";
+        let currentPage = 1;
+        const pageSize = 5;
+        let totalPages = 1;
+
+        const totalDeposits = document.getElementById("totalDeposits");
+        const totalWithdrawals = document.getElementById("totalWithdrawals");
+        const totalInvestmentProfits = document.getElementById("totalInvestmentProfits");
+        const totalReferralProfits = document.getElementById("totalReferralProfits");
+        const totalMainInvestBonuses = document.getElementById("totalMainInvestBonuses");
+        const pendingDepositsCount = document.getElementById("pendingDepositsCount");
+        const pendingWithdrawalsCount = document.getElementById("pendingWithdrawalsCount");
+        const totalUsers = document.getElementById("totalUsers");
+
+        const adminReportsMessage = document.getElementById("adminReportsMessage");
+        const adminReportsTableWrapper = document.getElementById("adminReportsTableWrapper");
+        const adminReportsTableHead = document.getElementById("adminReportsTableHead");
+        const adminReportsTableBody = document.getElementById("adminReportsTableBody");
+
+        const adminReportsPagination = document.getElementById("adminReportsPagination");
+        const adminReportsPrevBtn = document.getElementById("adminReportsPrevBtn");
+        const adminReportsNextBtn = document.getElementById("adminReportsNextBtn");
+        const adminReportsPageInfo = document.getElementById("adminReportsPageInfo");
+
+        const tabs = document.querySelectorAll(".report-tab");
 
         function initializeReportDatePickers() {
             reportFromDatePicker = flatpickr("#reportFromDateFilter", {
@@ -209,24 +254,11 @@
                 }
             });
         }
-        const totalDeposits = document.getElementById("totalDeposits");
-        const totalWithdrawals = document.getElementById("totalWithdrawals");
-        const totalInvestmentProfits = document.getElementById("totalInvestmentProfits");
-        const totalReferralProfits = document.getElementById("totalReferralProfits");
-        const totalMainInvestBonuses = document.getElementById("totalMainInvestBonuses");
-        const pendingDepositsCount = document.getElementById("pendingDepositsCount");
-        const pendingWithdrawalsCount = document.getElementById("pendingWithdrawalsCount");
-        const totalUsers = document.getElementById("totalUsers");
 
-        const adminReportsMessage = document.getElementById("adminReportsMessage");
-        const adminReportsTableWrapper = document.getElementById("adminReportsTableWrapper");
-        const adminReportsTableHead = document.getElementById("adminReportsTableHead");
-        const adminReportsTableBody = document.getElementById("adminReportsTableBody");
-
-        const tabs = document.querySelectorAll(".report-tab");
-                document.getElementById("applyReportsFilterBtn")
+        document.getElementById("applyReportsFilterBtn")
             .addEventListener("click", async function () {
-                await loadAdminReports();
+                currentPage = 1;
+                await loadReportPage();
             });
 
         document.getElementById("clearReportsFilterBtn")
@@ -245,54 +277,113 @@
                     reportToDatePicker.set("minDate", null);
                 }
 
-                await loadAdminReports();
+                currentPage = 1;
+                await loadReportPage();
             });
-        let summaryData = null;
-        let detailData = null;
-        let currentTab = "deposits";
+
+        document.getElementById("reportEmailFilter")
+            .addEventListener("keydown", async function (e) {
+                if (e.key === "Enter") {
+                    currentPage = 1;
+                    await loadReportPage();
+                }
+            });
+
+        adminReportsPrevBtn.addEventListener("click", async function () {
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage--;
+            await loadReportPage();
+        });
+
+        adminReportsNextBtn.addEventListener("click", async function () {
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage++;
+            await loadReportPage();
+        });
 
         tabs.forEach(tab => {
-            tab.addEventListener("click", function () {
+            tab.addEventListener("click", async function () {
                 tabs.forEach(x => x.classList.remove("active"));
                 this.classList.add("active");
 
                 currentTab = this.dataset.target;
-                renderDetailTable(currentTab);
+                currentPage = 1;
+
+                await loadReportPage();
             });
         });
 
         async function loadAdminReports() {
+            await loadSummary();
+            await loadReportPage();
+        }
+
+        async function loadSummary() {
             try {
                 const summaryResult = await api("/api/reports/admin");
-                const filterQuery = buildReportsFilterQuery();
-
-                     if (filterQuery === null) {
-                         return;
-                     }
-
-                const detailResult = await api("/api/reports/admin/detail" + filterQuery);
 
                 if (!summaryResult.success) {
-                    adminReportsMessage.innerText = summaryResult.message || "Could not load report summary.";
-                    return;
-                }
-
-                if (!detailResult.success) {
-                    adminReportsMessage.innerText = detailResult.message || "Could not load report details.";
+                    adminReportsMessage.innerText =
+                        summaryResult.message || "Could not load report summary.";
                     return;
                 }
 
                 summaryData = summaryResult.data;
-                detailData = detailResult.data;
-
                 fillSummary(summaryData);
-                renderDetailTable(currentTab);
 
             } catch (error) {
-                adminReportsMessage.innerText = error.message || "Could not load admin reports.";
+                adminReportsMessage.innerText =
+                    error.message || "Could not load report summary.";
             }
         }
-        function buildReportsFilterQuery() {
+
+        async function loadReportPage() {
+            try {
+                adminReportsTableHead.innerHTML = "";
+                adminReportsTableBody.innerHTML = "";
+                adminReportsTableWrapper.style.display = "none";
+                adminReportsPagination.style.display = "none";
+
+                adminReportsMessage.innerText = "Loading reports...";
+                adminReportsMessage.style.display = "block";
+
+                const query = buildReportsPageQuery();
+
+                if (query === null) {
+                    return;
+                }
+
+                const result = await api("/api/reports/admin/detail/page" + query);
+
+                if (!result.success || !result.data) {
+                    adminReportsMessage.innerText =
+                        result.message || "Could not load report details.";
+                    return;
+                }
+
+                const pagedData = result.data;
+                const items = pagedData.items || [];
+
+                currentPage = pagedData.page || 1;
+                totalPages = pagedData.totalPages || 1;
+
+                renderDetailTable(currentTab, items);
+                renderPagination(pagedData);
+
+            } catch (error) {
+                adminReportsMessage.innerText =
+                    error.message || "Could not load admin reports.";
+                adminReportsPagination.style.display = "none";
+            }
+        }
+
+        function buildReportsPageQuery() {
             const params = new URLSearchParams();
 
             const email = document.getElementById("reportEmailFilter").value.trim();
@@ -307,6 +398,10 @@
                 return null;
             }
 
+            params.append("type", currentTab);
+            params.append("page", currentPage);
+            params.append("pageSize", pageSize);
+
             if (email) params.append("email", email);
             if (status && status !== "All") params.append("status", status);
             if (fromDate) params.append("fromDate", fromDate);
@@ -314,10 +409,9 @@
             if (minAmount) params.append("minAmount", minAmount);
             if (maxAmount) params.append("maxAmount", maxAmount);
 
-            const query = params.toString();
-
-            return query ? "?" + query : "";
+            return "?" + params.toString();
         }
+
         function fillSummary(data) {
             totalDeposits.innerText = formatMoney(data.totalDeposits);
             totalWithdrawals.innerText = formatMoney(data.totalWithdrawals);
@@ -329,15 +423,30 @@
             totalUsers.innerText = data.totalUsers || 0;
         }
 
-        function renderDetailTable(type) {
-            if (!detailData) return;
+        function renderPagination(data) {
+            const totalCount = data.totalCount || 0;
 
+            if (totalCount <= 0) {
+                adminReportsPagination.style.display = "none";
+                return;
+            }
+
+            currentPage = data.page || 1;
+            totalPages = data.totalPages || 1;
+
+            adminReportsPagination.style.display = "flex";
+            adminReportsPageInfo.innerText =
+                `Page ${currentPage} of ${totalPages} - Total: ${totalCount}`;
+
+            adminReportsPrevBtn.disabled = currentPage <= 1;
+            adminReportsNextBtn.disabled = currentPage >= totalPages;
+        }
+
+        function renderDetailTable(type, items) {
             adminReportsTableHead.innerHTML = "";
             adminReportsTableBody.innerHTML = "";
 
-            const items = detailData[type] || [];
-
-            if (!items.length) {
+            if (!items || !items.length) {
                 adminReportsMessage.innerText = "No records found.";
                 adminReportsMessage.style.display = "block";
                 adminReportsTableWrapper.style.display = "none";
@@ -347,190 +456,192 @@
             adminReportsMessage.style.display = "none";
             adminReportsTableWrapper.style.display = "block";
 
-        if (type === "deposits") {
-            adminReportsTableHead.innerHTML = `
-                <tr>
-                    <th>User</th>
-                    <th>Tx Hash</th>
-                    <th>Status</th>
-                    <th>Note</th>
-                    <th>Created At</th>
-                    <th>Processed At</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
+            if (type === "deposits") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>User</th>
+                        <th>Tx Hash</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Created At</th>
+                        <th>Processed At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
 
-            items.forEach(item => {
-                const status = String(item.status || "").toLowerCase();
-                const note = item.adminNote || "-";
+                items.forEach(item => {
+                    const status = String(item.status || "").toLowerCase();
+                    const note = item.adminNote || "-";
 
-                appendRow(`
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.userUid || "-")}</strong>
-                            <span>${escapeHtml(item.userEmail || "-")}</span>
-                            ${
-                                item.userFullName
-                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
+                    appendRow(`
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.userUid || "-")}</strong>
+                                <span>${escapeHtml(item.userEmail || "-")}</span>
+                                ${
+                                    item.userFullName
+                                        ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
 
-                    <td>
-                        <div class="admin-tx-cell wide">
-                            <span title="${escapeHtml(item.txId || "")}">
-                                ${escapeHtml(item.txId || "-")}
+                        <td>
+                            <div class="admin-tx-cell wide">
+                                <span title="${escapeHtml(item.txId || "")}">
+                                    ${escapeHtml(item.txId || "-")}
+                                </span>
+
+                                ${
+                                    item.txId
+                                        ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="admin-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
                             </span>
+                        </td>
 
-                            ${
-                                item.txId
-                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="admin-status ${escapeHtml(status)}">
-                            ${escapeHtml(item.status || "-")}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="admin-report-note ${note !== "-" ? "has-note" : ""}">
-                            ${escapeHtml(note)}
-                        </span>
-                    </td>
-
-                    <td>${formatDate(item.createdAt)}</td>
-
-                    <td>${formatDate(item.processedAt)}</td>
-
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
-
-            return;
-        }
-
-        if (type === "withdrawals") {
-            adminReportsTableHead.innerHTML = `
-                <tr>
-                    <th>User</th>
-                    <th>Network</th>
-                    <th>Wallet Address</th>
-                    <th>Status</th>
-                    <th>Note</th>
-                    <th>Created At</th>
-                    <th>Processed At</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
-
-            items.forEach(item => {
-                const status = String(item.status || "").toLowerCase();
-                const note = item.adminNote || "-";
-
-                appendRow(`
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.userUid || "-")}</strong>
-                            <span>${escapeHtml(item.userEmail || "-")}</span>
-                            ${
-                                item.userFullName
-                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="admin-status neutral">
-                            ${escapeHtml(item.network || "-")}
-                        </span>
-                    </td>
-
-                    <td>
-                        <div class="admin-tx-cell wide">
-                            <span title="${escapeHtml(item.walletAddress || "")}">
-                                ${escapeHtml(item.walletAddress || "-")}
+                        <td>
+                            <span class="admin-report-note ${note !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(note)}
                             </span>
+                        </td>
 
-                            ${
-                                item.walletAddress
-                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
+                        <td>${formatDate(item.createdAt)}</td>
 
-                    <td>
-                        <span class="admin-status ${escapeHtml(status)}">
-                            ${escapeHtml(item.status || "-")}
-                        </span>
-                    </td>
+                        <td>${formatDate(item.processedAt)}</td>
 
-                    <td>
-                        <span class="admin-report-note ${note !== "-" ? "has-note" : ""}">
-                            ${escapeHtml(note)}
-                        </span>
-                    </td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
 
-                    <td>${formatDate(item.createdAt)}</td>
+                return;
+            }
 
-                    <td>${formatDate(item.processedAt)}</td>
+            if (type === "withdrawals") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>User</th>
+                        <th>Network</th>
+                        <th>Wallet Address</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Created At</th>
+                        <th>Processed At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
 
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
+                items.forEach(item => {
+                    const status = String(item.status || "").toLowerCase();
+                    const note = item.adminNote || "-";
 
-            return;
-        }
-        if (type === "transfers") {
-            adminReportsTableHead.innerHTML = `
-                <tr>
-                    <th>From User</th>
-                    <th>To User</th>
-                    <th>Wallet Path</th>
-                    <th>Description</th>
-                    <th>Created At</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
+                    appendRow(`
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.userUid || "-")}</strong>
+                                <span>${escapeHtml(item.userEmail || "-")}</span>
+                                ${
+                                    item.userFullName
+                                        ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
 
-            items.forEach(item => {
-                appendRow(`
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.fromUserUid || "-")}</strong>
-                            <span>${escapeHtml(item.fromUserEmail || "-")}</span>
-                        </div>
-                    </td>
+                        <td>
+                            <span class="admin-status neutral">
+                                ${escapeHtml(item.network || "-")}
+                            </span>
+                        </td>
 
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.toUserUid || "-")}</strong>
-                            <span>${escapeHtml(item.toUserEmail || "-")}</span>
-                        </div>
-                    </td>
+                        <td>
+                            <div class="admin-tx-cell wide">
+                                <span title="${escapeHtml(item.walletAddress || "")}">
+                                    ${escapeHtml(item.walletAddress || "-")}
+                                </span>
 
-                    <td>
-                        ${escapeHtml(item.fromWalletType || "-")}
-                        →
-                        ${escapeHtml(item.toWalletType || "-")}
-                    </td>
+                                ${
+                                    item.walletAddress
+                                        ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
 
-                    <td>${escapeHtml(item.description || "-")}</td>
+                        <td>
+                            <span class="admin-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
+                            </span>
+                        </td>
 
-                    <td>${formatDate(item.createdAt)}</td>
+                        <td>
+                            <span class="admin-report-note ${note !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(note)}
+                            </span>
+                        </td>
 
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
+                        <td>${formatDate(item.createdAt)}</td>
 
-            return;
-        }
+                        <td>${formatDate(item.processedAt)}</td>
+
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            if (type === "transfers") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>From User</th>
+                        <th>To User</th>
+                        <th>Wallet Path</th>
+                        <th>Description</th>
+                        <th>Created At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.fromUserUid || "-")}</strong>
+                                <span>${escapeHtml(item.fromUserEmail || "-")}</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.toUserUid || "-")}</strong>
+                                <span>${escapeHtml(item.toUserEmail || "-")}</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            ${escapeHtml(item.fromWalletType || "-")}
+                            →
+                            ${escapeHtml(item.toWalletType || "-")}
+                        </td>
+
+                        <td>${escapeHtml(item.description || "-")}</td>
+
+                        <td>${formatDate(item.createdAt)}</td>
+
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
             if (type === "mainInvestBonuses") {
                 adminReportsTableHead.innerHTML = `
                     <tr>
@@ -543,8 +654,8 @@
 
                 items.forEach(item => {
                     appendRow(`
-                        <td>${escapeHtml(item.fromUserEmail)}</td>
-                        <td>${escapeHtml(item.toUserEmail)}</td>
+                        <td>${escapeHtml(item.fromUserEmail || "-")}</td>
+                        <td>${escapeHtml(item.toUserEmail || "-")}</td>
                         <td>${formatDate(item.createdAt)}</td>
                         <td class="text-end">${formatMoney(item.amount)}</td>
                     `);
@@ -552,11 +663,136 @@
 
                 return;
             }
+
             if (type === "referralProfits") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Receiver</th>
+                        <th>Source User</th>
+                        <th>Profit Type</th>
+                        <th>Created At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.userUid || "-")}</strong>
+                                <span>${escapeHtml(item.userEmail || "-")}</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.sourceUserUid || "-")}</strong>
+                                <span>${escapeHtml(item.sourceUserEmail || "-")}</span>
+                                ${
+                                    item.sourceUserFullName
+                                        ? `<small>${escapeHtml(item.sourceUserFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="admin-status neutral">
+                                ${escapeHtml(item.profitType || "Referral Profit")}
+                            </span>
+                        </td>
+
+                        <td>${formatDate(item.createdAt)}</td>
+
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            if (type === "kycs") {
+                adminReportsTableHead.innerHTML = `
+                    <tr>
+                        <th>User</th>
+                        <th>Document</th>
+                        <th>Status</th>
+                        <th>Reject Reason</th>
+                        <th>Created At</th>
+                        <th>Reviewed At</th>
+                        <th>Reviewed By</th>
+                        <th class="text-end">File</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    const status = String(item.status || "").toLowerCase();
+                    const rejectReason = item.rejectReason || "-";
+
+                    appendRow(`
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.userUid || "-")}</strong>
+                                <span>${escapeHtml(item.userEmail || "-")}</span>
+                                ${
+                                    item.userFullName
+                                        ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="admin-status neutral">
+                                ${escapeHtml(item.documentType || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="admin-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
+                            </span>
+                        </td>
+
+                        <td>
+                            <span class="admin-report-note ${rejectReason !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(rejectReason)}
+                            </span>
+                        </td>
+
+                        <td>${formatDate(item.createdAt)}</td>
+
+                        <td>${formatDate(item.reviewedAt)}</td>
+
+                        <td>
+                            ${
+                                item.reviewedByAdminEmail || item.reviewedByAdminUid
+                                    ? `
+                                        <div class="report-user-cell compact">
+                                            <strong>${escapeHtml(item.reviewedByAdminUid || "-")}</strong>
+                                            <span>${escapeHtml(item.reviewedByAdminEmail || "-")}</span>
+                                        </div>
+                                      `
+                                    : "-"
+                            }
+                        </td>
+
+                        <td class="text-end">
+                            <button type="button"
+                                    class="admin-action-btn approve"
+                                    onclick="viewKycReportFile(${item.documentId})">
+                                View
+                            </button>
+                        </td>
+                    `);
+                });
+
+                return;
+            }
+
             adminReportsTableHead.innerHTML = `
                 <tr>
-                    <th>Receiver</th>
-                    <th>Source User</th>
+                    <th>User</th>
                     <th>Profit Type</th>
                     <th>Created At</th>
                     <th class="text-end">Amount</th>
@@ -573,15 +809,8 @@
                     </td>
 
                     <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.sourceUserUid || "-")}</strong>
-                            <span>${escapeHtml(item.sourceUserEmail || "-")}</span>
-                        </div>
-                    </td>
-
-                    <td>
                         <span class="admin-status neutral">
-                            ${escapeHtml(item.profitType || "Referral Profit")}
+                            ${escapeHtml(item.profitType || getReadableAdminType(type))}
                         </span>
                     </td>
 
@@ -590,117 +819,6 @@
                     <td class="text-end">${formatMoney(item.amount)}</td>
                 `);
             });
-
-            return;
-        }
-           if (type === "kycs") {
-            adminReportsTableHead.innerHTML = `
-                <tr>
-                    <th>User</th>
-                    <th>Document</th>
-                    <th>Status</th>
-                    <th>Reject Reason</th>
-                    <th>Created At</th>
-                    <th>Reviewed At</th>
-                    <th>Reviewed By</th>
-                    <th class="text-end">File</th>
-                </tr>
-            `;
-
-            items.forEach(item => {
-                const status = String(item.status || "").toLowerCase();
-                const rejectReason = item.rejectReason || "-";
-
-                appendRow(`
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.userUid || "-")}</strong>
-                            <span>${escapeHtml(item.userEmail || "-")}</span>
-                            ${
-                                item.userFullName
-                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="admin-status neutral">
-                            ${escapeHtml(item.documentType || "-")}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="admin-status ${escapeHtml(status)}">
-                            ${escapeHtml(item.status || "-")}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="admin-report-note ${rejectReason !== "-" ? "has-note" : ""}">
-                            ${escapeHtml(rejectReason)}
-                        </span>
-                    </td>
-
-                    <td>${formatDate(item.createdAt)}</td>
-
-                    <td>${formatDate(item.reviewedAt)}</td>
-
-                    <td>
-                        ${
-                            item.reviewedByAdminEmail || item.reviewedByAdminUid
-                                ? `
-                                    <div class="report-user-cell compact">
-                                        <strong>${escapeHtml(item.reviewedByAdminUid || "-")}</strong>
-                                        <span>${escapeHtml(item.reviewedByAdminEmail || "-")}</span>
-                                    </div>
-                                  `
-                                : "-"
-                        }
-                    </td>
-
-                    <td class="text-end">
-                        <button type="button"
-                                class="admin-action-btn approve"
-                                onclick="viewKycReportFile(${item.documentId})">
-                            View
-                        </button>
-                    </td>
-                `);
-            });
-
-            return;
-        }
-        
-        adminReportsTableHead.innerHTML = `
-            <tr>
-                <th>User</th>
-                <th>Profit Type</th>
-                <th>Created At</th>
-                <th class="text-end">Amount</th>
-            </tr>
-        `;
-
-        items.forEach(item => {
-            appendRow(`
-                <td>
-                    <div class="report-user-cell">
-                        <strong>${escapeHtml(item.userUid || "-")}</strong>
-                        <span>${escapeHtml(item.userEmail || "-")}</span>
-                    </div>
-                </td>
-
-                <td>
-                    <span class="admin-status neutral">
-                        ${escapeHtml(item.profitType || getReadableAdminType(type))}
-                    </span>
-                </td>
-
-                <td>${formatDate(item.createdAt)}</td>
-
-                <td class="text-end">${formatMoney(item.amount)}</td>
-            `);
-        });
         }
 
         function appendRow(html) {
@@ -736,6 +854,7 @@
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#039;");
         }
+
         async function copyReportText(text) {
             if (!text) return;
 
@@ -767,13 +886,15 @@
                 .replaceAll("\n", "")
                 .replaceAll("\r", "");
         }
-          function getReadableAdminType(type) {
+
+        function getReadableAdminType(type) {
             if (type === "investmentProfits") return "Investment Profit";
             if (type === "referralProfits") return "Referral Profit";
             if (type === "mainInvestBonuses") return "Main → Invest Bonus";
             return type || "-";
         }
-                async function viewKycReportFile(documentId) {
+
+        async function viewKycReportFile(documentId) {
             if (!documentId) {
                 showNotification("Document was not selected.", "error");
                 return;
@@ -818,6 +939,7 @@
                 showNotification("Could not load KYC document.", "error");
             }
         }
+
         initializeReportDatePickers();
         loadAdminReports();
     </script>

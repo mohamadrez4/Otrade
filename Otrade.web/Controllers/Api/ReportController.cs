@@ -72,4 +72,27 @@ public class ReportController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("admin/detail/page")]
+    public async Task<IActionResult> GetAdminDetailReportPage(
+        [FromQuery] AdminReportFilterRequest filter,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ViewReports);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _reportService.GetAdminDetailReportPageAsync(filter);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 }

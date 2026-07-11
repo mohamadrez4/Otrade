@@ -2760,3 +2760,22 @@ span.flatpickr-weekday {
     gap: 12px;
     flex-wrap: wrap;
 }
+.admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+    .admin-pagination button {
+        min-width: 92px;
+    }
+
+        .admin-pagination button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
