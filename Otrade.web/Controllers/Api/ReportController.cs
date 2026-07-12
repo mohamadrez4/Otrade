@@ -31,7 +31,37 @@ public class ReportController : ControllerBase
 
         return Ok(result);
     }
-    
+    [HttpGet("user/summary")]
+    public async Task<IActionResult> GetUserReportSummary(
+       [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _reportService.GetUserReportSummaryAsync(
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [HttpGet("user/page")]
+    public async Task<IActionResult> GetUserReportPage(
+        [FromQuery] string? type,
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _reportService.GetUserReportPageAsync(
+            currentUser.UserId,
+            type,
+            page,
+            pageSize);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
     [HttpGet("admin")]
     public async Task<IActionResult> GetAdminReport(
         [FromServices] CurrentUserService currentUser)

@@ -53,6 +53,22 @@
                 <tbody id="reportsTableBody"></tbody>
             </table>
         </div>
+
+        <div id="reportsPagination" class="reports-pagination" style="display:none;">
+            <button id="reportsPrevBtn"
+                    class="reports-pagination-btn"
+                    type="button">
+                Previous
+            </button>
+
+            <span id="reportsPageInfo"></span>
+
+            <button id="reportsNextBtn"
+                    class="reports-pagination-btn"
+                    type="button">
+                Next
+            </button>
+        </div>
     </div>
 
 </div>
@@ -69,55 +85,113 @@
         const reportsTableHead = document.getElementById("reportsTableHead");
         const reportsTableBody = document.getElementById("reportsTableBody");
 
+        const reportsPagination = document.getElementById("reportsPagination");
+        const reportsPrevBtn = document.getElementById("reportsPrevBtn");
+        const reportsNextBtn = document.getElementById("reportsNextBtn");
+        const reportsPageInfo = document.getElementById("reportsPageInfo");
+
         const tabs = document.querySelectorAll(".report-tab");
 
-        let reportData = null;
         let currentTab = "deposits";
+        let currentPage = 1;
+        const pageSize = 5;
+        let totalPages = 1;
 
         async function loadReports() {
+            await loadSummary();
+            await loadReportPage();
+        }
+
+        async function loadSummary() {
             try {
-                const result = await api("/api/reports/user");
-                reportData = result.data;
+                const result = await api("/api/reports/user/summary");
 
-                fillSummary(reportData);
-                renderTable(currentTab);
+                if (!result.success || !result.data) {
+                    reportsMessage.innerText =
+                        result.message || "Could not load report summary.";
+                    reportsMessage.style.display = "block";
+                    return;
+                }
 
-                reportsMessage.style.display = "none";
-                reportsTableWrapper.style.display = "block";
+                fillSummary(result.data);
+
             } catch (error) {
-                reportsMessage.innerText = error.message || "Could not load reports.";
+                reportsMessage.innerText =
+                    error.message || "Could not load report summary.";
+                reportsMessage.style.display = "block";
+            }
+        }
+
+        async function loadReportPage() {
+            try {
+                reportsTableHead.innerHTML = "";
+                reportsTableBody.innerHTML = "";
+                reportsTableWrapper.style.display = "none";
+                reportsPagination.style.display = "none";
+
+                reportsMessage.innerText = "Loading reports...";
+                reportsMessage.style.display = "block";
+
+                const url =
+                    `/api/reports/user/page?type=${encodeURIComponent(currentTab)}&page=${currentPage}&pageSize=${pageSize}`;
+
+                const result = await api(url);
+
+                if (!result.success || !result.data) {
+                    reportsMessage.innerText =
+                        result.message || "Could not load reports.";
+                    return;
+                }
+
+                const pagedData = result.data;
+                const items = pagedData.items || [];
+
+                currentPage = pagedData.page || 1;
+                totalPages = pagedData.totalPages || 1;
+
+                renderTable(currentTab, items);
+                renderPagination(pagedData);
+
+            } catch (error) {
+                reportsMessage.innerText =
+                    error.message || "Could not load reports.";
                 reportsMessage.style.display = "block";
                 reportsTableWrapper.style.display = "none";
+                reportsPagination.style.display = "none";
             }
         }
 
         function fillSummary(data) {
-        const depositsSum = (data.deposits || [])
-            .filter(x => String(x.status || "").toLowerCase() === "approved")
-            .reduce((total, x) => total + Number(x.amount || 0), 0);
-
-        const withdrawalsSum = (data.withdrawals || [])
-            .filter(x => String(x.status || "").toLowerCase() === "approved")
-            .reduce((total, x) => total + Number(x.amount || 0), 0);
-            const investmentProfitSum = sum(data.investmentProfits);
-            const referralProfitSum = sum(data.referralProfits);
-            const bonusSum = sum(data.mainInvestBonuses);
-
-            totalDeposits.innerText = formatMoney(depositsSum);
-            totalWithdrawals.innerText = formatMoney(withdrawalsSum);
-            totalProfits.innerText = formatMoney(investmentProfitSum + referralProfitSum);
-            totalBonuses.innerText = formatMoney(bonusSum);
+            totalDeposits.innerText = formatMoney(data.totalDeposits);
+            totalWithdrawals.innerText = formatMoney(data.totalWithdrawals);
+            totalProfits.innerText = formatMoney(data.totalProfits);
+            totalBonuses.innerText = formatMoney(data.totalBonuses);
         }
 
-        function renderTable(type) {
-            if (!reportData) return;
+        function renderPagination(data) {
+            const totalCount = data.totalCount || 0;
 
+            if (totalCount <= 0) {
+                reportsPagination.style.display = "none";
+                return;
+            }
+
+            currentPage = data.page || 1;
+            totalPages = data.totalPages || 1;
+
+            reportsPagination.style.display = "flex";
+            reportsPageInfo.innerText =
+                `Page ${currentPage} of ${totalPages} - Total: ${totalCount}`;
+
+            reportsPrevBtn.disabled = currentPage <= 1;
+            reportsNextBtn.disabled = currentPage >= totalPages;
+        }
+
+        function renderTable(type, items) {
             reportsTableHead.innerHTML = "";
             reportsTableBody.innerHTML = "";
 
-            let items = reportData[type] || [];
-
-            if (!items.length) {
+            if (!items || !items.length) {
                 reportsMessage.innerText = "No records found.";
                 reportsMessage.style.display = "block";
                 reportsTableWrapper.style.display = "none";
@@ -127,204 +201,212 @@
             reportsMessage.style.display = "none";
             reportsTableWrapper.style.display = "block";
 
-        if (type === "deposits") {
-            reportsTableHead.innerHTML = `
-                <tr>
-                    <th>Date</th>
-                    <th>Tx Hash</th>
-                    <th>Status</th>
-                    <th>Note</th>
-                    <th>Processed At</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
+            if (type === "deposits") {
+                reportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Date</th>
+                        <th>Tx Hash</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Processed At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
 
-            items.forEach(item => {
-                const status = String(item.status || "").toLowerCase();
-                const note = item.adminNote || "-";
+                items.forEach(item => {
+                    const status = String(item.status || "").toLowerCase();
+                    const note = item.adminNote || "-";
 
-                appendRow(`
-                    <td>${formatDate(item.createdAt)}</td>
+                    appendRow(`
+                        <td>${formatDate(item.createdAt)}</td>
 
-                    <td>
-                        <div class="report-copy-cell">
-                            <span title="${escapeHtml(item.txId || "")}">
-                                ${escapeHtml(item.txId || "-")}
+                        <td>
+                            <div class="report-copy-cell">
+                                <span title="${escapeHtml(item.txId || "")}">
+                                    ${escapeHtml(item.txId || "-")}
+                                </span>
+
+                                ${
+                                    item.txId
+                                        ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="report-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
                             </span>
+                        </td>
 
-                            ${
-                                item.txId
-                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.txId)}')">Copy</button>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
-
-                    <td>
-                        <span class="report-status ${escapeHtml(status)}">
-                            ${escapeHtml(item.status || "-")}
-                        </span>
-                    </td>
-
-                    <td>
-                        <span class="report-note ${note !== "-" ? "has-note" : ""}">
-                            ${escapeHtml(note)}
-                        </span>
-                    </td>
-
-                    <td>${formatDate(item.processedAt)}</td>
-
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
-
-            return;
-        }
-
-        if (type === "withdrawals") {
-            reportsTableHead.innerHTML = `
-                <tr>
-                    <th>Date</th>
-                    <th>Network</th>
-                    <th>Wallet Address</th>
-                    <th>Status</th>
-                    <th>Note</th>
-                    <th>Processed At</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
-
-            items.forEach(item => {
-                const status = String(item.status || "").toLowerCase();
-                const note = item.adminNote || "-";
-
-                appendRow(`
-                    <td>${formatDate(item.createdAt)}</td>
-
-                    <td>
-                        <span class="report-status neutral">
-                            ${escapeHtml(item.network || "-")}
-                        </span>
-                    </td>
-
-                    <td>
-                        <div class="report-copy-cell">
-                            <span title="${escapeHtml(item.walletAddress || "")}">
-                                ${escapeHtml(item.walletAddress || "-")}
+                        <td>
+                            <span class="report-note ${note !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(note)}
                             </span>
+                        </td>
 
-                            ${
-                                item.walletAddress
-                                    ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
-                                    : ""
-                            }
-                        </div>
-                    </td>
+                        <td>${formatDate(item.processedAt)}</td>
 
-                    <td>
-                        <span class="report-status ${escapeHtml(status)}">
-                            ${escapeHtml(item.status || "-")}
-                        </span>
-                    </td>
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
 
-                    <td>
-                        <span class="report-note ${note !== "-" ? "has-note" : ""}">
-                            ${escapeHtml(note)}
-                        </span>
-                    </td>
+                return;
+            }
 
-                    <td>${formatDate(item.processedAt)}</td>
+            if (type === "withdrawals") {
+                reportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Date</th>
+                        <th>Network</th>
+                        <th>Wallet Address</th>
+                        <th>Status</th>
+                        <th>Note</th>
+                        <th>Processed At</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
 
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
+                items.forEach(item => {
+                    const status = String(item.status || "").toLowerCase();
+                    const note = item.adminNote || "-";
 
-            return;
-        }
-        if (type === "transfers") {
-            reportsTableHead.innerHTML = `
-                <tr>
-                    <th>Date</th>
-                    <th>Direction</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Wallet Path</th>
-                    <th>Description</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
+                    appendRow(`
+                        <td>${formatDate(item.createdAt)}</td>
 
-            items.forEach(item => {
-                appendRow(`
-                    <td>${formatDate(item.createdAt)}</td>
+                        <td>
+                            <span class="report-status neutral">
+                                ${escapeHtml(item.network || "-")}
+                            </span>
+                        </td>
 
-                    <td>
-                        <span class="report-status neutral">
-                            ${escapeHtml(item.direction || "-")}
-                        </span>
-                    </td>
+                        <td>
+                            <div class="report-copy-cell">
+                                <span title="${escapeHtml(item.walletAddress || "")}">
+                                    ${escapeHtml(item.walletAddress || "-")}
+                                </span>
 
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.fromUid || "-")}</strong>
-                            <span>${escapeHtml(item.fromEmail || "-")}</span>
-                        </div>
-                    </td>
+                                ${
+                                    item.walletAddress
+                                        ? `<button type="button" onclick="copyReportText('${escapeForJs(item.walletAddress)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
 
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.toUid || "-")}</strong>
-                            <span>${escapeHtml(item.toEmail || "-")}</span>
-                        </div>
-                    </td>
+                        <td>
+                            <span class="report-status ${escapeHtml(status)}">
+                                ${escapeHtml(item.status || "-")}
+                            </span>
+                        </td>
 
-                    <td>
-                        ${escapeHtml(item.fromWalletType || "-")}
-                        →
-                        ${escapeHtml(item.toWalletType || "-")}
-                    </td>
+                        <td>
+                            <span class="report-note ${note !== "-" ? "has-note" : ""}">
+                                ${escapeHtml(note)}
+                            </span>
+                        </td>
 
-                    <td>${escapeHtml(item.description || "-")}</td>
+                        <td>${formatDate(item.processedAt)}</td>
 
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
 
-            return;
-        }
-                if (type === "referralProfits") {
-            reportsTableHead.innerHTML = `
-                <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Source User</th>
-                    <th class="text-end">Amount</th>
-                </tr>
-            `;
+                return;
+            }
 
-            items.forEach(item => {
-                appendRow(`
-                    <td>${formatDate(item.createdAt)}</td>
+            if (type === "transfers") {
+                reportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Date</th>
+                        <th>Direction</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Wallet Path</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
 
-                    <td>
-                        <span class="report-status success">
-                            Referral Profit
-                        </span>
-                    </td>
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${formatDate(item.createdAt)}</td>
 
-                    <td>
-                        <div class="report-user-cell">
-                            <strong>${escapeHtml(item.sourceUserUid || "-")}</strong>
-                            <span>${escapeHtml(item.sourceUserEmail || "-")}</span>
-                        </div>
-                    </td>
+                        <td>
+                            <span class="report-status neutral">
+                                ${escapeHtml(item.direction || "-")}
+                            </span>
+                        </td>
 
-                    <td class="text-end">${formatMoney(item.amount)}</td>
-                `);
-            });
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.fromUid || "-")}</strong>
+                                <span>${escapeHtml(item.fromEmail || "-")}</span>
+                            </div>
+                        </td>
 
-            return;
-        }
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.toUid || "-")}</strong>
+                                <span>${escapeHtml(item.toEmail || "-")}</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            ${escapeHtml(item.fromWalletType || "-")}
+                            →
+                            ${escapeHtml(item.toWalletType || "-")}
+                        </td>
+
+                        <td>${escapeHtml(item.description || "-")}</td>
+
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
+            if (type === "referralProfits") {
+                reportsTableHead.innerHTML = `
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Source User</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                `;
+
+                items.forEach(item => {
+                    appendRow(`
+                        <td>${formatDate(item.createdAt)}</td>
+
+                        <td>
+                            <span class="report-status success">
+                                Referral Profit
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.sourceUserUid || "-")}</strong>
+                                <span>${escapeHtml(item.sourceUserEmail || "-")}</span>
+                                ${
+                                    item.sourceUserFullName
+                                        ? `<small>${escapeHtml(item.sourceUserFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td class="text-end">${formatMoney(item.amount)}</td>
+                    `);
+                });
+
+                return;
+            }
+
             reportsTableHead.innerHTML = `
                 <tr>
                     <th>Date</th>
@@ -349,18 +431,34 @@
         }
 
         tabs.forEach(tab => {
-            tab.addEventListener("click", function () {
+            tab.addEventListener("click", async function () {
                 tabs.forEach(x => x.classList.remove("active"));
                 this.classList.add("active");
 
                 currentTab = this.dataset.target;
-                renderTable(currentTab);
+                currentPage = 1;
+
+                await loadReportPage();
             });
         });
 
-        function sum(items) {
-            return (items || []).reduce((total, item) => total + Number(item.amount || 0), 0);
-        }
+        reportsPrevBtn.addEventListener("click", async function () {
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage--;
+            await loadReportPage();
+        });
+
+        reportsNextBtn.addEventListener("click", async function () {
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage++;
+            await loadReportPage();
+        });
 
         function getReadableType(type) {
             if (type === "investmentProfits") return "Investment Profit";
@@ -377,6 +475,7 @@
                 maximumFractionDigits: 8
             }) + " USDT";
         }
+
         function formatDate(value) {
             if (!value) return "-";
 
@@ -386,7 +485,8 @@
                 day: "2-digit"
             });
         }
-                async function copyReportText(value) {
+
+        async function copyReportText(value) {
             if (!value) {
                 showNotification("Nothing to copy.", "warning");
                 return;
@@ -411,7 +511,8 @@
                 showNotification("Copied to clipboard.", "success");
             }
         }
-                function escapeForJs(value) {
+
+        function escapeForJs(value) {
             return String(value || "")
                 .replaceAll("\\", "\\\\")
                 .replaceAll("'", "\\'")
@@ -419,7 +520,8 @@
                 .replaceAll("\n", "")
                 .replaceAll("\r", "");
         }
-                function escapeHtml(value) {
+
+        function escapeHtml(value) {
             return String(value || "")
                 .replaceAll("&", "&amp;")
                 .replaceAll("<", "&lt;")

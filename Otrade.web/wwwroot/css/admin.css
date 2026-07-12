@@ -2779,3 +2779,20 @@ span.flatpickr-weekday {
             opacity: 0.45;
             cursor: not-allowed;
         }
+
+.reports-pagination-btn {
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    background: rgba(17, 233, 161, 0.08);
+    color: #11E9A1;
+    border-radius: 12px;
+    min-width: 92px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+    .reports-pagination-btn:hover:not(:disabled) {
+        border-color: #11E9A1;
+        background: rgba(17, 233, 161, 0.14);
+    }

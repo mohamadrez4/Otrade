@@ -1133,6 +1133,287 @@ public class ReportService
         return ResponseFactory.Fail<object>("Invalid report type.");
     }
 
+    public async Task<ApiResponse<object>> GetUserReportSummaryAsync(long userId)
+    {
+        var totalDeposits = await _context.Deposits
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.Status == DepositStatus.Approved)
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var totalWithdrawals = await _context.Withdrawals
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.Status == DepositStatus.Approved)
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var totalInvestmentProfits = await _context.ProfitLedgers
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.Type == ProfitType.Investment)
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var totalReferralProfits = await _context.ProfitLedgers
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.Type == ProfitType.Referral)
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var totalBonuses = await _context.ReferralBonusRecords
+            .AsNoTracking()
+            .Where(x =>
+                x.ToUserId == userId &&
+                x.Type == "MainToInvestBonus")
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        return ResponseFactory.Success<object>(new
+        {
+            TotalDeposits = totalDeposits,
+            TotalWithdrawals = totalWithdrawals,
+            TotalProfits = totalInvestmentProfits + totalReferralProfits,
+            TotalBonuses = totalBonuses
+        });
+    }
+
+    public async Task<ApiResponse<object>> GetUserReportPageAsync(
+        long userId,
+        string? type,
+        int page = 1,
+        int pageSize = 20)
+    {
+        if (string.IsNullOrWhiteSpace(type))
+            type = "deposits";
+
+        if (page <= 0)
+            page = 1;
+
+        if (pageSize <= 0)
+            pageSize = 20;
+
+        if (pageSize > 100)
+            pageSize = 100;
+
+        type = type.Trim();
+
+        if (type.Equals("deposits", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.Deposits
+                .AsNoTracking()
+                .Where(x => x.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new DepositDto
+                {
+                    DepositId = x.DepositId,
+                    Amount = x.Amount,
+                    TxId = x.TxId,
+                    Status = x.Status.ToString(),
+                    AdminNote = x.AdminNote,
+                    CreatedAt = x.CreatedAt,
+                    ProcessedAt = x.ProcessedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("withdrawals", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.Withdrawals
+                .AsNoTracking()
+                .Where(x => x.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new WithdrawalDto
+                {
+                    WithdrawalId = x.WithdrawalId,
+                    Amount = x.Amount,
+                    WalletAddress = x.WalletAddress,
+                    Network = x.Network,
+                    Status = x.Status.ToString(),
+                    AdminNote = x.AdminNote,
+                    CreatedAt = x.CreatedAt,
+                    ProcessedAt = x.ProcessedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("transfers", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.WalletTransfers
+                .AsNoTracking()
+                .Include(x => x.FromWallet)
+                    .ThenInclude(x => x.User)
+                .Include(x => x.ToWallet)
+                    .ThenInclude(x => x.User)
+                .Where(x =>
+                    x.FromWallet.UserId == userId ||
+                    x.ToWallet.UserId == userId);
+
+            var totalCount = await query.CountAsync();
+
+            var rows = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new
+                {
+                    x.TransferId,
+                    x.Amount,
+                    x.Description,
+                    x.CreatedAt,
+
+                    FromWalletType = x.FromWallet.WalletType,
+                    ToWalletType = x.ToWallet.WalletType,
+
+                    FromUserId = x.FromWallet.UserId,
+                    FromEmail = x.FromWallet.User.Email,
+                    FromUid = x.FromWallet.User.ReferralCode,
+
+                    ToUserId = x.ToWallet.UserId,
+                    ToEmail = x.ToWallet.User.Email,
+                    ToUid = x.ToWallet.User.ReferralCode
+                })
+                .ToListAsync();
+
+            var items = rows
+                .Select(x => new WalletTransactionDto
+                {
+                    TransferId = x.TransferId,
+
+                    Direction = x.FromUserId == x.ToUserId
+                        ? "Wallet Transfer"
+                        : x.FromUserId == userId
+                            ? "Sent"
+                            : "Received",
+
+                    FromWalletType = x.FromWalletType.ToString(),
+                    ToWalletType = x.ToWalletType.ToString(),
+
+                    FromEmail = x.FromEmail,
+                    FromUid = x.FromUid,
+
+                    ToEmail = x.ToEmail,
+                    ToUid = x.ToUid,
+
+                    Amount = x.Amount,
+                    Description = x.Description,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToList();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("investmentProfits", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.ProfitLedgers
+                .AsNoTracking()
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.Type == ProfitType.Investment);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new ProfitDto
+                {
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("referralProfits", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.ProfitLedgers
+                .AsNoTracking()
+                .Include(x => x.SourceUser)
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.Type == ProfitType.Referral);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new ProfitDto
+                {
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt,
+
+                    SourceUserUid = x.SourceUser != null
+                        ? x.SourceUser.ReferralCode
+                        : null,
+
+                    SourceUserEmail = x.SourceUser != null
+                        ? x.SourceUser.Email
+                        : null,
+
+                    SourceUserFullName = x.SourceUser != null
+                        ? (x.SourceUser.FirstName + " " + x.SourceUser.LastName).Trim()
+                        : null
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        if (type.Equals("mainInvestBonuses", StringComparison.OrdinalIgnoreCase))
+        {
+            var query = _context.ReferralBonusRecords
+                .AsNoTracking()
+                .Where(x =>
+                    x.ToUserId == userId &&
+                    x.Type == "MainToInvestBonus");
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new BonusDto
+                {
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt
+                })
+                .ToListAsync();
+
+            return ResponseFactory.Success<object>(
+                CreatePagedResponse(page, pageSize, totalCount, items));
+        }
+
+        return ResponseFactory.Fail<object>("Invalid report type.");
+    }
     private static PagedResponse<T> CreatePagedResponse<T>(
         int page,
         int pageSize,
