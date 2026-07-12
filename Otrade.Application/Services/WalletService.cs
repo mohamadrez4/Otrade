@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Otrade.Application.Common;
 using Otrade.Application.Common.Interfaces;
+using Otrade.Application.DTOs.Common;
 using Otrade.Application.DTOs.Wallet;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
@@ -971,12 +972,30 @@ public class WalletService
 
         return ResponseFactory.Success(true, "Withdrawal request canceled");
     }
-    public async Task<ApiResponse<List<UserDepositHistoryDto>>> GetMyDepositsAsync(long userId)
+    public async Task<ApiResponse<PagedResponse<UserDepositHistoryDto>>> GetMyDepositsAsync(
+        long userId,
+        int page = 1,
+        int pageSize = 20)
     {
-        var deposits = await _context.Deposits
+        if (page <= 0)
+            page = 1;
+
+        if (pageSize <= 0)
+            pageSize = 20;
+
+        if (pageSize > 100)
+            pageSize = 100;
+
+        var query = _context.Deposits
             .AsNoTracking()
-            .Where(x => x.UserId == userId)
+            .Where(x => x.UserId == userId);
+
+        var totalCount = await query.CountAsync();
+
+        var deposits = await query
             .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(x => new UserDepositHistoryDto
             {
                 DepositId = x.DepositId,
@@ -989,7 +1008,16 @@ public class WalletService
             })
             .ToListAsync();
 
-        return ResponseFactory.Success(deposits);
+        var response = new PagedResponse<UserDepositHistoryDto>
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Items = deposits
+        };
+
+        return ResponseFactory.Success(response);
     }
     private static string GenerateInternalTransferCode()
     {

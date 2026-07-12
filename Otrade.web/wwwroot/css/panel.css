@@ -3612,3 +3612,35 @@ select.panel-input:focus {
         opacity: 0.45;
         cursor: not-allowed;
     }
+.deposit-history-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.deposit-history-page-btn {
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    background: rgba(17, 233, 161, 0.08);
+    color: #11E9A1;
+    border-radius: 12px;
+    min-width: 92px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+    .deposit-history-page-btn:hover:not(:disabled) {
+        border-color: #11E9A1;
+        background: rgba(17, 233, 161, 0.14);
+    }
+
+    .deposit-history-page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }

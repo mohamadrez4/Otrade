@@ -98,6 +98,22 @@
             <tbody id="depositsBody"></tbody>
         </table>
     </div>
+
+    <div id="depositsPagination" class="deposit-history-pagination" style="display:none;">
+        <button id="depositsPrevBtn"
+                class="deposit-history-page-btn"
+                type="button">
+            Previous
+        </button>
+
+        <span id="depositsPageInfo"></span>
+
+        <button id="depositsNextBtn"
+                class="deposit-history-page-btn"
+                type="button">
+            Next
+        </button>
+    </div>
 </div>
 
 @section Scripts {
@@ -116,12 +132,39 @@
         const depositsWrapper = document.getElementById("depositsWrapper");
         const depositsBody = document.getElementById("depositsBody");
 
+        const depositsPagination = document.getElementById("depositsPagination");
+        const depositsPrevBtn = document.getElementById("depositsPrevBtn");
+        const depositsNextBtn = document.getElementById("depositsNextBtn");
+        const depositsPageInfo = document.getElementById("depositsPageInfo");
+
         let siteWalletAddress = "";
+
+        let depositsCurrentPage = 1;
+        const depositsPageSize = 5;
+        let depositsTotalPages = 1;
 
         depositForm.addEventListener("submit", submitDepositRequest);
 
         copyDepositAddressBtn.addEventListener("click", function () {
             copyText(siteWalletAddress);
+        });
+
+        depositsPrevBtn.addEventListener("click", async function () {
+            if (depositsCurrentPage <= 1) {
+                return;
+            }
+
+            depositsCurrentPage--;
+            await loadDeposits();
+        });
+
+        depositsNextBtn.addEventListener("click", async function () {
+            if (depositsCurrentPage >= depositsTotalPages) {
+                return;
+            }
+
+            depositsCurrentPage++;
+            await loadDeposits();
         });
 
         async function submitDepositRequest(e) {
@@ -171,6 +214,7 @@
                 amountInput.value = "";
                 txIdInput.value = "";
 
+                depositsCurrentPage = 1;
                 await loadDeposits();
 
             } catch (error) {
@@ -209,20 +253,29 @@
             depositsMessage.style.display = "block";
             depositsMessage.innerText = "Loading deposits...";
             depositsWrapper.style.display = "none";
+            depositsPagination.style.display = "none";
             depositsBody.innerHTML = "";
 
             try {
-                const result = await api("/api/wallet/deposits/my-history");
+                const url =
+                    `/api/wallet/deposits/my-history?page=${depositsCurrentPage}&pageSize=${depositsPageSize}`;
+
+                const result = await api(url);
 
                 if (!result || !result.success) {
                     depositsMessage.innerText = result?.message || "Could not load deposits.";
                     return;
                 }
 
-                const items = result.data || [];
+                const data = result.data || {};
+                const items = data.items || [];
+
+                depositsCurrentPage = data.page || 1;
+                depositsTotalPages = data.totalPages || 1;
 
                 if (!items.length) {
                     depositsMessage.innerText = "No deposits found.";
+                    depositsPagination.style.display = "none";
                     return;
                 }
 
@@ -275,9 +328,32 @@
                 depositsMessage.style.display = "none";
                 depositsWrapper.style.display = "block";
 
+                renderDepositsPagination(data);
+
             } catch {
                 depositsMessage.innerText = "Could not load deposits.";
+                depositsPagination.style.display = "none";
             }
+        }
+
+        function renderDepositsPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                depositsPagination.style.display = "none";
+                return;
+            }
+
+            depositsCurrentPage = data.page || 1;
+            depositsTotalPages = data.totalPages || 1;
+
+            depositsPagination.style.display = "flex";
+
+            depositsPageInfo.innerText =
+                `Page ${depositsCurrentPage} of ${depositsTotalPages} - Total: ${totalCount}`;
+
+            depositsPrevBtn.disabled = depositsCurrentPage <= 1;
+            depositsNextBtn.disabled = depositsCurrentPage >= depositsTotalPages;
         }
 
         async function copyText(value) {

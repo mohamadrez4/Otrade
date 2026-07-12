@@ -100,10 +100,14 @@ public class WalletController : ControllerBase
     [Authorize]
     [HttpGet("deposits/my-history")]
     public async Task<IActionResult> GetMyDeposits(
-    [FromServices] CurrentUserService currentUser)
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromServices] CurrentUserService currentUser)
     {
         var result = await _walletService.GetMyDepositsAsync(
-            currentUser.UserId);
+            currentUser.UserId,
+            page,
+            pageSize);
 
         if (!result.Success)
             return BadRequest(result);
