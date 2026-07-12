@@ -15,10 +15,15 @@
             <input id="searchInput"
                    class="panel-input"
                    type="text"
+                   autocomplete="off"
                    placeholder="Search by email, name, referral code, or sponsor" />
 
-            <button id="searchBtn" class="panel-primary-btn">
+            <button id="searchBtn" class="panel-primary-btn" type="button">
                 Search
+            </button>
+
+            <button id="clearSearchBtn" class="admin-secondary-btn" type="button">
+                Clear
             </button>
         </div>
 
@@ -31,7 +36,7 @@
                 <thead>
                     <tr>
                         <th>Email</th>
-                        <th>Referral Code</th>
+                        <th>UID</th>
                         <th>Full Name</th>
                         <th>Rank</th>
                         <th>KYC Status</th>
@@ -47,6 +52,22 @@
                 <tbody id="usersTableBody"></tbody>
             </table>
         </div>
+
+        <div id="usersPagination" class="admin-pagination" style="display:none;">
+            <button id="usersPrevBtn"
+                    class="reports-filter-clear"
+                    type="button">
+                Previous
+            </button>
+
+            <span id="usersPageInfo"></span>
+
+            <button id="usersNextBtn"
+                    class="reports-filter-clear"
+                    type="button">
+                Next
+            </button>
+        </div>
     </div>
 
 </div>
@@ -56,28 +77,62 @@
         const usersMessage = document.getElementById("usersMessage");
         const usersTableWrapper = document.getElementById("usersTableWrapper");
         const usersTableBody = document.getElementById("usersTableBody");
+
         const searchInput = document.getElementById("searchInput");
         const searchBtn = document.getElementById("searchBtn");
+        const clearSearchBtn = document.getElementById("clearSearchBtn");
+
+        const usersPagination = document.getElementById("usersPagination");
+        const usersPrevBtn = document.getElementById("usersPrevBtn");
+        const usersNextBtn = document.getElementById("usersNextBtn");
+        const usersPageInfo = document.getElementById("usersPageInfo");
 
         let currentPage = 1;
-        const pageSize = 20;
+        const pageSize = 10;
+        let totalPages = 1;
 
-        searchBtn.addEventListener("click", function () {
+        searchBtn.addEventListener("click", async function () {
             currentPage = 1;
-            loadUsers();
+            await loadUsers();
         });
 
-        searchInput.addEventListener("keydown", function (e) {
+        clearSearchBtn.addEventListener("click", async function () {
+            searchInput.value = "";
+            currentPage = 1;
+            await loadUsers();
+        });
+
+        searchInput.addEventListener("keydown", async function (e) {
             if (e.key === "Enter") {
                 currentPage = 1;
-                loadUsers();
+                await loadUsers();
             }
+        });
+
+        usersPrevBtn.addEventListener("click", async function () {
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage--;
+            await loadUsers();
+        });
+
+        usersNextBtn.addEventListener("click", async function () {
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage++;
+            await loadUsers();
         });
 
         async function loadUsers() {
             usersMessage.style.display = "block";
             usersMessage.innerText = "Loading users...";
+
             usersTableWrapper.style.display = "none";
+            usersPagination.style.display = "none";
             usersTableBody.innerHTML = "";
 
             const search = searchInput.value.trim();
@@ -91,16 +146,20 @@
             try {
                 const result = await api(url);
 
-                if (!result.success) {
-                    usersMessage.innerText = result.message || "Could not load users.";
+                if (!result || !result.success) {
+                    usersMessage.innerText = result?.message || "Could not load users.";
                     return;
                 }
 
                 const data = result.data || {};
                 const items = data.items || [];
 
+                currentPage = data.page || 1;
+                totalPages = data.totalPages || 1;
+
                 if (!items.length) {
                     usersMessage.innerText = "No users found.";
+                    usersPagination.style.display = "none";
                     return;
                 }
 
@@ -139,26 +198,27 @@
                         <td>${formatMoney(user.wallets?.profit || 0)}</td>
                         <td>${formatMoney(user.wallets?.referral || 0)}</td>
 
-           <td>
-            <div class="admin-sponsor-cell">
-                <strong>${escapeHtml(user.sponsorEmail || "-")}</strong>
+                        <td>
+                            <div class="admin-sponsor-cell">
+                                <strong>${escapeHtml(user.sponsorEmail || "-")}</strong>
 
-                ${
-                    user.sponsorFullName
-                        ? `<span class="admin-sponsor-name">${escapeHtml(user.sponsorFullName)}</span>`
-                        : ""
-                }
+                                ${
+                                    user.sponsorFullName
+                                        ? `<span class="admin-sponsor-name">${escapeHtml(user.sponsorFullName)}</span>`
+                                        : ""
+                                }
 
-                ${
-                    user.sponsorReferralCode
-                        ? `<span>UID: ${escapeHtml(user.sponsorReferralCode)}</span>`
-                        : ""
-                }
-            </div>
-        </td>
-        <td>
-            ${renderAdminRoleSelect(user)}
-        </td>
+                                ${
+                                    user.sponsorReferralCode
+                                        ? `<span>UID: ${escapeHtml(user.sponsorReferralCode)}</span>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>
+                            ${renderAdminRoleSelect(user)}
+                        </td>
                     `;
 
                     usersTableBody.appendChild(row);
@@ -167,11 +227,35 @@
                 usersMessage.style.display = "none";
                 usersTableWrapper.style.display = "block";
 
+                renderUsersPagination(data);
+
             } catch (error) {
                 usersMessage.innerText = error.message || "Could not load users.";
+                usersPagination.style.display = "none";
             }
         }
-                function renderAdminRoleSelect(user) {
+
+        function renderUsersPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                usersPagination.style.display = "none";
+                return;
+            }
+
+            currentPage = data.page || 1;
+            totalPages = data.totalPages || 1;
+
+            usersPagination.style.display = "flex";
+
+            usersPageInfo.innerText =
+                `Page ${currentPage} of ${totalPages} - Total: ${totalCount}`;
+
+            usersPrevBtn.disabled = currentPage <= 1;
+            usersNextBtn.disabled = currentPage >= totalPages;
+        }
+
+        function renderAdminRoleSelect(user) {
             if (user.isOwner) {
                 return `
                     <span class="admin-role-badge owner">
@@ -188,22 +272,27 @@
                     <option value="" ${currentRole === "User" ? "selected" : ""}>
                         User
                     </option>
+
                     <option value="SuperAdmin" ${currentRole === "SuperAdmin" ? "selected" : ""}>
                         SuperAdmin
                     </option>
+
                     <option value="Finance" ${currentRole === "Finance" ? "selected" : ""}>
                         Finance
                     </option>
+
                     <option value="Support" ${currentRole === "Support" ? "selected" : ""}>
                         Support
                     </option>
+
                     <option value="Backend" ${currentRole === "Backend" ? "selected" : ""}>
                         Backend
                     </option>
                 </select>
             `;
         }
-                async function updateAdminRole(userId, adminRole) {
+
+        async function updateAdminRole(userId, adminRole) {
             const confirmed = await showConfirm(
                 "Are you sure you want to change this user's admin role?",
                 "Change Admin Role"
@@ -238,6 +327,7 @@
                 await loadUsers();
             }
         }
+
         function buildFullName(user) {
             const firstName = user.firstName || "";
             const lastName = user.lastName || "";
