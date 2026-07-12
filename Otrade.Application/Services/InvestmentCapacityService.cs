@@ -10,10 +10,11 @@ namespace Otrade.Application.Services;
 public class InvestmentCapacityService
 {
     private readonly OtradeDbContext _context;
-
-    public InvestmentCapacityService(OtradeDbContext context)
+    private readonly InvestmentWaitListService _investmentWaitListService;
+    public InvestmentCapacityService(OtradeDbContext context, InvestmentWaitListService investmentWaitListService)
     {
         _context = context;
+        _investmentWaitListService = investmentWaitListService;
     }
 
     public async Task<ApiResponse<List<InvestmentCapacityDto>>> GetAdminListAsync()
@@ -90,7 +91,13 @@ public class InvestmentCapacityService
         }
 
         await _context.SaveChangesAsync();
+        var remainingCapacity = capacity.TotalCapacity - capacity.UsedCapacity;
 
+        if (capacity.IsActive && remainingCapacity > 0)
+        {
+            await _investmentWaitListService
+                .NotifyPendingUsersIfCapacityAvailableAsync(remainingCapacity);
+        }
         return ResponseFactory.Success(
             new InvestmentCapacityDto
             {

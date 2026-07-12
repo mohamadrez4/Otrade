@@ -20,4 +20,7 @@ public interface IEmailTemplateService
     string GetPasswordResetEmail(string code);
     string GetInternalTransferVerificationEmail(decimal amount,string receiverDisplay,string code,int expiresInMinutes);
     string GetInternalTransferCompletedEmail(decimal amount,string receiverDisplay);
+    string GetInvestmentWaitListJoinedEmail(decimal requestedAmount);
+    string GetInvestmentCapacityAvailableEmail(decimal requestedAmount);
+    string GetInvestmentWaitListNotifiedEmail(decimal requestedAmount);
 }

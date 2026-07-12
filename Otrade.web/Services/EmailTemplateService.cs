@@ -216,4 +216,32 @@ public class EmailTemplateService : IEmailTemplateService
         <p>Amount: {amount:F2} USDT</p>
     ";
     }
+    public string GetInvestmentWaitListJoinedEmail(decimal requestedAmount)
+    {
+        return $@"
+        <h2>Investment Wait List</h2>
+        <p>Your request has been added to the investment wait list.</p>
+        <p><strong>Requested Amount:</strong> {requestedAmount:F2} USDT</p>
+        <p>We will notify you when investment capacity becomes available.</p>
+    ";
+    }
+
+    public string GetInvestmentCapacityAvailableEmail(decimal requestedAmount)
+    {
+        return $@"
+        <h2>Investment Capacity Available</h2>
+        <p>Investment capacity may now be available for your request.</p>
+        <p><strong>Your Requested Amount:</strong> {requestedAmount:F2} USDT</p>
+        <p>Please log in to your Otrade panel and try transferring from Main Wallet to Invest Wallet.</p>
+    ";
+    }
+    public string GetInvestmentWaitListNotifiedEmail(decimal requestedAmount)
+    {
+        return $@"
+        <h2>Investment Wait List Update</h2>
+        <p>Your investment wait list request has been reviewed.</p>
+        <p><strong>Requested Amount:</strong> {requestedAmount:F2} USDT</p>
+        <p>You are still on the wait list. We will notify you again when investment capacity becomes available.</p>
+    ";
+    }
 }

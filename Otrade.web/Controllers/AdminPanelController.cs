@@ -65,6 +65,12 @@ public class AdminPanelController : Controller
     {
         return View();
     }
+    [AdminPagePermission(AdminPermission.ManageDeposits)]
+    [HttpGet("/admin/investment-wait-list")]
+    public IActionResult InvestmentWaitList()
+    {
+        return View();
+    }
     [HttpGet("/admin/forbidden")]
     public IActionResult Forbidden()
     {

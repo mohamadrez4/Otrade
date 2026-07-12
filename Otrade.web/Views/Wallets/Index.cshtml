@@ -285,6 +285,40 @@
                     </div>
 
                     <p id="capacityWarningText" class="transfer-capacity-warning"></p>
+                    <div id="investmentWaitListBox"
+                         class="investment-waitlist-box"
+                         style="display:none;">
+
+                        <div class="investment-waitlist-info">
+                            <strong id="investmentWaitListTitle">
+                                Join Investment Wait List
+                            </strong>
+
+                            <p id="investmentWaitListText">
+                                Investment capacity is full. You can join the wait list and we will notify you when capacity becomes available.
+                            </p>
+                        </div>
+
+                        <div id="investmentWaitListStatus"
+                             class="investment-waitlist-status"
+                             style="display:none;">
+                        </div>
+
+                        <div class="investment-waitlist-actions">
+                            <button type="button"
+                                    id="joinInvestmentWaitListBtn"
+                                    class="panel-primary-btn investment-waitlist-btn">
+                                Join Wait List
+                            </button>
+
+                            <button type="button"
+                                    id="cancelInvestmentWaitListBtn"
+                                    class="internal-transfer-secondary-btn investment-waitlist-btn"
+                                    style="display:none;">
+                                Cancel Request
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="transfer-field">
@@ -397,6 +431,14 @@
 
 @section Scripts {
     <script>
+        let currentInvestmentWaitList = null;
+
+        const investmentWaitListBox = document.getElementById("investmentWaitListBox");
+        const investmentWaitListTitle = document.getElementById("investmentWaitListTitle");
+        const investmentWaitListText = document.getElementById("investmentWaitListText");
+        const investmentWaitListStatus = document.getElementById("investmentWaitListStatus");
+        const joinInvestmentWaitListBtn = document.getElementById("joinInvestmentWaitListBtn");
+        const cancelInvestmentWaitListBtn = document.getElementById("cancelInvestmentWaitListBtn");
         let walletsMap = {};
         let currentInvestmentCapacity = null;
         let isTransferSubmitting = false;
@@ -488,10 +530,14 @@
                 }
             });
         }
+        joinInvestmentWaitListBtn.addEventListener("click", joinInvestmentWaitList);
+
+        cancelInvestmentWaitListBtn.addEventListener("click", cancelInvestmentWaitList);
             updateToWalletOptions();
 
             await loadWallets();
             await loadCurrentInvestmentCapacity();
+            await loadMyInvestmentWaitListStatus();
         });
 
         async function loadWallets() {
@@ -619,13 +665,214 @@
 
             return fromType === "Main" && toType === "Invest";
         }
+                async function loadMyInvestmentWaitListStatus() {
+            try {
+                const result = await api("/api/wallet/investment-wait-list/my-status", {
+                    method: "GET"
+                });
 
+                if (!result || !result.success) {
+                    currentInvestmentWaitList = null;
+                    updateInvestmentWaitListBox();
+                    return;
+                }
+
+                currentInvestmentWaitList = result.data || null;
+
+                updateInvestmentWaitListBox();
+
+            } catch {
+                currentInvestmentWaitList = null;
+                updateInvestmentWaitListBox();
+            }
+        }
+                async function joinInvestmentWaitList() {
+            const amount = Number(document.getElementById("transferAmount").value || 0);
+
+            if (!isMainToInvestTransfer()) {
+                showNotification("Wait list is only available for Main to Invest transfer.", "warning");
+                return;
+            }
+
+            if (!amount || amount <= 0) {
+                showNotification("Please enter the amount you want to invest first.", "warning");
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                `Join investment wait list for ${formatMoney(amount)} USDT?`,
+                "Join Wait List"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            joinInvestmentWaitListBtn.disabled = true;
+            joinInvestmentWaitListBtn.innerText = "Submitting...";
+
+            try {
+                const result = await api("/api/wallet/investment-wait-list/join", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        requestedAmount: amount
+                    })
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not join wait list.", "error");
+                    return;
+                }
+
+                currentInvestmentWaitList = result.data || null;
+
+                showNotification(
+                    result.message || "You have been added to the investment wait list.",
+                    "success"
+                );
+
+                updateInvestmentWaitListBox();
+
+            } catch (error) {
+                showNotification(error.message || "Could not join wait list.", "error");
+            } finally {
+                joinInvestmentWaitListBtn.disabled = false;
+                joinInvestmentWaitListBtn.innerText = "Join Wait List";
+            }
+        }
+                async function cancelInvestmentWaitList() {
+            const confirmed = await showConfirm(
+                "Are you sure you want to cancel your wait list request?",
+                "Cancel Wait List"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            cancelInvestmentWaitListBtn.disabled = true;
+            cancelInvestmentWaitListBtn.innerText = "Cancelling...";
+
+            try {
+                const result = await api("/api/wallet/investment-wait-list/cancel", {
+                    method: "POST"
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not cancel wait list request.", "error");
+                    return;
+                }
+
+                showNotification(
+                    result.message || "Wait list request cancelled.",
+                    "success"
+                );
+
+                await loadMyInvestmentWaitListStatus();
+
+            } catch (error) {
+                showNotification(error.message || "Could not cancel wait list request.", "error");
+            } finally {
+                cancelInvestmentWaitListBtn.disabled = false;
+                cancelInvestmentWaitListBtn.innerText = "Cancel Request";
+            }
+        }
+                function updateInvestmentWaitListBox() {
+            if (!investmentWaitListBox) {
+                return;
+            }
+
+            if (!isMainToInvestTransfer()) {
+                investmentWaitListBox.style.display = "none";
+                return;
+            }
+
+            const amount = Number(document.getElementById("transferAmount").value || 0);
+            const remaining = Number(currentInvestmentCapacity?.remainingCapacity || 0);
+
+            const capacityIsUnavailable =
+                !currentInvestmentCapacity ||
+                !currentInvestmentCapacity.isConfigured ||
+                !currentInvestmentCapacity.isActive ||
+                remaining <= 0 ||
+                (amount > 0 && amount > remaining);
+
+            const activeWaitList =
+            currentInvestmentWaitList &&
+            (
+                currentInvestmentWaitList.status === "Pending" ||
+                currentInvestmentWaitList.status === "Notified" ||
+                currentInvestmentWaitList.status === "CapacityAvailable"
+            );
+
+            if (!capacityIsUnavailable && !activeWaitList) {
+                investmentWaitListBox.style.display = "none";
+                return;
+            }
+
+            investmentWaitListBox.style.display = "block";
+
+            if (activeWaitList) {
+                investmentWaitListTitle.innerText = "Your Wait List Request";
+
+                investmentWaitListText.innerText =
+                    `Requested Amount: ${formatMoney(currentInvestmentWaitList.requestedAmount)} USDT`;
+
+                investmentWaitListStatus.style.display = "block";
+                investmentWaitListStatus.className =
+                    `investment-waitlist-status ${String(currentInvestmentWaitList.status || "").toLowerCase()}`;
+
+                investmentWaitListStatus.innerText =
+                    `Status: ${currentInvestmentWaitList.status}`;
+
+                joinInvestmentWaitListBtn.style.display = "none";
+                cancelInvestmentWaitListBtn.style.display = "inline-flex";
+
+                if (currentInvestmentWaitList.status === "Notified") {
+                    investmentWaitListText.innerText =
+                        `Your wait list request has been reviewed. We will notify you when investment capacity becomes available. Requested amount: ${formatMoney(currentInvestmentWaitList.requestedAmount)} USDT.`;
+                }
+
+                if (currentInvestmentWaitList.status === "CapacityAvailable") {
+                    investmentWaitListText.innerText =
+                        `Investment capacity is now available for your request of ${formatMoney(currentInvestmentWaitList.requestedAmount)} USDT. You can try transferring Main → Invest now.`;
+                }
+
+                return;
+            }
+
+            investmentWaitListTitle.innerText = "Join Investment Wait List";
+
+            if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
+                investmentWaitListText.innerText =
+                    "Investment capacity is not configured yet. You can join the wait list.";
+            } else if (!currentInvestmentCapacity.isActive) {
+                investmentWaitListText.innerText =
+                    "Investment capacity is currently inactive. You can join the wait list.";
+            } else if (remaining <= 0) {
+                investmentWaitListText.innerText =
+                    "Investment capacity is full. You can join the wait list.";
+            } else if (amount > remaining) {
+                investmentWaitListText.innerText =
+                    `Your amount exceeds remaining capacity. Remaining capacity is ${formatMoney(remaining)} USDT.`;
+            } else {
+                investmentWaitListText.innerText =
+                    "You can join the wait list for this investment amount.";
+            }
+
+            investmentWaitListStatus.style.display = "none";
+            investmentWaitListStatus.innerText = "";
+
+            joinInvestmentWaitListBtn.style.display = "inline-flex";
+            cancelInvestmentWaitListBtn.style.display = "none";
+        }
         function updateTransferCapacityBox() {
             const box = document.getElementById("transferCapacityBox");
             const warning = document.getElementById("capacityWarningText");
 
             if (!isMainToInvestTransfer()) {
                 box.style.display = "none";
+                updateInvestmentWaitListBox();
                 return;
             }
 
@@ -639,6 +886,7 @@
 
                 warning.innerText = "Investment capacity for current month is not configured by admin.";
                 warning.classList.add("danger");
+                updateInvestmentWaitListBox();
                 return;
             }
 
@@ -654,12 +902,14 @@
             if (!currentInvestmentCapacity.isActive) {
                 warning.innerText = "Investment capacity for current month is inactive.";
                 warning.classList.add("danger");
+                updateInvestmentWaitListBox();
                 return;
             }
 
             if (remaining <= 0) {
                 warning.innerText = "Investment capacity for current month is full.";
                 warning.classList.add("danger");
+                updateInvestmentWaitListBox();
                 return;
             }
 
@@ -668,6 +918,7 @@
                     `Amount exceeds remaining investment capacity. Remaining: ${formatMoney(remaining)} USDT`;
 
                 warning.classList.add("danger");
+                updateInvestmentWaitListBox();
                 return;
             }
 

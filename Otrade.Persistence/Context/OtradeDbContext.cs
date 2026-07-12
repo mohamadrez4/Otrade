@@ -53,9 +53,11 @@ public class OtradeDbContext : DbContext
     // ================= SYSTEM =================
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<InvestmentCapacity> InvestmentCapacities { get; set; }
+    public DbSet<InvestmentWaitListEntry> InvestmentWaitListEntries => Set<InvestmentWaitListEntry>();
     public DbSet<TemporaryRegistration> TemporaryRegistrations { get; set; }
     public DbSet<EmailLog> EmailLogs { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+
     public DbSet<JobLock> JobLocks { get; set; }
     public DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; }
     public DbSet<InternalTransferVerification> InternalTransferVerifications => Set<InternalTransferVerification>();
@@ -515,6 +517,38 @@ public class OtradeDbContext : DbContext
                 .IsUnique();
 
             entity.HasIndex(x => new { x.IsActive, x.MonthStart });
+        });
+        modelBuilder.Entity<InvestmentWaitListEntry>(entity =>
+        {
+            entity.ToTable("InvestmentWaitListEntries");
+
+            entity.HasKey(x => x.WaitListId);
+
+            entity.Property(x => x.RequestedAmount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.AdminNote)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.UserId);
+
+            entity.HasIndex(x => new
+            {
+                x.Status,
+                x.CreatedAt
+            });
+
+            entity.HasIndex(x => x.CreatedAt);
         });
         modelBuilder.Entity<Rank>().HasData(
     new Rank

@@ -22,18 +22,21 @@ public class AdminController : ControllerBase
     private readonly PreRegistrationService _preRegistrationService;
     private readonly InvestmentCapacityService _investmentCapacityService;
     private readonly AdminPermissionService _adminPermissionService;
+    private readonly InvestmentWaitListService _investmentWaitListService;
     public AdminController(
     AdminService adminService,
     OtradeDbContext context,
     PreRegistrationService preRegistrationService,
     InvestmentCapacityService investmentCapacityService,
-    AdminPermissionService adminPermissionService)
+    AdminPermissionService adminPermissionService,
+    InvestmentWaitListService investmentWaitListService)
     {
         _adminService = adminService;
         _context = context;
         _preRegistrationService = preRegistrationService;
         _investmentCapacityService = investmentCapacityService;
         _adminPermissionService = adminPermissionService;
+        _investmentWaitListService = investmentWaitListService;
     }
     [Authorize]
     [HttpGet("me/access")]
@@ -607,4 +610,62 @@ public class AdminController : ControllerBase
 
         return Ok(result);
     }
+    [Authorize]
+    [HttpGet("investment-wait-list")]
+    public async Task<IActionResult> GetInvestmentWaitList(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromQuery] string? status,
+        [FromQuery] string? search,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _investmentWaitListService.GetAdminListAsync(
+            page,
+            pageSize,
+            status,
+            search);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("investment-wait-list/{waitListId:long}/status")]
+    public async Task<IActionResult> UpdateInvestmentWaitListStatus(
+        long waitListId,
+        [FromBody] UpdateInvestmentWaitListStatusRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageDeposits);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _investmentWaitListService.UpdateStatusAsync(
+            waitListId,
+            request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
 }

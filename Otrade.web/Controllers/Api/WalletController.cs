@@ -13,12 +13,15 @@ public class WalletController : ControllerBase
 {
     private readonly WalletService _walletService;
     private readonly InvestmentCapacityService _investmentCapacityService;
+    private readonly InvestmentWaitListService _investmentWaitListService;
     public WalletController(
         WalletService walletService,
-        InvestmentCapacityService investmentCapacityService)
+        InvestmentCapacityService investmentCapacityService,
+        InvestmentWaitListService investmentWaitListService)
     {
         _walletService = walletService;
         _investmentCapacityService = investmentCapacityService;
+        _investmentWaitListService = investmentWaitListService;
     }
 
     [Authorize]
@@ -224,6 +227,49 @@ public class WalletController : ControllerBase
     public async Task<IActionResult> GetCurrentInvestmentCapacity()
     {
         var result = await _investmentCapacityService.GetCurrentMonthCapacityAsync();
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+    [Authorize]
+    [HttpPost("investment-wait-list/join")]
+    public async Task<IActionResult> JoinInvestmentWaitList(
+    [FromBody] JoinInvestmentWaitListRequest request,
+    [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _investmentWaitListService.JoinAsync(
+            currentUser.UserId,
+            request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("investment-wait-list/my-status")]
+    public async Task<IActionResult> GetMyInvestmentWaitListStatus(
+        [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _investmentWaitListService.GetMyStatusAsync(
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("investment-wait-list/cancel")]
+    public async Task<IActionResult> CancelMyInvestmentWaitList(
+        [FromServices] CurrentUserService currentUser)
+    {
+        var result = await _investmentWaitListService.CancelMyRequestAsync(
+            currentUser.UserId);
 
         if (!result.Success)
             return BadRequest(result);

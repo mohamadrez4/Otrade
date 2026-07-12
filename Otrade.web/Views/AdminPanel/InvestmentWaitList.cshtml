@@ -1,0 +1,524 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Investment Wait List";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Investment Wait List</h3>
+            <p>Review users waiting for investment capacity and notify them when capacity becomes available.</p>
+        </div>
+
+        <div class="admin-filter-row">
+            <select id="waitListStatusFilter" class="panel-input">
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Notified">Notified</option>
+                <option value="CapacityAvailable">Capacity Available</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+
+            <input id="waitListSearchInput"
+                   class="panel-input"
+                   type="text"
+                   autocomplete="off"
+                   placeholder="Search by email, UID, or name" />
+
+            <button id="waitListSearchBtn" class="panel-primary-btn" type="button">
+                Search
+            </button>
+
+            <button id="waitListClearBtn" class="admin-secondary-btn" type="button">
+                Clear
+            </button>
+        </div>
+
+        <div id="waitListMessage" class="admin-message">
+            Loading wait list...
+        </div>
+
+        <div id="waitListTableWrapper" class="admin-table-wrapper" style="display:none;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Requested Amount</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Notified At</th>
+                        <th>Completed At</th>
+                        <th>Admin Note</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody id="waitListTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="waitListPagination" class="admin-pagination" style="display:none;">
+            <button id="waitListPrevBtn"
+                    class="reports-filter-clear"
+                    type="button">
+                Previous
+            </button>
+
+            <span id="waitListPageInfo"></span>
+
+            <button id="waitListNextBtn"
+                    class="reports-filter-clear"
+                    type="button">
+                Next
+            </button>
+        </div>
+    </div>
+
+</div>
+<div class="ow-modal-backdrop" id="waitListStatusModal" style="display:none;" role="dialog" aria-modal="true">
+    <div class="ow-modal-shell">
+
+        <div class="ow-modal-glow"></div>
+
+        <div class="ow-modal-header">
+            <div class="ow-modal-title-wrap">
+                <div class="ow-modal-icon">
+                    <span>↗</span>
+                </div>
+
+                <div>
+                    <h4>Update Wait List Status</h4>
+                    <p>Change the user wait list status and optionally add an admin note.</p>
+                </div>
+            </div>
+
+            <button type="button"
+                    class="ow-modal-close"
+                    onclick="closeWaitListStatusModal()"
+                    aria-label="Close">
+                ×
+            </button>
+        </div>
+
+        <div class="ow-modal-user-card">
+            <span>User</span>
+            <strong id="waitListModalSummary">-</strong>
+        </div>
+
+        <div class="ow-modal-body">
+
+            <div class="ow-form-group">
+                <label for="waitListModalStatus">Status</label>
+
+                <input type="hidden" id="waitListModalStatus" value="Pending" />
+
+                <div class="ow-custom-select" id="waitListStatusDropdown">
+                    <button type="button"
+                            class="ow-custom-select-trigger"
+                            id="waitListStatusDropdownBtn">
+                        <span id="waitListStatusDropdownText">Pending</span>
+                        <span class="ow-custom-select-arrow">⌄</span>
+                    </button>
+
+                    <div class="ow-custom-select-menu" id="waitListStatusDropdownMenu">
+                        <button type="button" data-value="Pending">Pending</button>
+                        <button type="button" data-value="Notified">Notified</button>
+                        <button type="button" data-value="CapacityAvailable">Capacity Available</button>
+                        <button type="button" data-value="Completed">Completed</button>
+                        <button type="button" data-value="Cancelled">Cancelled</button>
+                    </div>
+                </div>  
+
+                <small>
+                    Selecting <b>Notified</b> sends the capacity available email to the user.
+                </small>
+            </div>
+
+            <div class="ow-form-group">
+                <label for="waitListModalNote">Admin Note</label>
+
+                <textarea id="waitListModalNote"
+                          class="ow-input ow-textarea"
+                          rows="4"
+                          maxlength="1000"
+                          placeholder="Write an optional note for this wait list request..."></textarea>
+            </div>
+
+        </div>
+
+        <div class="ow-modal-footer">
+            <button type="button"
+                    class="ow-btn ow-btn-secondary"
+                    onclick="closeWaitListStatusModal()">
+                Cancel
+            </button>
+
+            <button type="button"
+                    id="saveWaitListStatusBtn"
+                    class="ow-btn ow-btn-primary">
+                Save Changes
+            </button>
+        </div>
+
+    </div>
+</div>
+@section Scripts {
+    <script>
+        const waitListStatusFilter = document.getElementById("waitListStatusFilter");
+        const waitListSearchInput = document.getElementById("waitListSearchInput");
+        const waitListSearchBtn = document.getElementById("waitListSearchBtn");
+        const waitListClearBtn = document.getElementById("waitListClearBtn");
+
+        const waitListMessage = document.getElementById("waitListMessage");
+        const waitListTableWrapper = document.getElementById("waitListTableWrapper");
+        const waitListTableBody = document.getElementById("waitListTableBody");
+
+        const waitListPagination = document.getElementById("waitListPagination");
+        const waitListPrevBtn = document.getElementById("waitListPrevBtn");
+        const waitListNextBtn = document.getElementById("waitListNextBtn");
+        const waitListPageInfo = document.getElementById("waitListPageInfo");
+
+        const waitListStatusModal = document.getElementById("waitListStatusModal");
+        const waitListModalSummary = document.getElementById("waitListModalSummary");
+        const waitListModalStatus = document.getElementById("waitListModalStatus");
+        const waitListModalNote = document.getElementById("waitListModalNote");
+        const saveWaitListStatusBtn = document.getElementById("saveWaitListStatusBtn");
+        const waitListStatusDropdown = document.getElementById("waitListStatusDropdown");
+        const waitListStatusDropdownBtn = document.getElementById("waitListStatusDropdownBtn");
+        const waitListStatusDropdownText = document.getElementById("waitListStatusDropdownText");
+        const waitListStatusDropdownMenu = document.getElementById("waitListStatusDropdownMenu");
+        let waitListCurrentPage = 1;
+        const waitListPageSize = 20;
+        let waitListTotalPages = 1;
+        let selectedWaitListId = null;
+
+        waitListSearchBtn.addEventListener("click", async function () {
+            waitListCurrentPage = 1;
+            await loadInvestmentWaitList();
+        });
+
+        waitListClearBtn.addEventListener("click", async function () {
+            waitListStatusFilter.value = "All";
+            waitListSearchInput.value = "";
+            waitListCurrentPage = 1;
+            await loadInvestmentWaitList();
+        });
+
+        waitListStatusFilter.addEventListener("change", async function () {
+            waitListCurrentPage = 1;
+            await loadInvestmentWaitList();
+        });
+
+        waitListSearchInput.addEventListener("keydown", async function (e) {
+            if (e.key === "Enter") {
+                waitListCurrentPage = 1;
+                await loadInvestmentWaitList();
+            }
+        });
+
+        waitListPrevBtn.addEventListener("click", async function () {
+            if (waitListCurrentPage <= 1) return;
+
+            waitListCurrentPage--;
+            await loadInvestmentWaitList();
+        });
+
+        waitListNextBtn.addEventListener("click", async function () {
+            if (waitListCurrentPage >= waitListTotalPages) return;
+
+            waitListCurrentPage++;
+            await loadInvestmentWaitList();
+        });
+
+        saveWaitListStatusBtn.addEventListener("click", saveWaitListStatus);
+        waitListStatusDropdownBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            waitListStatusDropdown.classList.toggle("open");
+        });
+
+        waitListStatusDropdownMenu.querySelectorAll("button").forEach(button => {
+            button.addEventListener("click", function (e) {
+                e.stopPropagation();
+
+                const value = this.dataset.value;
+
+                setWaitListModalStatus(value);
+
+                waitListStatusDropdown.classList.remove("open");
+            });
+        });
+
+        document.addEventListener("click", function () {
+            waitListStatusDropdown.classList.remove("open");
+        });
+        waitListStatusModal.addEventListener("click", function (e) {
+            if (e.target.id === "waitListStatusModal") {
+                closeWaitListStatusModal();
+            }
+        });
+
+        async function loadInvestmentWaitList() {
+            waitListMessage.style.display = "block";
+            waitListMessage.innerText = "Loading wait list...";
+
+            waitListTableWrapper.style.display = "none";
+            waitListPagination.style.display = "none";
+            waitListTableBody.innerHTML = "";
+
+            const status = waitListStatusFilter.value;
+            const search = waitListSearchInput.value.trim();
+
+            let url = `/api/admin/investment-wait-list?page=${waitListCurrentPage}&pageSize=${waitListPageSize}`;
+
+            if (status && status !== "All") {
+                url += `&status=${encodeURIComponent(status)}`;
+            }
+
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+
+            try {
+                const result = await api(url);
+
+                if (!result || !result.success) {
+                    waitListMessage.innerText =
+                        result?.message || "Could not load wait list.";
+                    return;
+                }
+
+                const data = result.data || {};
+                const items = data.items || [];
+
+                waitListCurrentPage = data.page || 1;
+                waitListTotalPages = data.totalPages || 1;
+
+                if (!items.length) {
+                    waitListMessage.innerText = "No wait list records found.";
+                    waitListPagination.style.display = "none";
+                    return;
+                }
+
+                items.forEach(item => {
+                    const row = document.createElement("tr");
+                    const statusClass = String(item.status || "").toLowerCase();
+
+                    row.innerHTML = `
+                        <td>
+                            <div class="report-user-cell">
+                                <strong>${escapeHtml(item.userUid || "-")}</strong>
+                                <span>${escapeHtml(item.userEmail || "-")}</span>
+                                ${
+                                    item.userFullName
+                                        ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
+
+                        <td>${formatMoney(item.requestedAmount)} USDT</td>
+
+                        <td>
+                            <span class="admin-status ${escapeHtml(statusClass)}">
+                                ${escapeHtml(item.status || "-")}
+                            </span>
+                        </td>
+
+                        <td>${formatDate(item.createdAt)}</td>
+                        <td>${formatDate(item.notifiedAt)}</td>
+                        <td>${formatDate(item.completedAt)}</td>
+
+                        <td>
+                            <span class="admin-report-note ${item.adminNote ? "has-note" : ""}">
+                                ${escapeHtml(item.adminNote || "-")}
+                            </span>
+                        </td>
+
+        <td class="text-end">
+            ${
+                        item.status === "Pending" ||
+        item.status === "Notified" ||
+        item.status === "CapacityAvailable"
+                    ? `
+                        <button type="button"
+                                class="admin-action-btn approve"
+                                onclick="openWaitListStatusModal(
+                                    ${item.waitListId},
+                                    '${escapeForJs(item.userUid || "-")}',
+                                    '${escapeForJs(item.userEmail || "-")}',
+                                    '${escapeForJs(item.status || "Pending")}',
+                                    '${escapeForJs(item.adminNote || "")}'
+                                )">
+                            Update
+                        </button>
+                      `
+                    : `
+                        <span class="admin-row-muted">
+                            Locked
+                        </span>
+                      `
+            }
+        </td>
+                    `;
+
+                    waitListTableBody.appendChild(row);
+                });
+
+                waitListMessage.style.display = "none";
+                waitListTableWrapper.style.display = "block";
+
+                renderWaitListPagination(data);
+
+            } catch (error) {
+                waitListMessage.innerText =
+                    error.message || "Could not load wait list.";
+                waitListPagination.style.display = "none";
+            }
+        }
+
+        function renderWaitListPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                waitListPagination.style.display = "none";
+                return;
+            }
+
+            waitListCurrentPage = data.page || 1;
+            waitListTotalPages = data.totalPages || 1;
+
+            waitListPagination.style.display = "flex";
+
+            waitListPageInfo.innerText =
+                `Page ${waitListCurrentPage} of ${waitListTotalPages} - Total: ${totalCount}`;
+
+            waitListPrevBtn.disabled = waitListCurrentPage <= 1;
+            waitListNextBtn.disabled = waitListCurrentPage >= waitListTotalPages;
+        }
+         function setWaitListModalStatus(value) {
+            const allowedValues = ["Pending", "Notified", "CapacityAvailable", "Completed", "Cancelled"];
+
+            if (!allowedValues.includes(value)) {
+                value = "Pending";
+            }
+
+            waitListModalStatus.value = value;
+                waitListStatusDropdownText.innerText =
+        value === "CapacityAvailable" ? "Capacity Available" : value;
+
+            waitListStatusDropdownMenu.querySelectorAll("button").forEach(button => {
+                button.classList.toggle("active", button.dataset.value === value);
+            });
+        }
+        function openWaitListStatusModal(waitListId, uid, email, status, note) {
+            selectedWaitListId = waitListId;
+
+            waitListModalSummary.innerText = `${uid} - ${email}`;
+            setWaitListModalStatus(status || "Pending");
+            waitListModalNote.value = note || "";
+
+            waitListStatusModal.style.display = "flex";
+        }
+
+        function closeWaitListStatusModal() {
+            selectedWaitListId = null;
+
+            waitListModalSummary.innerText = "-";
+            setWaitListModalStatus("Pending");
+            waitListModalNote.value = "";
+
+            waitListStatusModal.style.display = "none";
+        }
+
+        async function saveWaitListStatus() {
+            if (!selectedWaitListId) {
+                showNotification("No wait list record selected.", "error");
+                return;
+            }
+
+            const status = waitListModalStatus.value;
+            const adminNote = waitListModalNote.value.trim();
+
+            const confirmed = await showConfirm(
+                "Are you sure you want to update this wait list request?",
+                "Update Wait List"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            saveWaitListStatusBtn.disabled = true;
+            saveWaitListStatusBtn.innerText = "Saving...";
+
+            try {
+                const result = await api(`/api/admin/investment-wait-list/${selectedWaitListId}/status`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        status,
+                        adminNote
+                    })
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not update wait list.", "error");
+                    return;
+                }
+
+                showNotification(
+                    result.message || "Wait list updated successfully.",
+                    "success"
+                );
+
+                closeWaitListStatusModal();
+
+                await loadInvestmentWaitList();
+
+            } catch (error) {
+                showNotification(error.message || "Could not update wait list.", "error");
+            } finally {
+                saveWaitListStatusBtn.disabled = false;
+                saveWaitListStatusBtn.innerText = "Save";
+            }
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function escapeForJs(value) {
+            return String(value || "")
+                .replaceAll("\\", "\\\\")
+                .replaceAll("'", "\\'")
+                .replaceAll('"', '\\"')
+                .replaceAll("\n", "")
+                .replaceAll("\r", "");
+        }
+
+        loadInvestmentWaitList();
+    </script>
+}
