@@ -144,9 +144,18 @@ public class WalletController : ControllerBase
     [Authorize]
     [HttpGet("withdrawals/my-history")]
     public async Task<IActionResult> GetMyWithdrawals(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
         [FromServices] CurrentUserService currentUser)
     {
-        var result = await _walletService.GetMyWithdrawalsAsync(currentUser.UserId);
+        var result = await _walletService.GetMyWithdrawalsAsync(
+            currentUser.UserId,
+            page,
+            pageSize);
+
+        if (!result.Success)
+            return BadRequest(result);
+
         return Ok(result);
     }
     [Authorize]

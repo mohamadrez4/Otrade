@@ -891,11 +891,30 @@ public class WalletService
         });
     }
 
-    public async Task<ApiResponse<List<UserPendingWithdrawalDto>>> GetMyWithdrawalsAsync(long userId)
+    public async Task<ApiResponse<PagedResponse<UserPendingWithdrawalDto>>> GetMyWithdrawalsAsync(
+        long userId,
+        int page = 1,
+        int pageSize = 20)
     {
-        var withdrawals = await _context.Withdrawals
-            .Where(x => x.UserId == userId)
+        if (page <= 0)
+            page = 1;
+
+        if (pageSize <= 0)
+            pageSize = 20;
+
+        if (pageSize > 100)
+            pageSize = 100;
+
+        var query = _context.Withdrawals
+            .AsNoTracking()
+            .Where(x => x.UserId == userId);
+
+        var totalCount = await query.CountAsync();
+
+        var withdrawals = await query
             .OrderByDescending(x => x.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(x => new UserPendingWithdrawalDto
             {
                 WithdrawalId = x.WithdrawalId,
@@ -910,7 +929,16 @@ public class WalletService
             })
             .ToListAsync();
 
-        return ResponseFactory.Success(withdrawals);
+        var response = new PagedResponse<UserPendingWithdrawalDto>
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Items = withdrawals
+        };
+
+        return ResponseFactory.Success(response);
     }
     public async Task<ApiResponse<bool>> CancelWithdrawalAsync(long withdrawalId, long userId)
     {

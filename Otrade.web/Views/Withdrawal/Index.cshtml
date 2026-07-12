@@ -117,12 +117,29 @@
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Note</th>
+                    <th>Processed At</th>
                     <th class="text-end">Action</th>
                 </tr>
             </thead>
 
             <tbody id="withdrawalsBody"></tbody>
         </table>
+    </div>
+
+    <div id="withdrawalsPagination" class="withdrawal-history-pagination" style="display:none;">
+        <button id="withdrawalsPrevBtn"
+                class="withdrawal-history-page-btn"
+                type="button">
+            Previous
+        </button>
+
+        <span id="withdrawalsPageInfo"></span>
+
+        <button id="withdrawalsNextBtn"
+                class="withdrawal-history-page-btn"
+                type="button">
+            Next
+        </button>
     </div>
 </div>
 
@@ -133,6 +150,10 @@
         let withdrawalVerificationId = null;
         let withdrawalVerificationLocked = false;
         let withdrawalVerifiedAmount = 0;
+
+        let withdrawalsCurrentPage = 1;
+        const withdrawalsPageSize = 5;
+        let withdrawalsTotalPages = 1;
 
         const withdrawalForm = document.getElementById("withdrawalForm");
         const amountInput = document.getElementById("amount");
@@ -151,11 +172,34 @@
         const withdrawalsWrapper = document.getElementById("withdrawalsWrapper");
         const withdrawalsBody = document.getElementById("withdrawalsBody");
 
+        const withdrawalsPagination = document.getElementById("withdrawalsPagination");
+        const withdrawalsPrevBtn = document.getElementById("withdrawalsPrevBtn");
+        const withdrawalsNextBtn = document.getElementById("withdrawalsNextBtn");
+        const withdrawalsPageInfo = document.getElementById("withdrawalsPageInfo");
+
         withdrawalForm.addEventListener("submit", submitWithdrawalRequest);
 
         resetWithdrawalVerificationBtn.addEventListener("click", resetWithdrawalVerification);
 
         confirmWithdrawalBtn.addEventListener("click", confirmWithdrawalRequest);
+
+        withdrawalsPrevBtn.addEventListener("click", async function () {
+            if (withdrawalsCurrentPage <= 1) {
+                return;
+            }
+
+            withdrawalsCurrentPage--;
+            await loadWithdrawals();
+        });
+
+        withdrawalsNextBtn.addEventListener("click", async function () {
+            if (withdrawalsCurrentPage >= withdrawalsTotalPages) {
+                return;
+            }
+
+            withdrawalsCurrentPage++;
+            await loadWithdrawals();
+        });
 
         withdrawalVerificationCode.addEventListener("input", function () {
             this.value = this.value.replace(/\D/g, "").slice(0, 6);
@@ -288,6 +332,8 @@
 
                 resetWithdrawalFormAfterSuccess();
 
+                withdrawalsCurrentPage = 1;
+
                 await loadWalletBalance();
                 await loadWithdrawals();
 
@@ -361,21 +407,30 @@
             withdrawalsMessage.style.display = "block";
             withdrawalsMessage.innerText = "Loading withdrawals...";
             withdrawalsWrapper.style.display = "none";
+            withdrawalsPagination.style.display = "none";
             withdrawalsBody.innerHTML = "";
 
             try {
-                const result = await api("/api/wallet/withdrawals/my-history");
+                const url =
+                    `/api/wallet/withdrawals/my-history?page=${withdrawalsCurrentPage}&pageSize=${withdrawalsPageSize}`;
 
-                if (!result.success) {
+                const result = await api(url);
+
+                if (!result || !result.success) {
                     withdrawalsMessage.innerText =
-                        result.message || "Could not load withdrawals.";
+                        result?.message || "Could not load withdrawals.";
                     return;
                 }
 
-                const items = result.data || [];
+                const data = result.data || {};
+                const items = data.items || [];
+
+                withdrawalsCurrentPage = data.page || 1;
+                withdrawalsTotalPages = data.totalPages || 1;
 
                 if (!items.length) {
                     withdrawalsMessage.innerText = "No withdrawals found.";
+                    withdrawalsPagination.style.display = "none";
                     return;
                 }
 
@@ -413,6 +468,8 @@
                             </span>
                         </td>
 
+                        <td>${formatDate(item.processedAt)}</td>
+
                         <td class="text-end">
                             ${
                                 item.canCancel
@@ -428,9 +485,32 @@
                 withdrawalsMessage.style.display = "none";
                 withdrawalsWrapper.style.display = "block";
 
+                renderWithdrawalsPagination(data);
+
             } catch {
                 withdrawalsMessage.innerText = "Could not load withdrawals.";
+                withdrawalsPagination.style.display = "none";
             }
+        }
+
+        function renderWithdrawalsPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                withdrawalsPagination.style.display = "none";
+                return;
+            }
+
+            withdrawalsCurrentPage = data.page || 1;
+            withdrawalsTotalPages = data.totalPages || 1;
+
+            withdrawalsPagination.style.display = "flex";
+
+            withdrawalsPageInfo.innerText =
+                `Page ${withdrawalsCurrentPage} of ${withdrawalsTotalPages} - Total: ${totalCount}`;
+
+            withdrawalsPrevBtn.disabled = withdrawalsCurrentPage <= 1;
+            withdrawalsNextBtn.disabled = withdrawalsCurrentPage >= withdrawalsTotalPages;
         }
 
         async function cancelWithdrawal(withdrawalId) {
@@ -493,4 +573,4 @@
         loadWalletBalance();
         loadWithdrawals();
     </script>
-}   
+}
