@@ -4165,3 +4165,12 @@ select.panel-input:focus {
     color: #11E9A1;
     font-weight: 900;
 }
+.bonus-user-admin-note {
+    display: block;
+    margin-top: 7px;
+    max-width: 220px;
+    color: #94A3B8;
+    font-size: 11px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}

@@ -68,6 +68,7 @@
                         <th>Status</th>
                         <th>Applied At</th>
                         <th>Expires At</th>
+                        <th>Closed At</th>
                     </tr>
                 </thead>
 
@@ -274,17 +275,33 @@
                         <span class="bonus-user-status ${escapeHtml(statusClass)}">
                             ${escapeHtml(item.status || "-")}
                         </span>
+
+                        ${renderBonusAdminNote(item)}
                     </td>
 
                     <td>${formatDateTime(item.createdAt)}</td>
 
                     <td>${formatDateTime(item.expiresAt)}</td>
+
+                    <td>${formatDateTime(item.completedAt)}</td>
                 `;
 
                 myBonusTableBody.appendChild(row);
             });
         }
+        function renderBonusAdminNote(item) {
+            const note = String(item.adminNote || "").trim();
 
+            if (!note || note === "Applied by user") {
+                return "";
+            }
+
+            return `
+                <small class="bonus-user-admin-note">
+                    ${escapeHtml(note)}
+                </small>
+            `;
+        }
         function renderMyBonusPagination(data) {
             const totalCount = data.totalCount || 0;
 

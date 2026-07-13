@@ -276,4 +276,34 @@ public class EmailTemplateService : IEmailTemplateService
         <p>You can review your active bonus records in your Otrade panel.</p>
     ";
     }
+    public string GetBonusUsageStatusChangedEmail(
+        string code,
+        string status,
+        decimal bonusCapitalAmount,
+        string? appliedRankName,
+        string? adminNote)
+    {
+        var rankText = string.IsNullOrWhiteSpace(appliedRankName)
+            ? ""
+            : $"<p><strong>Applied Rank:</strong> {appliedRankName}</p>";
+
+        var noteText = string.IsNullOrWhiteSpace(adminNote)
+            ? ""
+            : $"<p><strong>Admin Note:</strong> {adminNote}</p>";
+
+        return $@"
+        <h2>Bonus Status Updated</h2>
+
+        <p>Your bonus usage status has been updated by the Otrade admin team.</p>
+
+        <p><strong>Bonus Code:</strong> {code}</p>
+        <p><strong>New Status:</strong> {status}</p>
+        <p><strong>Bonus Capital:</strong> {bonusCapitalAmount:F2} USDT</p>
+
+        {rankText}
+        {noteText}
+
+        <p>You can review this record in your Otrade panel under Bonus Codes.</p>
+    ";
+    }
 }

@@ -15,7 +15,9 @@ public class MyBonusCodeUsageDto
     public string? AppliedRankName { get; set; }
 
     public string Status { get; set; } = string.Empty;
+    public DateTime? CompletedAt { get; set; }
 
+    public string? AdminNote { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public DateTime? ExpiresAt { get; set; }

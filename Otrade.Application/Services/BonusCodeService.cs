@@ -435,7 +435,9 @@ public class BonusCodeService
                 AppliedRankName = x.AppliedRank != null ? x.AppliedRank.Name : null,
                 Status = x.Status.ToString(),
                 CreatedAt = x.CreatedAt,
-                ExpiresAt = x.ExpiresAt
+                ExpiresAt = x.ExpiresAt,
+                CompletedAt = x.CompletedAt,
+                AdminNote = x.AdminNote
             })
             .ToListAsync();
 
@@ -500,7 +502,20 @@ public class BonusCodeService
             : $"Changed manually by admin to {targetStatus}.";
 
         await _context.SaveChangesAsync();
+        if (usage.User != null && !string.IsNullOrWhiteSpace(usage.User.Email))
+        {
+            var emailBody = _emailTemplateService.GetBonusUsageStatusChangedEmail(
+                usage.BonusCode?.Code ?? "-",
+                usage.Status.ToString(),
+                usage.BonusCapitalAmount,
+                usage.AppliedRank?.Name,
+                usage.AdminNote);
 
+            await _notificationQueue.QueueEmailAsync(
+                usage.User.Email,
+                $"Bonus Usage {usage.Status}",
+                emailBody);
+        }
         var dto = new BonusCodeUsageDto
         {
             UsageId = usage.UsageId,
@@ -609,7 +624,9 @@ public class BonusCodeService
             AppliedRankName = appliedRank?.Name,
             Status = usage.Status.ToString(),
             CreatedAt = usage.CreatedAt,
-            ExpiresAt = usage.ExpiresAt
+            ExpiresAt = usage.ExpiresAt,
+            CompletedAt = usage.CompletedAt,
+            AdminNote = usage.AdminNote
         };
     }
 
