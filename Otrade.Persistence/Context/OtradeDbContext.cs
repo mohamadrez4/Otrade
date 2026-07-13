@@ -626,7 +626,21 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.Type)
                 .HasConversion<string>()
                 .HasMaxLength(30);
+            entity.Property(x => x.RealCapitalAmount)
+                .HasPrecision(18, 8);
 
+            entity.Property(x => x.BonusCapitalAmount)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.ProfitBaseAmount)
+                .HasPrecision(18, 8);
+
+            entity.HasOne(x => x.EffectiveRank)
+                .WithMany()
+                .HasForeignKey(x => x.EffectiveRankId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.EffectiveRankId);
             entity.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserId)

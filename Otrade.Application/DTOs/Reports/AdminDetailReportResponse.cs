@@ -102,7 +102,13 @@ public class AdminProfitDto
     public string ProfitType { get; set; } = string.Empty;
 
     public decimal Amount { get; set; }
+    public decimal? RealCapitalAmount { get; set; }
 
+    public decimal? BonusCapitalAmount { get; set; }
+
+    public decimal? ProfitBaseAmount { get; set; }
+
+    public string? EffectiveRankName { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 

@@ -140,6 +140,12 @@ public class InvestmentProfitJob
                 ReferenceId = todayKey,
                 Amount = profit,
                 Type = ProfitType.Investment,
+
+                RealCapitalAmount = realCapital,
+                BonusCapitalAmount = activeBonusCapital,
+                ProfitBaseAmount = profitBase,
+                EffectiveRankId = effectiveRank.RankId,
+
                 CreatedAt = now
             });
 

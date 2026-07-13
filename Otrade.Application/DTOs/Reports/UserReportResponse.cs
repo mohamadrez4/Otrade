@@ -82,6 +82,13 @@ public class ProfitDto
     public string? SourceUserEmail { get; set; }
 
     public string? SourceUserFullName { get; set; }
+    public decimal? RealCapitalAmount { get; set; }
+
+    public decimal? BonusCapitalAmount { get; set; }
+
+    public decimal? ProfitBaseAmount { get; set; }
+
+    public string? EffectiveRankName { get; set; }
 }
 
 public class BonusDto

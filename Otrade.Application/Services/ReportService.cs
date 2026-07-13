@@ -873,6 +873,7 @@ public class ReportService
             var query = _context.ProfitLedgers
                 .AsNoTracking()
                 .Include(x => x.User)
+                .Include(x => x.EffectiveRank)
                 .Where(x => x.Type == ProfitType.Investment)
                 .AsQueryable();
 
@@ -909,14 +910,21 @@ public class ReportService
                     UserUid = x.User.ReferralCode,
                     ProfitType = "Investment Profit",
                     Amount = x.Amount,
-                    CreatedAt = x.CreatedAt
+                    CreatedAt = x.CreatedAt,
+
+                    RealCapitalAmount = x.RealCapitalAmount,
+                    BonusCapitalAmount = x.BonusCapitalAmount,
+                    ProfitBaseAmount = x.ProfitBaseAmount,
+
+                    EffectiveRankName = x.EffectiveRank != null
+                        ? x.EffectiveRank.Name
+                        : null
                 })
                 .ToListAsync();
 
             return ResponseFactory.Success<object>(
                 CreatePagedResponse(page, pageSize, totalCount, items));
         }
-
         if (type.Equals("referralProfits", StringComparison.OrdinalIgnoreCase))
         {
             var query = _context.ProfitLedgers
@@ -1328,6 +1336,7 @@ public class ReportService
         {
             var query = _context.ProfitLedgers
                 .AsNoTracking()
+                .Include(x => x.EffectiveRank)
                 .Where(x =>
                     x.UserId == userId &&
                     x.Type == ProfitType.Investment);
@@ -1341,14 +1350,21 @@ public class ReportService
                 .Select(x => new ProfitDto
                 {
                     Amount = x.Amount,
-                    CreatedAt = x.CreatedAt
+                    CreatedAt = x.CreatedAt,
+
+                    RealCapitalAmount = x.RealCapitalAmount,
+                    BonusCapitalAmount = x.BonusCapitalAmount,
+                    ProfitBaseAmount = x.ProfitBaseAmount,
+
+                    EffectiveRankName = x.EffectiveRank != null
+                        ? x.EffectiveRank.Name
+                        : null
                 })
                 .ToListAsync();
 
             return ResponseFactory.Success<object>(
                 CreatePagedResponse(page, pageSize, totalCount, items));
         }
-
         if (type.Equals("referralProfits", StringComparison.OrdinalIgnoreCase))
         {
             var query = _context.ProfitLedgers

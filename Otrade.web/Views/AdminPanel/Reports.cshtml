@@ -663,7 +663,60 @@
 
                 return;
             }
+        if (type === "investmentProfits") {
+            adminReportsTableHead.innerHTML = `
+                <tr>
+                    <th>User</th>
+                    <th>Effective Rank</th>
+                    <th>Real Capital</th>
+                    <th>Bonus Capital</th>
+                    <th>Profit Base</th>
+                    <th>Created At</th>
+                    <th class="text-end">Daily Profit</th>
+                </tr>
+            `;
 
+            items.forEach(item => {
+                appendRow(`
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.userUid || "-")}</strong>
+                            <span>${escapeHtml(item.userEmail || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="admin-status approved">
+                            ${escapeHtml(item.effectiveRankName || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${formatMoney(item.realCapitalAmount)} USDT
+                    </td>
+
+                    <td>
+                        <strong class="report-bonus-capital">
+                            ${formatMoney(item.bonusCapitalAmount)} USDT
+                        </strong>
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${formatMoney(item.profitBaseAmount)} USDT
+                        </strong>
+                    </td>
+
+                    <td>${formatDate(item.createdAt)}</td>
+
+                    <td class="text-end">
+                        ${formatMoney(item.amount)}
+                    </td>
+                `);
+            });
+
+            return;
+        }
             if (type === "referralProfits") {
                 adminReportsTableHead.innerHTML = `
                     <tr>

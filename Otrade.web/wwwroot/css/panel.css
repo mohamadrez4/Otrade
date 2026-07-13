@@ -4161,3 +4161,7 @@ select.panel-input:focus {
 .dashboard-rank-bonus-box {
     display: none !important;
 }
+.report-bonus-capital {
+    color: #11E9A1;
+    font-weight: 900;
+}
