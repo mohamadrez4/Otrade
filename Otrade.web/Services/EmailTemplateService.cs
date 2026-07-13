@@ -244,4 +244,17 @@ public class EmailTemplateService : IEmailTemplateService
         <p>You are still on the wait list. We will notify you again when investment capacity becomes available.</p>
     ";
     }
+    public string GetInvestWalletTransferEmail(decimal amount,string fromWalletType,decimal investWalletBalance)
+    {
+        return $@"
+        <h2>Investment Wallet Updated</h2>
+        <p>Your transfer to Invest Wallet has been completed successfully.</p>
+
+        <p><strong>From Wallet:</strong> {fromWalletType}</p>
+        <p><strong>Transferred Amount:</strong> {amount:F2} USDT</p>
+        <p><strong>Current Invest Wallet Balance:</strong> {investWalletBalance:F2} USDT</p>
+
+        <p>Your investment balance has been updated in your Otrade panel.</p>
+    ";
+    }
 }

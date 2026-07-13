@@ -23,4 +23,5 @@ public interface IEmailTemplateService
     string GetInvestmentWaitListJoinedEmail(decimal requestedAmount);
     string GetInvestmentCapacityAvailableEmail(decimal requestedAmount);
     string GetInvestmentWaitListNotifiedEmail(decimal requestedAmount);
+    string GetInvestWalletTransferEmail(decimal amount,string fromWalletType,decimal investWalletBalance);
 }

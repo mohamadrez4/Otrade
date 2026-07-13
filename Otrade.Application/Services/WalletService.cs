@@ -385,6 +385,9 @@ public class WalletService
             fromWallet.WalletType == WalletType.Main &&
             toWallet.WalletType == WalletType.Invest;
 
+        var isTransferToInvest =
+            toWallet.WalletType == WalletType.Invest;
+
         var isInvestToMain =
             fromWallet.WalletType == WalletType.Invest &&
             toWallet.WalletType == WalletType.Main;
@@ -411,7 +414,10 @@ public class WalletService
             if (activeContract == null)
                 return ResponseFactory.Fail<bool>(
                     "No active contract. Please create a contract first.");
+        }
 
+        if (isTransferToInvest)
+        {
             var capacityResult =
                 await _investmentCapacityService.ReserveCurrentMonthCapacityAsync(
                     request.Amount);
@@ -424,7 +430,7 @@ public class WalletService
 
         var fromBefore = fromWallet.Balance;
         var toBefore = toWallet.Balance;
-
+        InvestmentWaitListEntry? completedWaitListEntry = null;
         fromWallet.Balance -= request.Amount;
         toWallet.Balance += request.Amount;
 
@@ -434,7 +440,24 @@ public class WalletService
                 userId,
                 request.Amount);
         }
+        if (isTransferToInvest)
+        {
+            completedWaitListEntry = await _context.InvestmentWaitListEntries
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.Status == InvestmentWaitListStatus.CapacityAvailable &&
+                    x.RequestedAmount <= request.Amount)
+                .OrderBy(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
 
+            if (completedWaitListEntry != null)
+            {
+                completedWaitListEntry.Status = InvestmentWaitListStatus.Completed;
+                completedWaitListEntry.CompletedAt = now;
+                completedWaitListEntry.AdminNote =
+                    "Completed automatically after transfer to Invest Wallet.";
+            }
+        }
         var transferDescription = string.IsNullOrWhiteSpace(request.Description)
             ? $"Transfer from {fromWallet.WalletType} to {toWallet.WalletType}"
             : request.Description.Trim();
@@ -478,6 +501,26 @@ public class WalletService
         await _context.SaveChangesAsync();
 
         await transaction.CommitAsync();
+
+        if (isTransferToInvest)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+
+            if (user != null)
+            {
+                var emailBody = _emailTemplateService.GetInvestWalletTransferEmail(
+                    request.Amount,
+                    fromWallet.WalletType.ToString(),
+                    toWallet.Balance);
+
+                await _notificationQueue.QueueEmailAsync(
+                    user.Email,
+                    "Investment Wallet Updated",
+                    emailBody);
+            }
+        }
 
         return ResponseFactory.Success(true, "Transfer completed");
     }

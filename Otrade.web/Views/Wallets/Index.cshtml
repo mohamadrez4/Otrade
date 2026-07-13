@@ -686,10 +686,10 @@
                 updateInvestmentWaitListBox();
             }
         }
-                async function joinInvestmentWaitList() {
+           async function joinInvestmentWaitList() {
             const amount = Number(document.getElementById("transferAmount").value || 0);
 
-            if (!isMainToInvestTransfer()) {
+            if (!isTransferToInvest()) {
                 showNotification("Wait list is only available for Main to Invest transfer.", "warning");
                 return;
             }
@@ -782,7 +782,7 @@
                 return;
             }
 
-            if (!isMainToInvestTransfer()) {
+            if (!isTransferToInvest()) {
                 investmentWaitListBox.style.display = "none";
                 return;
             }
@@ -870,7 +870,7 @@
             const box = document.getElementById("transferCapacityBox");
             const warning = document.getElementById("capacityWarningText");
 
-            if (!isMainToInvestTransfer()) {
+            if (!isTransferToInvest()) {
                 box.style.display = "none";
                 updateInvestmentWaitListBox();
                 return;
@@ -937,7 +937,7 @@
 
             let maxAmount = Number(wallet.balance || 0);
 
-            if (isMainToInvestTransfer()) {
+            if (isTransferToInvest()) {
                 if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
                     showNotification("Investment capacity is not configured.", "error");
                     return;
@@ -1482,6 +1482,10 @@
             hideInternalTransferDetails();
             hideInternalTransferVerificationBox();
             showInternalReceiverMessage("", "");
+        }
+            function isTransferToInvest() {
+            const toType = document.getElementById("toWallet").value;
+            return toType === "Invest";
         }
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
