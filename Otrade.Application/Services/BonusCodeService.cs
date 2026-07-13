@@ -448,7 +448,84 @@ public class BonusCodeService
             Items = items
         });
     }
+    public async Task<ApiResponse<BonusCodeUsageDto>> UpdateUsageStatusAsync(
+        long usageId,
+        UpdateBonusCodeUsageStatusRequest request)
+    {
+        if (request == null)
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Invalid request");
 
+        if (!Enum.TryParse<BonusCodeUsageStatus>(request.Status, true, out var targetStatus))
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Invalid bonus usage status");
+
+        if (targetStatus == BonusCodeUsageStatus.Active)
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Active status cannot be set manually");
+
+        if (targetStatus is not BonusCodeUsageStatus.Cancelled
+            and not BonusCodeUsageStatus.Expired)
+        {
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Only Cancelled or Expired status can be set manually");
+        }
+
+        var usage = await _context.BonusCodeUsages
+            .Include(x => x.BonusCode)
+            .Include(x => x.User)
+            .Include(x => x.AppliedRank)
+            .FirstOrDefaultAsync(x => x.UsageId == usageId);
+
+        if (usage == null)
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Bonus usage record not found");
+
+        if (usage.Status != BonusCodeUsageStatus.Active)
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Only active bonus usage records can be updated");
+
+        var adminNote = request.AdminNote?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(adminNote) && adminNote.Length > 1000)
+            return ResponseFactory.Fail<BonusCodeUsageDto>("Admin note cannot be longer than 1000 characters");
+
+        var now = DateTime.Now;
+
+        usage.Status = targetStatus;
+        usage.CompletedAt = now;
+
+        if (targetStatus == BonusCodeUsageStatus.Expired &&
+            (!usage.ExpiresAt.HasValue || usage.ExpiresAt.Value > now))
+        {
+            usage.ExpiresAt = now;
+        }
+
+        usage.AdminNote = !string.IsNullOrWhiteSpace(adminNote)
+            ? adminNote
+            : $"Changed manually by admin to {targetStatus}.";
+
+        await _context.SaveChangesAsync();
+
+        var dto = new BonusCodeUsageDto
+        {
+            UsageId = usage.UsageId,
+            BonusCodeId = usage.BonusCodeId,
+            Code = usage.BonusCode?.Code ?? string.Empty,
+            CampaignName = usage.BonusCode?.CampaignName,
+            UserId = usage.UserId,
+            UserEmail = usage.User?.Email ?? string.Empty,
+            UserUid = usage.User?.ReferralCode ?? string.Empty,
+            UserFullName = $"{usage.User?.FirstName} {usage.User?.LastName}".Trim(),
+            RealCapitalAmount = usage.RealCapitalAmount,
+            BonusCapitalAmount = usage.BonusCapitalAmount,
+            AppliedRankId = usage.AppliedRankId,
+            AppliedRankName = usage.AppliedRank?.Name,
+            Status = usage.Status.ToString(),
+            CreatedAt = usage.CreatedAt,
+            ExpiresAt = usage.ExpiresAt,
+            CompletedAt = usage.CompletedAt,
+            AdminNote = usage.AdminNote
+        };
+
+        return ResponseFactory.Success(
+            dto,
+            $"Bonus usage marked as {targetStatus} successfully");
+    }
     private async Task<ApiResponse<bool>> ValidateBonusDefinitionAsync(
         BonusCodeType bonusType,
         decimal? bonusCapitalPercent,

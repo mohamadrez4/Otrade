@@ -148,6 +148,7 @@
                             <th>Status</th>
                             <th>Applied At</th>
                             <th>Expires At</th>
+                            <th class="text-end">Action</th>
                         </tr>
                     </thead>
 
@@ -370,7 +371,67 @@
 
     </div>
 </div>
+<div class="ow-modal-backdrop" id="bonusUsageActionModal" style="display:none;" role="dialog" aria-modal="true">
+    <div class="ow-modal-shell bonus-usage-action-modal-shell">
 
+        <div class="ow-modal-glow"></div>
+
+        <div class="ow-modal-header">
+            <div class="ow-modal-title-wrap">
+                <div class="ow-modal-icon">
+                    <span>✓</span>
+                </div>
+
+                <div>
+                    <h4 id="bonusUsageActionTitle">Update Bonus Usage</h4>
+                    <p id="bonusUsageActionSubtitle">Change the status of this bonus usage.</p>
+                </div>
+            </div>
+
+            <button type="button"
+                    class="ow-modal-close"
+                    id="closeBonusUsageActionModalBtn"
+                    aria-label="Close">
+                ×
+            </button>
+        </div>
+
+        <div class="ow-modal-body">
+
+            <div class="bonus-usage-action-summary" id="bonusUsageActionSummary">
+                -
+            </div>
+
+            <div class="ow-form-group">
+                <label for="bonusUsageAdminNoteInput">Admin Note</label>
+
+                <textarea id="bonusUsageAdminNoteInput"
+                          class="ow-input ow-textarea"
+                          rows="4"
+                          maxlength="1000"
+                          placeholder="Optional note for this action..."></textarea>
+
+                <small>This note will be saved on the bonus usage record.</small>
+            </div>
+
+        </div>
+
+        <div class="ow-modal-footer">
+            <button type="button"
+                    class="ow-btn ow-btn-secondary"
+                    id="cancelBonusUsageActionBtn">
+                Cancel
+            </button>
+
+            <button type="button"
+                    class="ow-btn ow-btn-primary"
+                    id="confirmBonusUsageActionBtn">
+                Confirm
+            </button>
+        </div>
+
+    </div>
+</div>
 @section Scripts {
     <script>
         let bonusExpiresAtPicker = null;
@@ -423,7 +484,14 @@
 
         const bonusCapitalPercentGroup = document.getElementById("bonusCapitalPercentGroup");
         const bonusRankGroup = document.getElementById("bonusRankGroup");
-
+                const bonusUsageActionModal = document.getElementById("bonusUsageActionModal");
+        const bonusUsageActionTitle = document.getElementById("bonusUsageActionTitle");
+        const bonusUsageActionSubtitle = document.getElementById("bonusUsageActionSubtitle");
+        const bonusUsageActionSummary = document.getElementById("bonusUsageActionSummary");
+        const bonusUsageAdminNoteInput = document.getElementById("bonusUsageAdminNoteInput");
+        const closeBonusUsageActionModalBtn = document.getElementById("closeBonusUsageActionModalBtn");
+        const cancelBonusUsageActionBtn = document.getElementById("cancelBonusUsageActionBtn");
+        const confirmBonusUsageActionBtn = document.getElementById("confirmBonusUsageActionBtn");
         let activeTab = "codes";
 
         let bonusCodesCache = [];
@@ -435,7 +503,9 @@
 
         let bonusUsagesPage = 1;
         let bonusUsagesTotalPages = 1;
-
+        let bonusUsagesCache = [];
+        let selectedBonusUsageId = null;
+        let selectedBonusUsageTargetStatus = "";
         bonusAdminTabs.forEach(tab => {
             tab.addEventListener("click", async function () {
                 bonusAdminTabs.forEach(x => x.classList.remove("active"));
@@ -540,7 +610,15 @@
 
         openCreateBonusCodeBtn.addEventListener("click", openCreateBonusCodeModal);
         saveBonusCodeBtn.addEventListener("click", saveBonusCode);
-
+        closeBonusUsageActionModalBtn.addEventListener("click", closeBonusUsageActionModal);
+        cancelBonusUsageActionBtn.addEventListener("click", closeBonusUsageActionModal);
+        confirmBonusUsageActionBtn.addEventListener("click", submitBonusUsageStatusUpdate);
+        
+        bonusUsageActionModal.addEventListener("click", function (e) {
+            if (e.target.id === "bonusUsageActionModal") {
+                closeBonusUsageActionModal();
+            }
+        });
         bonusIsSingleUseInput.addEventListener("change", updateSingleUseState);
 
         document.querySelectorAll("#bonusTypeChoiceGroup .bonus-choice-btn").forEach(button => {
@@ -744,7 +822,7 @@
 
                 const data = result.data || {};
                 const items = data.items || [];
-
+                bonusUsagesCache = items;
                 bonusUsagesPage = data.page || 1;
                 bonusUsagesTotalPages = data.totalPages || 1;
 
@@ -810,12 +888,164 @@
                     <td>${formatDateTime(item.createdAt)}</td>
 
                     <td>${formatDateTime(item.expiresAt)}</td>
+                    <td class="text-end">
+                    ${renderBonusUsageActions(item)}
+                    </td>
                 `;
 
                 bonusUsagesTableBody.appendChild(row);
             });
         }
+                function renderBonusUsageActions(item) {
+            const status = String(item.status || "");
 
+            if (status !== "Active") {
+                return `<span class="bonus-usage-locked">Locked</span>`;
+            }
+
+            const usageId = Number(item.usageId || 0);
+
+                   return `
+            <div class="bonus-usage-actions">
+                <button type="button"
+                        class="admin-action-btn reject"
+                        onclick="openBonusUsageActionModal(${usageId}, 'Cancelled')">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        class="admin-action-btn warning"
+                        onclick="openBonusUsageActionModal(${usageId}, 'Expired')">
+                    Expire
+                </button>
+            </div>
+        `;
+        }
+
+        function openBonusUsageActionModal(usageId, targetStatus) {
+            const item = bonusUsagesCache.find(x => Number(x.usageId) === Number(usageId));
+
+            if (!item) {
+                showNotification("Bonus usage record was not found.", "error");
+                return;
+            }
+
+            if (String(item.status || "") !== "Active") {
+                showNotification("Only active bonus usage records can be updated.", "warning");
+                return;
+            }
+
+            selectedBonusUsageId = usageId;
+            selectedBonusUsageTargetStatus = targetStatus;
+
+            const actionText = getUsageActionText(targetStatus);
+
+            bonusUsageActionTitle.innerText = `${actionText} Bonus Usage`;
+
+            bonusUsageActionSubtitle.innerText =
+                "This action removes the bonus from active calculations.";
+
+            bonusUsageActionSummary.innerHTML = `
+                <div>
+                    <span>Code</span>
+                    <strong>${escapeHtml(item.code || "-")}</strong>
+                </div>
+
+                <div>
+                    <span>User</span>
+                    <strong>${escapeHtml(item.userUid || "-")} - ${escapeHtml(item.userEmail || "-")}</strong>
+                </div>
+
+                <div>
+                    <span>Bonus Capital</span>
+                    <strong>${formatMoney(item.bonusCapitalAmount)} USDT</strong>
+                </div>
+
+                <div>
+                    <span>Applied Rank</span>
+                    <strong>${escapeHtml(item.appliedRankName || "-")}</strong>
+                </div>
+            `;
+
+            bonusUsageAdminNoteInput.value = "";
+
+            confirmBonusUsageActionBtn.innerText = actionText;
+            bonusUsageActionModal.style.display = "flex";
+
+            setTimeout(() => {
+                bonusUsageAdminNoteInput.focus();
+            }, 100);
+        }
+
+        function closeBonusUsageActionModal() {
+            selectedBonusUsageId = null;
+            selectedBonusUsageTargetStatus = "";
+            bonusUsageAdminNoteInput.value = "";
+            bonusUsageActionModal.style.display = "none";
+        }
+
+        async function submitBonusUsageStatusUpdate() {
+            if (!selectedBonusUsageId || !selectedBonusUsageTargetStatus) {
+                showNotification("No bonus usage action selected.", "error");
+                return;
+            }
+
+            const actionText = getUsageActionText(selectedBonusUsageTargetStatus);
+
+            const confirmed = await showConfirm(
+                `Are you sure you want to ${actionText.toLowerCase()} this bonus usage?`,
+                `${actionText} Bonus Usage`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            confirmBonusUsageActionBtn.disabled = true;
+            confirmBonusUsageActionBtn.innerText = "Saving...";
+
+            try {
+                const result = await api(
+                    `/api/admin/bonus-codes/usages/${selectedBonusUsageId}/status`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            status: selectedBonusUsageTargetStatus,
+                            adminNote: bonusUsageAdminNoteInput.value.trim() || null
+                        })
+                    }
+                );
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not update bonus usage status.", "error");
+                    return;
+                }
+
+                showNotification(
+                    result.message || "Bonus usage status updated successfully.",
+                    "success"
+                );
+
+                closeBonusUsageActionModal();
+
+                await loadBonusUsages();
+
+            } catch (error) {
+                showNotification(
+                    error.message || "Could not update bonus usage status.",
+                    "error"
+                );
+            } finally {
+                confirmBonusUsageActionBtn.disabled = false;
+                confirmBonusUsageActionBtn.innerText = "Confirm";
+            }
+        }
+
+        function getUsageActionText(status) {
+            if (status === "Cancelled") return "Cancel";
+            if (status === "Expired") return "Expire";
+            return "Update";
+        }
         function renderBonusUsagesPagination(data) {
             const totalCount = data.totalCount || 0;
 

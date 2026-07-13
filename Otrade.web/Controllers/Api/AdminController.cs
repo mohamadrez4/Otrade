@@ -786,5 +786,31 @@ public class AdminController : ControllerBase
             return BadRequest(result);
 
         return Ok(result);
-    }   
+    }
+    [Authorize]
+    [HttpPost("bonus-codes/usages/{usageId:long}/status")]
+    public async Task<IActionResult> UpdateBonusCodeUsageStatus(
+        long usageId,
+        [FromBody] UpdateBonusCodeUsageStatusRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageBonus);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _bonusCodeService.UpdateUsageStatusAsync(
+            usageId,
+            request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
 }
