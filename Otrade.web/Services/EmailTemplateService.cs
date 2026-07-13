@@ -257,4 +257,23 @@ public class EmailTemplateService : IEmailTemplateService
         <p>Your investment balance has been updated in your Otrade panel.</p>
     ";
     }
+    public string GetBonusCodeAppliedEmail(string code,decimal bonusCapitalAmount,string? appliedRankName)
+    {
+        var rankText = string.IsNullOrWhiteSpace(appliedRankName)
+            ? ""
+            : $"<p><strong>Applied Rank:</strong> {appliedRankName}</p>";
+
+        return $@"
+        <h2>Bonus Code Applied</h2>
+
+        <p>Your bonus code has been applied successfully.</p>
+
+        <p><strong>Bonus Code:</strong> {code}</p>
+        <p><strong>Bonus Capital:</strong> {bonusCapitalAmount:F2} USDT</p>
+
+        {rankText}
+
+        <p>You can review your active bonus records in your Otrade panel.</p>
+    ";
+    }
 }

@@ -1,0 +1,1192 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Bonus Codes";
+}
+
+<div class="admin-page">
+
+    <div class="panel-card">
+        <div class="admin-section-header">
+            <h3>Bonus Codes</h3>
+            <p>Create, manage, and review bonus code usage history.</p>
+        </div>
+
+        <div class="bonus-admin-tabs">
+            <button type="button" class="bonus-admin-tab active" data-tab="codes">
+                Bonus Codes
+            </button>
+
+            <button type="button" class="bonus-admin-tab" data-tab="usages">
+                Usage History
+            </button>
+        </div>
+
+        <div id="bonusCodesSection" class="bonus-admin-section">
+
+            <div class="bonus-admin-toolbar">
+                <div class="bonus-admin-filter-grid">
+
+                    <input id="bonusCodeSearchInput"
+                           class="panel-input"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Search by code, campaign, or description" />
+
+                    <select id="bonusCodeTypeFilter" class="panel-input">
+                        <option value="All">All Types</option>
+                        <option value="CapitalBonus">Capital Bonus</option>
+                        <option value="RankUpgrade">Rank Upgrade</option>
+                        <option value="Mixed">Mixed</option>
+                    </select>
+
+                    <select id="bonusCodeActiveFilter" class="panel-input">
+                        <option value="">All Status</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+
+                </div>
+
+                <div class="bonus-admin-actions">
+                    <button id="bonusCodeSearchBtn" type="button" class="admin-secondary-btn">
+                        Search
+                    </button>
+
+                    <button id="bonusCodeClearBtn" type="button" class="admin-secondary-btn">
+                        Clear
+                    </button>
+
+                    <button id="openCreateBonusCodeBtn" type="button" class="panel-primary-btn">
+                        Create Bonus Code
+                    </button>
+                </div>
+            </div>
+
+            <div id="bonusCodesMessage" class="admin-message">
+                Loading bonus codes...
+            </div>
+
+            <div id="bonusCodesTableWrapper" class="admin-table-wrapper" style="display:none;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Campaign</th>
+                            <th>Type</th>
+                            <th>Bonus</th>
+                            <th>Usage</th>
+                            <th>Status</th>
+                            <th>Expires At</th>
+                            <th>Created At</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="bonusCodesTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="bonusCodesPagination" class="admin-pagination" style="display:none;">
+                <button id="bonusCodesPrevBtn" class="reports-filter-clear" type="button">
+                    Previous
+                </button>
+
+                <span id="bonusCodesPageInfo"></span>
+
+                <button id="bonusCodesNextBtn" class="reports-filter-clear" type="button">
+                    Next
+                </button>
+            </div>
+
+        </div>
+
+        <div id="bonusUsagesSection" class="bonus-admin-section" style="display:none;">
+
+            <div class="bonus-admin-toolbar">
+                <div class="bonus-admin-filter-grid">
+
+                    <input id="bonusUsageSearchInput"
+                           class="panel-input"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Search by code, email, UID, or name" />
+
+                    <select id="bonusUsageStatusFilter" class="panel-input">
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Expired">Expired</option>
+                    </select>
+
+                </div>
+
+                <div class="bonus-admin-actions">
+                    <button id="bonusUsageSearchBtn" type="button" class="admin-secondary-btn">
+                        Search
+                    </button>
+
+                    <button id="bonusUsageClearBtn" type="button" class="admin-secondary-btn">
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <div id="bonusUsagesMessage" class="admin-message">
+                Loading usage history...
+            </div>
+
+            <div id="bonusUsagesTableWrapper" class="admin-table-wrapper" style="display:none;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>User</th>
+                            <th>Real Capital</th>
+                            <th>Bonus Capital</th>
+                            <th>Applied Rank</th>
+                            <th>Status</th>
+                            <th>Applied At</th>
+                            <th>Expires At</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="bonusUsagesTableBody"></tbody>
+                </table>
+            </div>
+
+            <div id="bonusUsagesPagination" class="admin-pagination" style="display:none;">
+                <button id="bonusUsagesPrevBtn" class="reports-filter-clear" type="button">
+                    Previous
+                </button>
+
+                <span id="bonusUsagesPageInfo"></span>
+
+                <button id="bonusUsagesNextBtn" class="reports-filter-clear" type="button">
+                    Next
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="ow-modal-backdrop" id="bonusCodeModal" style="display:none;" role="dialog" aria-modal="true">
+    <div class="ow-modal-shell bonus-code-modal-shell">
+
+        <div class="ow-modal-glow"></div>
+
+        <div class="ow-modal-header">
+            <div class="ow-modal-title-wrap">
+                <div class="ow-modal-icon">
+                    <span>★</span>
+                </div>
+
+                <div>
+                    <h4 id="bonusCodeModalTitle">Create Bonus Code</h4>
+                    <p>Create a bonus code for rank upgrade, capital bonus, or both.</p>
+                </div>
+            </div>
+
+            <button type="button"
+                    class="ow-modal-close"
+                    onclick="closeBonusCodeModal()"
+                    aria-label="Close">
+                ×
+            </button>
+        </div>
+
+        <div class="ow-modal-body">
+
+            <div class="bonus-modal-grid">
+
+                <div class="ow-form-group">
+                    <label for="bonusCodeInput">Code</label>
+
+                    <input id="bonusCodeInput"
+                           class="ow-input"
+                           type="text"
+                           maxlength="50"
+                           autocomplete="off"
+                           placeholder="Example: WELCOME10" />
+
+                    <small>Code will be saved in uppercase.</small>
+                </div>
+
+                <div class="ow-form-group">
+                    <label for="bonusCampaignInput">Campaign Name</label>
+
+                    <input id="bonusCampaignInput"
+                           class="ow-input"
+                           type="text"
+                           maxlength="150"
+                           autocomplete="off"
+                           placeholder="Example: Welcome Campaign" />
+                </div>
+
+            </div>
+
+            <div class="ow-form-group">
+                <label for="bonusDescriptionInput">Description</label>
+
+                <textarea id="bonusDescriptionInput"
+                          class="ow-input ow-textarea"
+                          rows="3"
+                          maxlength="500"
+                          placeholder="Optional description..."></textarea>
+            </div>
+
+            <div class="ow-form-group">
+                <label>Bonus Type</label>
+
+                <input type="hidden" id="bonusTypeInput" value="CapitalBonus" />
+
+                <div class="bonus-choice-grid" id="bonusTypeChoiceGroup">
+                    <button type="button" class="bonus-choice-btn active" data-type="CapitalBonus">
+                        <strong>Capital Bonus</strong>
+                        <span>Bonus capital based on user's Invest balance</span>
+                    </button>
+
+                    <button type="button" class="bonus-choice-btn" data-type="RankUpgrade">
+                        <strong>Rank Upgrade</strong>
+                        <span>Apply a bonus rank to user</span>
+                    </button>
+
+                    <button type="button" class="bonus-choice-btn" data-type="Mixed">
+                        <strong>Mixed</strong>
+                        <span>Capital bonus and rank upgrade together</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bonus-modal-grid">
+
+                <div class="ow-form-group" id="bonusCapitalPercentGroup">
+                    <label for="bonusCapitalPercentInput">Bonus Capital Percent</label>
+
+                    <input id="bonusCapitalPercentInput"
+                           class="ow-input"
+                           type="number"
+                           min="0"
+                           max="100"
+                           step="0.0001"
+                           placeholder="Example: 10" />
+
+                    <small>Example: 10 means 10% of current Invest Wallet balance.</small>
+                </div>
+
+                <div class="ow-form-group" id="bonusRankGroup" style="display:none;">
+                    <label>Bonus Rank</label>
+
+                    <input type="hidden" id="bonusRankIdInput" value="" />
+
+                    <div class="bonus-rank-choice-grid" id="bonusRankChoiceGroup">
+                        <button type="button" class="bonus-rank-btn active" data-rank-id="">
+                            No Rank
+                        </button>
+
+                        <button type="button" class="bonus-rank-btn" data-rank-id="1">
+                            Basic
+                        </button>
+
+                        <button type="button" class="bonus-rank-btn" data-rank-id="2">
+                            Bronze
+                        </button>
+
+                        <button type="button" class="bonus-rank-btn" data-rank-id="3">
+                            Silver
+                        </button>
+
+                        <button type="button" class="bonus-rank-btn" data-rank-id="4">
+                            Gold
+                        </button>
+
+                        <button type="button" class="bonus-rank-btn" data-rank-id="5">
+                            Diamond
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="bonus-modal-grid">
+
+                <div class="ow-form-group">
+                    <label for="bonusMaxUsageInput">Max Usage Count</label>
+
+                    <input id="bonusMaxUsageInput"
+                           class="ow-input"
+                           type="number"
+                           min="1"
+                           step="1"
+                           value="1" />
+                </div>
+
+                <div class="ow-form-group">
+                    <label for="bonusExpiresAtInput">Expires At</label>
+
+                    <input id="bonusExpiresAtInput"
+                           class="ow-input bonus-flatpickr-input"
+                           type="text"
+                           autocomplete="off"
+                           placeholder="Select expiration date and time" />
+
+                    <small>Leave empty for no expiration.</small>
+                </div>
+
+            </div>
+
+            <div class="bonus-switch-row">
+
+                <label class="bonus-check-line">
+                    <input id="bonusIsActiveInput" type="checkbox" checked />
+                    <span>Active</span>
+                </label>
+
+                <label class="bonus-check-line">
+                    <input id="bonusIsSingleUseInput" type="checkbox" checked />
+                    <span>Single Use</span>
+                </label>
+
+            </div>
+
+        </div>
+
+        <div class="ow-modal-footer">
+            <button type="button"
+                    class="ow-btn ow-btn-secondary"
+                    onclick="closeBonusCodeModal()">
+                Cancel
+            </button>
+
+            <button type="button"
+                    id="saveBonusCodeBtn"
+                    class="ow-btn ow-btn-primary">
+                Save Bonus Code
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let bonusExpiresAtPicker = null;
+        const bonusAdminTabs = document.querySelectorAll(".bonus-admin-tab");
+
+        const bonusCodesSection = document.getElementById("bonusCodesSection");
+        const bonusUsagesSection = document.getElementById("bonusUsagesSection");
+
+        const bonusCodeSearchInput = document.getElementById("bonusCodeSearchInput");
+        const bonusCodeTypeFilter = document.getElementById("bonusCodeTypeFilter");
+        const bonusCodeActiveFilter = document.getElementById("bonusCodeActiveFilter");
+        const bonusCodeSearchBtn = document.getElementById("bonusCodeSearchBtn");
+        const bonusCodeClearBtn = document.getElementById("bonusCodeClearBtn");
+        const openCreateBonusCodeBtn = document.getElementById("openCreateBonusCodeBtn");
+
+        const bonusCodesMessage = document.getElementById("bonusCodesMessage");
+        const bonusCodesTableWrapper = document.getElementById("bonusCodesTableWrapper");
+        const bonusCodesTableBody = document.getElementById("bonusCodesTableBody");
+        const bonusCodesPagination = document.getElementById("bonusCodesPagination");
+        const bonusCodesPrevBtn = document.getElementById("bonusCodesPrevBtn");
+        const bonusCodesNextBtn = document.getElementById("bonusCodesNextBtn");
+        const bonusCodesPageInfo = document.getElementById("bonusCodesPageInfo");
+
+        const bonusUsageSearchInput = document.getElementById("bonusUsageSearchInput");
+        const bonusUsageStatusFilter = document.getElementById("bonusUsageStatusFilter");
+        const bonusUsageSearchBtn = document.getElementById("bonusUsageSearchBtn");
+        const bonusUsageClearBtn = document.getElementById("bonusUsageClearBtn");
+
+        const bonusUsagesMessage = document.getElementById("bonusUsagesMessage");
+        const bonusUsagesTableWrapper = document.getElementById("bonusUsagesTableWrapper");
+        const bonusUsagesTableBody = document.getElementById("bonusUsagesTableBody");
+        const bonusUsagesPagination = document.getElementById("bonusUsagesPagination");
+        const bonusUsagesPrevBtn = document.getElementById("bonusUsagesPrevBtn");
+        const bonusUsagesNextBtn = document.getElementById("bonusUsagesNextBtn");
+        const bonusUsagesPageInfo = document.getElementById("bonusUsagesPageInfo");
+
+        const bonusCodeModal = document.getElementById("bonusCodeModal");
+        const bonusCodeModalTitle = document.getElementById("bonusCodeModalTitle");
+        const bonusCodeInput = document.getElementById("bonusCodeInput");
+        const bonusCampaignInput = document.getElementById("bonusCampaignInput");
+        const bonusDescriptionInput = document.getElementById("bonusDescriptionInput");
+        const bonusTypeInput = document.getElementById("bonusTypeInput");
+        const bonusCapitalPercentInput = document.getElementById("bonusCapitalPercentInput");
+        const bonusRankIdInput = document.getElementById("bonusRankIdInput");
+        const bonusMaxUsageInput = document.getElementById("bonusMaxUsageInput");
+        const bonusExpiresAtInput = document.getElementById("bonusExpiresAtInput");
+        const bonusIsActiveInput = document.getElementById("bonusIsActiveInput");
+        const bonusIsSingleUseInput = document.getElementById("bonusIsSingleUseInput");
+        const saveBonusCodeBtn = document.getElementById("saveBonusCodeBtn");
+
+        const bonusCapitalPercentGroup = document.getElementById("bonusCapitalPercentGroup");
+        const bonusRankGroup = document.getElementById("bonusRankGroup");
+
+        let activeTab = "codes";
+
+        let bonusCodesCache = [];
+        let editingBonusCodeId = null;
+
+        let bonusCodesPage = 1;
+        const bonusPageSize = 20;
+        let bonusCodesTotalPages = 1;
+
+        let bonusUsagesPage = 1;
+        let bonusUsagesTotalPages = 1;
+
+        bonusAdminTabs.forEach(tab => {
+            tab.addEventListener("click", async function () {
+                bonusAdminTabs.forEach(x => x.classList.remove("active"));
+                this.classList.add("active");
+
+                activeTab = this.dataset.tab;
+
+                bonusCodesSection.style.display = activeTab === "codes" ? "block" : "none";
+                bonusUsagesSection.style.display = activeTab === "usages" ? "block" : "none";
+
+                if (activeTab === "codes") {
+                    bonusCodesPage = 1;
+                    await loadBonusCodes();
+                } else {
+                    bonusUsagesPage = 1;
+                    await loadBonusUsages();
+                }
+            });
+        });
+
+        bonusCodeSearchBtn.addEventListener("click", async function () {
+            bonusCodesPage = 1;
+            await loadBonusCodes();
+        });
+
+        bonusCodeClearBtn.addEventListener("click", async function () {
+            bonusCodeSearchInput.value = "";
+            bonusCodeTypeFilter.value = "All";
+            bonusCodeActiveFilter.value = "";
+            bonusCodesPage = 1;
+            await loadBonusCodes();
+        });
+
+        bonusCodeSearchInput.addEventListener("keydown", async function (e) {
+            if (e.key === "Enter") {
+                bonusCodesPage = 1;
+                await loadBonusCodes();
+            }
+        });
+
+        bonusCodeTypeFilter.addEventListener("change", async function () {
+            bonusCodesPage = 1;
+            await loadBonusCodes();
+        });
+
+        bonusCodeActiveFilter.addEventListener("change", async function () {
+            bonusCodesPage = 1;
+            await loadBonusCodes();
+        });
+
+        bonusCodesPrevBtn.addEventListener("click", async function () {
+            if (bonusCodesPage <= 1) return;
+
+            bonusCodesPage--;
+            await loadBonusCodes();
+        });
+
+        bonusCodesNextBtn.addEventListener("click", async function () {
+            if (bonusCodesPage >= bonusCodesTotalPages) return;
+
+            bonusCodesPage++;
+            await loadBonusCodes();
+        });
+
+        bonusUsageSearchBtn.addEventListener("click", async function () {
+            bonusUsagesPage = 1;
+            await loadBonusUsages();
+        });
+
+        bonusUsageClearBtn.addEventListener("click", async function () {
+            bonusUsageSearchInput.value = "";
+            bonusUsageStatusFilter.value = "All";
+            bonusUsagesPage = 1;
+            await loadBonusUsages();
+        });
+
+        bonusUsageSearchInput.addEventListener("keydown", async function (e) {
+            if (e.key === "Enter") {
+                bonusUsagesPage = 1;
+                await loadBonusUsages();
+            }
+        });
+
+        bonusUsageStatusFilter.addEventListener("change", async function () {
+            bonusUsagesPage = 1;
+            await loadBonusUsages();
+        });
+
+        bonusUsagesPrevBtn.addEventListener("click", async function () {
+            if (bonusUsagesPage <= 1) return;
+
+            bonusUsagesPage--;
+            await loadBonusUsages();
+        });
+
+        bonusUsagesNextBtn.addEventListener("click", async function () {
+            if (bonusUsagesPage >= bonusUsagesTotalPages) return;
+
+            bonusUsagesPage++;
+            await loadBonusUsages();
+        });
+
+        openCreateBonusCodeBtn.addEventListener("click", openCreateBonusCodeModal);
+        saveBonusCodeBtn.addEventListener("click", saveBonusCode);
+
+        bonusIsSingleUseInput.addEventListener("change", updateSingleUseState);
+
+        document.querySelectorAll("#bonusTypeChoiceGroup .bonus-choice-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                setBonusType(this.dataset.type);
+            });
+        });
+
+        document.querySelectorAll("#bonusRankChoiceGroup .bonus-rank-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                setBonusRankId(this.dataset.rankId || "");
+            });
+        });
+
+        bonusCodeModal.addEventListener("click", function (e) {
+            if (e.target.id === "bonusCodeModal") {
+                closeBonusCodeModal();
+            }
+        });
+
+        async function loadBonusCodes() {
+            bonusCodesMessage.style.display = "block";
+            bonusCodesMessage.innerText = "Loading bonus codes...";
+
+            bonusCodesTableWrapper.style.display = "none";
+            bonusCodesPagination.style.display = "none";
+            bonusCodesTableBody.innerHTML = "";
+
+            const search = bonusCodeSearchInput.value.trim();
+            const type = bonusCodeTypeFilter.value;
+            const active = bonusCodeActiveFilter.value;
+
+            let url = `/api/admin/bonus-codes?page=${bonusCodesPage}&pageSize=${bonusPageSize}`;
+
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (type && type !== "All") url += `&type=${encodeURIComponent(type)}`;
+            if (active) url += `&isActive=${encodeURIComponent(active)}`;
+
+            try {
+                const result = await api(url);
+
+                if (!result || !result.success) {
+                    bonusCodesMessage.innerText =
+                        result?.message || "Could not load bonus codes.";
+                    return;
+                }
+
+                const data = result.data || {};
+                const items = data.items || [];
+
+                bonusCodesCache = items;
+                bonusCodesPage = data.page || 1;
+                bonusCodesTotalPages = data.totalPages || 1;
+
+                if (!items.length) {
+                    bonusCodesMessage.innerText = "No bonus codes found.";
+                    return;
+                }
+
+                renderBonusCodes(items);
+                renderBonusCodesPagination(data);
+
+                bonusCodesMessage.style.display = "none";
+                bonusCodesTableWrapper.style.display = "block";
+
+            } catch (error) {
+                bonusCodesMessage.innerText =
+                    error.message || "Could not load bonus codes.";
+            }
+        }
+
+        function renderBonusCodes(items) {
+            bonusCodesTableBody.innerHTML = "";
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+
+                const usageText = `${item.usedCount || 0} / ${item.maxUsageCount || 0}`;
+                const statusClass = item.isActive ? "approved" : "rejected";
+                const statusText = item.isActive ? "Active" : "Inactive";
+
+                row.innerHTML = `
+                    <td>
+                        <span class="bonus-code-pill">
+                            ${escapeHtml(item.code || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="bonus-campaign-cell">
+                            <strong>${escapeHtml(item.campaignName || "-")}</strong>
+                            ${
+                                item.description
+                                    ? `<span>${escapeHtml(item.description)}</span>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="bonus-type-pill ${escapeHtml(String(item.bonusType || "").toLowerCase())}">
+                            ${getReadableBonusType(item.bonusType)}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${renderBonusSummary(item)}
+                    </td>
+
+                    <td>
+                        <div class="bonus-usage-cell">
+                            <strong>${escapeHtml(usageText)}</strong>
+                            <span>${item.isSingleUse ? "Single Use" : "Multi Use"}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="admin-status ${statusClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+
+                    <td>${formatDateTime(item.expiresAt)}</td>
+
+                    <td>${formatDateTime(item.createdAt)}</td>
+
+                    <td class="text-end">
+                        <button type="button"
+                                class="admin-action-btn approve"
+                                onclick="openEditBonusCodeModal(${item.bonusCodeId})">
+                            Edit
+                        </button>
+                    </td>
+                `;
+
+                bonusCodesTableBody.appendChild(row);
+            });
+        }
+
+        function renderBonusSummary(item) {
+            const parts = [];
+
+            if (item.bonusCapitalPercent) {
+                parts.push(`<span>${formatPercent(item.bonusCapitalPercent)} Capital</span>`);
+            }
+
+            if (item.bonusRankName) {
+                parts.push(`<span>${escapeHtml(item.bonusRankName)} Rank</span>`);
+            }
+
+            if (!parts.length) {
+                return "-";
+            }
+
+            return `<div class="bonus-summary-cell">${parts.join("")}</div>`;
+        }
+
+        function renderBonusCodesPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                bonusCodesPagination.style.display = "none";
+                return;
+            }
+
+            bonusCodesPage = data.page || 1;
+            bonusCodesTotalPages = data.totalPages || 1;
+
+            bonusCodesPagination.style.display = "flex";
+            bonusCodesPageInfo.innerText =
+                `Page ${bonusCodesPage} of ${bonusCodesTotalPages} - Total: ${totalCount}`;
+
+            bonusCodesPrevBtn.disabled = bonusCodesPage <= 1;
+            bonusCodesNextBtn.disabled = bonusCodesPage >= bonusCodesTotalPages;
+        }
+
+        async function loadBonusUsages() {
+            bonusUsagesMessage.style.display = "block";
+            bonusUsagesMessage.innerText = "Loading usage history...";
+
+            bonusUsagesTableWrapper.style.display = "none";
+            bonusUsagesPagination.style.display = "none";
+            bonusUsagesTableBody.innerHTML = "";
+
+            const search = bonusUsageSearchInput.value.trim();
+            const status = bonusUsageStatusFilter.value;
+
+            let url = `/api/admin/bonus-codes/usages?page=${bonusUsagesPage}&pageSize=${bonusPageSize}`;
+
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (status && status !== "All") url += `&status=${encodeURIComponent(status)}`;
+
+            try {
+                const result = await api(url);
+
+                if (!result || !result.success) {
+                    bonusUsagesMessage.innerText =
+                        result?.message || "Could not load bonus usage history.";
+                    return;
+                }
+
+                const data = result.data || {};
+                const items = data.items || [];
+
+                bonusUsagesPage = data.page || 1;
+                bonusUsagesTotalPages = data.totalPages || 1;
+
+                if (!items.length) {
+                    bonusUsagesMessage.innerText = "No bonus usage records found.";
+                    return;
+                }
+
+                renderBonusUsages(items);
+                renderBonusUsagesPagination(data);
+
+                bonusUsagesMessage.style.display = "none";
+                bonusUsagesTableWrapper.style.display = "block";
+
+            } catch (error) {
+                bonusUsagesMessage.innerText =
+                    error.message || "Could not load bonus usage history.";
+            }
+        }
+
+        function renderBonusUsages(items) {
+            bonusUsagesTableBody.innerHTML = "";
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+                const statusClass = String(item.status || "").toLowerCase();
+
+                row.innerHTML = `
+                    <td>
+                        <span class="bonus-code-pill">
+                            ${escapeHtml(item.code || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="report-user-cell">
+                            <strong>${escapeHtml(item.userUid || "-")}</strong>
+                            <span>${escapeHtml(item.userEmail || "-")}</span>
+                            ${
+                                item.userFullName
+                                    ? `<small>${escapeHtml(item.userFullName)}</small>`
+                                    : ""
+                            }
+                        </div>
+                    </td>
+
+                    <td>${formatMoney(item.realCapitalAmount)} USDT</td>
+
+                    <td>
+                        <strong class="bonus-capital-value">
+                            ${formatMoney(item.bonusCapitalAmount)} USDT
+                        </strong>
+                    </td>
+
+                    <td>${escapeHtml(item.appliedRankName || "-")}</td>
+
+                    <td>
+                        <span class="admin-status ${escapeHtml(statusClass)}">
+                            ${escapeHtml(item.status || "-")}
+                        </span>
+                    </td>
+
+                    <td>${formatDateTime(item.createdAt)}</td>
+
+                    <td>${formatDateTime(item.expiresAt)}</td>
+                `;
+
+                bonusUsagesTableBody.appendChild(row);
+            });
+        }
+
+        function renderBonusUsagesPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                bonusUsagesPagination.style.display = "none";
+                return;
+            }
+
+            bonusUsagesPage = data.page || 1;
+            bonusUsagesTotalPages = data.totalPages || 1;
+
+            bonusUsagesPagination.style.display = "flex";
+            bonusUsagesPageInfo.innerText =
+                `Page ${bonusUsagesPage} of ${bonusUsagesTotalPages} - Total: ${totalCount}`;
+
+            bonusUsagesPrevBtn.disabled = bonusUsagesPage <= 1;
+            bonusUsagesNextBtn.disabled = bonusUsagesPage >= bonusUsagesTotalPages;
+        }
+
+        function openCreateBonusCodeModal() {
+            editingBonusCodeId = null;
+
+            bonusCodeModalTitle.innerText = "Create Bonus Code";
+
+            bonusCodeInput.disabled = false;
+            bonusCodeInput.value = "";
+            bonusCampaignInput.value = "";
+            bonusDescriptionInput.value = "";
+            bonusCapitalPercentInput.value = "";
+            bonusMaxUsageInput.value = "1";
+            if (bonusExpiresAtPicker) {
+            bonusExpiresAtPicker.clear();
+             } else {
+                 bonusExpiresAtInput.value = "";
+             }
+            bonusIsActiveInput.checked = true;
+            bonusIsSingleUseInput.checked = true;
+
+            setBonusType("CapitalBonus");
+            setBonusRankId("");
+            updateSingleUseState();
+
+            bonusCodeModal.style.display = "flex";
+
+            setTimeout(() => {
+                bonusCodeInput.focus();
+            }, 100);
+        }
+
+        function openEditBonusCodeModal(bonusCodeId) {
+            const item = bonusCodesCache.find(x => x.bonusCodeId === bonusCodeId);
+
+            if (!item) {
+                showNotification("Bonus code was not found.", "error");
+                return;
+            }
+
+            editingBonusCodeId = bonusCodeId;
+
+            bonusCodeModalTitle.innerText = "Edit Bonus Code";
+
+            bonusCodeInput.disabled = true;
+            bonusCodeInput.value = item.code || "";
+            bonusCampaignInput.value = item.campaignName || "";
+            bonusDescriptionInput.value = item.description || "";
+            bonusCapitalPercentInput.value = item.bonusCapitalPercent || "";
+            bonusMaxUsageInput.value = item.maxUsageCount || 1;
+                    if (bonusExpiresAtPicker) {
+            if (item.expiresAt) {
+                bonusExpiresAtPicker.setDate(item.expiresAt, true);
+            } else {
+                bonusExpiresAtPicker.clear();
+            }
+        } else {
+            bonusExpiresAtInput.value = toDateTimeLocalValue(item.expiresAt);
+        }
+            bonusIsActiveInput.checked = item.isActive === true;
+            bonusIsSingleUseInput.checked = item.isSingleUse === true;
+
+            setBonusType(item.bonusType || "CapitalBonus");
+            setBonusRankId(item.bonusRankId ? String(item.bonusRankId) : "");
+            updateSingleUseState();
+
+            bonusCodeModal.style.display = "flex";
+        }
+
+        function closeBonusCodeModal() {
+            editingBonusCodeId = null;
+            bonusCodeModal.style.display = "none";
+        }
+
+        async function saveBonusCode() {
+            const code = bonusCodeInput.value.trim().toUpperCase();
+            const campaignName = bonusCampaignInput.value.trim();
+            const description = bonusDescriptionInput.value.trim();
+            const bonusType = bonusTypeInput.value;
+            const bonusCapitalPercent = bonusCapitalPercentInput.value
+                ? Number(bonusCapitalPercentInput.value)
+                : null;
+
+            const bonusRankId = bonusRankIdInput.value
+                ? Number(bonusRankIdInput.value)
+                : null;
+
+            const isActive = bonusIsActiveInput.checked;
+            const isSingleUse = bonusIsSingleUseInput.checked;
+
+            const maxUsageCount = isSingleUse
+                ? 1
+                : Number(bonusMaxUsageInput.value || 0);
+
+            const expiresAt = bonusExpiresAtInput.value || null;
+
+            if (!editingBonusCodeId && !code) {
+                showNotification("Bonus code is required.", "error");
+                return;
+            }
+
+            if (!bonusType) {
+                showNotification("Bonus type is required.", "error");
+                return;
+            }
+
+            if (["CapitalBonus", "Mixed"].includes(bonusType)) {
+                if (!bonusCapitalPercent || bonusCapitalPercent <= 0) {
+                    showNotification("Bonus capital percent must be greater than zero.", "error");
+                    return;
+                }
+
+                if (bonusCapitalPercent > 100) {
+                    showNotification("Bonus capital percent cannot be greater than 100.", "error");
+                    return;
+                }
+            }
+
+            if (["RankUpgrade", "Mixed"].includes(bonusType)) {
+                if (!bonusRankId) {
+                    showNotification("Please select a bonus rank.", "error");
+                    return;
+                }
+            }
+
+            if (!maxUsageCount || maxUsageCount <= 0) {
+                showNotification("Max usage count must be greater than zero.", "error");
+                return;
+            }
+
+            const confirmed = await showConfirm(
+                editingBonusCodeId
+                    ? "Are you sure you want to update this bonus code?"
+                    : "Are you sure you want to create this bonus code?",
+                editingBonusCodeId ? "Update Bonus Code" : "Create Bonus Code"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            const payload = {
+                campaignName: campaignName || null,
+                description: description || null,
+                isActive,
+                isSingleUse,
+                maxUsageCount,
+                expiresAt,
+                bonusType,
+                bonusCapitalPercent: ["CapitalBonus", "Mixed"].includes(bonusType)
+                    ? bonusCapitalPercent
+                    : null,
+                bonusRankId: ["RankUpgrade", "Mixed"].includes(bonusType)
+                    ? bonusRankId
+                    : null
+            };
+
+            if (!editingBonusCodeId) {
+                payload.code = code;
+            }
+
+            saveBonusCodeBtn.disabled = true;
+            saveBonusCodeBtn.innerText = "Saving...";
+
+            try {
+                const url = editingBonusCodeId
+                    ? `/api/admin/bonus-codes/${editingBonusCodeId}`
+                    : "/api/admin/bonus-codes";
+
+                const method = editingBonusCodeId ? "PUT" : "POST";
+
+                const result = await api(url, {
+                    method,
+                    body: JSON.stringify(payload)
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not save bonus code.", "error");
+                    return;
+                }
+
+                showNotification(
+                    result.message || "Bonus code saved successfully.",
+                    "success"
+                );
+
+                closeBonusCodeModal();
+
+                await loadBonusCodes();
+
+            } catch (error) {
+                showNotification(error.message || "Could not save bonus code.", "error");
+            } finally {
+                saveBonusCodeBtn.disabled = false;
+                saveBonusCodeBtn.innerText = "Save Bonus Code";
+            }
+        }
+
+        function setBonusType(type) {
+            const allowedTypes = ["CapitalBonus", "RankUpgrade", "Mixed"];
+
+            if (!allowedTypes.includes(type)) {
+                type = "CapitalBonus";
+            }
+
+            bonusTypeInput.value = type;
+
+            document.querySelectorAll("#bonusTypeChoiceGroup .bonus-choice-btn").forEach(button => {
+                button.classList.toggle("active", button.dataset.type === type);
+            });
+
+            const needsCapital = type === "CapitalBonus" || type === "Mixed";
+            const needsRank = type === "RankUpgrade" || type === "Mixed";
+
+            bonusCapitalPercentGroup.style.display = needsCapital ? "block" : "none";
+            bonusRankGroup.style.display = needsRank ? "block" : "none";
+
+            if (!needsCapital) {
+                bonusCapitalPercentInput.value = "";
+            }
+
+            if (!needsRank) {
+                setBonusRankId("");
+            }
+        }
+
+        function setBonusRankId(rankId) {
+            bonusRankIdInput.value = rankId || "";
+
+            document.querySelectorAll("#bonusRankChoiceGroup .bonus-rank-btn").forEach(button => {
+                button.classList.toggle(
+                    "active",
+                    (button.dataset.rankId || "") === (rankId || "")
+                );
+            });
+        }
+
+        function updateSingleUseState() {
+            if (bonusIsSingleUseInput.checked) {
+                bonusMaxUsageInput.value = "1";
+                bonusMaxUsageInput.disabled = true;
+            } else {
+                bonusMaxUsageInput.disabled = false;
+
+                if (Number(bonusMaxUsageInput.value || 0) <= 1) {
+                    bonusMaxUsageInput.value = "100";
+                }
+            }
+        }
+
+        function getReadableBonusType(type) {
+            if (type === "CapitalBonus") return "Capital Bonus";
+            if (type === "RankUpgrade") return "Rank Upgrade";
+            if (type === "Mixed") return "Mixed";
+            return type || "-";
+        }
+
+        function formatPercent(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 4
+            }) + "%";
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 8
+            });
+        }
+
+        function formatDateTime(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function toDateTimeLocalValue(value) {
+            if (!value) return "";
+
+            const date = new Date(value);
+
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const day = String(date.getDate()).padStart(2, "0");
+            const hour = String(date.getHours()).padStart(2, "0");
+            const minute = String(date.getMinutes()).padStart(2, "0");
+
+            return `${year}-${month}-${day}T${hour}:${minute}:00`;
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+        function initializeBonusExpiresAtPicker() {
+            bonusExpiresAtPicker = flatpickr("#bonusExpiresAtInput", {
+                enableTime: true,
+                time_24hr: true,
+                dateFormat: "Y-m-d\\TH:i:S",
+                altInput: true,
+                altFormat: "Y-m-d H:i",
+                allowInput: true,
+                disableMobile: true,
+                monthSelectorType: "static",
+                minuteIncrement: 5,
+                closeOnSelect: false,
+
+                onReady: function (selectedDates, dateStr, instance) {
+                    const footer = document.createElement("div");
+                    footer.className = "bonus-flatpickr-footer";
+
+                    const clearBtn = document.createElement("button");
+                    clearBtn.type = "button";
+                    clearBtn.className = "bonus-flatpickr-btn secondary";
+                    clearBtn.innerText = "Clear";
+
+                    clearBtn.addEventListener("click", function () {
+                        instance.clear();
+                        instance.close();
+                    });
+
+                    const doneBtn = document.createElement("button");
+                    doneBtn.type = "button";
+                    doneBtn.className = "bonus-flatpickr-btn primary";
+                    doneBtn.innerText = "Done";
+
+                    doneBtn.addEventListener("click", function () {
+                        if (!instance.input.value && !instance.altInput.value) {
+                            showNotification("Please select expiration date or clear it.", "warning");
+                            return;
+                        }
+
+                        instance.close();
+                    });
+
+                    footer.appendChild(clearBtn);
+                    footer.appendChild(doneBtn);
+
+                    instance.calendarContainer.appendChild(footer);
+                }
+            });
+        }
+        initializeBonusExpiresAtPicker();
+        loadBonusCodes();
+    </script>
+}

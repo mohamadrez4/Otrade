@@ -76,4 +76,10 @@ public class AdminPanelController : Controller
     {
         return View();
     }
+    [AdminPagePermission(AdminPermission.ManageBonus)]
+    [HttpGet("/admin/bonus-codes")]
+    public IActionResult BonusCodes()
+    {
+        return View();
+    }
 }

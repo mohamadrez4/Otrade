@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Otrade.Application.Common;
 using Otrade.Application.DTOs.Admin;
+using Otrade.Application.DTOs.Bonus;
 using Otrade.Application.DTOs.Ticket;
 using Otrade.Application.DTOs.Wallet;
 using Otrade.Application.Services;
@@ -23,13 +24,15 @@ public class AdminController : ControllerBase
     private readonly InvestmentCapacityService _investmentCapacityService;
     private readonly AdminPermissionService _adminPermissionService;
     private readonly InvestmentWaitListService _investmentWaitListService;
+    private readonly BonusCodeService _bonusCodeService;
     public AdminController(
     AdminService adminService,
     OtradeDbContext context,
     PreRegistrationService preRegistrationService,
     InvestmentCapacityService investmentCapacityService,
     AdminPermissionService adminPermissionService,
-    InvestmentWaitListService investmentWaitListService)
+    InvestmentWaitListService investmentWaitListService,
+    BonusCodeService bonusCodeService)
     {
         _adminService = adminService;
         _context = context;
@@ -37,6 +40,7 @@ public class AdminController : ControllerBase
         _investmentCapacityService = investmentCapacityService;
         _adminPermissionService = adminPermissionService;
         _investmentWaitListService = investmentWaitListService;
+        _bonusCodeService = bonusCodeService;
     }
     [Authorize]
     [HttpGet("me/access")]
@@ -667,5 +671,120 @@ public class AdminController : ControllerBase
 
         return Ok(result);
     }
+    [Authorize]
+    [HttpGet("bonus-codes")]
+    public async Task<IActionResult> GetBonusCodes(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromQuery] string? search,
+        [FromQuery] string? type,
+        [FromQuery] bool? isActive,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
 
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageBonus);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _bonusCodeService.GetAdminBonusCodesAsync(
+            page,
+            pageSize,
+            search,
+            type,
+            isActive);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("bonus-codes")]
+    public async Task<IActionResult> CreateBonusCode(
+        [FromBody] CreateBonusCodeRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageBonus);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _bonusCodeService.CreateAsync(
+            request,
+            currentUser.UserId);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPut("bonus-codes/{bonusCodeId:long}")]
+    public async Task<IActionResult> UpdateBonusCode(
+        long bonusCodeId,
+        [FromBody] UpdateBonusCodeRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageBonus);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _bonusCodeService.UpdateAsync(
+            bonusCodeId,
+            request);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpGet("bonus-codes/usages")]
+    public async Task<IActionResult> GetBonusCodeUsages(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ManageBonus);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _bonusCodeService.GetAdminUsagesAsync(
+            page,
+            pageSize,
+            search,
+            status);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }   
 }

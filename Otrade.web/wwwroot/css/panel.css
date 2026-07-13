@@ -3735,3 +3735,212 @@ select.panel-input:focus {
     background: rgba(96, 165, 250, 0.10);
     border: 1px solid rgba(96, 165, 250, 0.22);
 }
+.bonus-user-page {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.bonus-user-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+    .bonus-user-header h3 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 20px;
+        font-weight: 900;
+    }
+
+    .bonus-user-header p {
+        margin: 7px 0 0;
+        color: #94A3B8;
+        font-size: 13px;
+        line-height: 1.7;
+    }
+
+.bonus-apply-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.bonus-code-input-wrap {
+    flex: 1;
+    min-width: 260px;
+}
+
+    .bonus-code-input-wrap label {
+        display: block;
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+.bonus-user-input {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 900;
+}
+
+.bonus-apply-btn {
+    min-width: 150px;
+    height: 44px;
+}
+
+.bonus-user-note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    color: #94A3B8;
+    background: rgba(17, 233, 161, 0.07);
+    border: 1px solid rgba(17, 233, 161, 0.15);
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+    .bonus-user-note strong {
+        color: #11E9A1;
+    }
+
+.bonus-user-message {
+    color: #94A3B8;
+    font-size: 13px;
+    padding: 14px 0;
+}
+
+.bonus-user-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.bonus-user-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+    .bonus-user-table th,
+    .bonus-user-table td {
+        padding: 14px 12px;
+        border-bottom: 1px solid rgba(28, 37, 50, 0.85);
+        color: #FFFFFF;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    .bonus-user-table th {
+        color: #94A3B8;
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+.bonus-user-code-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.10);
+    border: 1px solid rgba(17, 233, 161, 0.20);
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+}
+
+.bonus-user-capital {
+    color: #11E9A1;
+    font-weight: 900;
+}
+
+.bonus-user-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #FFFFFF;
+    background: rgba(148, 163, 184, 0.10);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+    .bonus-user-status.active {
+        color: #11E9A1;
+        background: rgba(17, 233, 161, 0.10);
+        border-color: rgba(17, 233, 161, 0.20);
+    }
+
+    .bonus-user-status.completed {
+        color: #60A5FA;
+        background: rgba(96, 165, 250, 0.10);
+        border-color: rgba(96, 165, 250, 0.20);
+    }
+
+    .bonus-user-status.cancelled {
+        color: #94A3B8;
+        background: rgba(148, 163, 184, 0.10);
+        border-color: rgba(148, 163, 184, 0.20);
+    }
+
+    .bonus-user-status.expired {
+        color: #FBBF24;
+        background: rgba(251, 191, 36, 0.10);
+        border-color: rgba(251, 191, 36, 0.20);
+    }
+
+.bonus-user-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.bonus-user-page-btn {
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    background: rgba(17, 233, 161, 0.08);
+    color: #11E9A1;
+    border-radius: 12px;
+    min-width: 92px;
+    height: 38px;
+    padding: 0 14px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+    .bonus-user-page-btn:hover:not(:disabled) {
+        border-color: #11E9A1;
+        background: rgba(17, 233, 161, 0.14);
+    }
+
+    .bonus-user-page-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+@media (max-width: 700px) {
+    .bonus-apply-form {
+        align-items: stretch;
+    }
+
+    .bonus-code-input-wrap,
+    .bonus-apply-btn {
+        width: 100%;
+        min-width: 100%;
+    }
+}

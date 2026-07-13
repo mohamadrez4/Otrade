@@ -27,4 +27,6 @@ public class AdminAccessDto
     public bool ManageHangfire { get; set; }
 
     public bool ManageAdminRoles { get; set; }
+
+    public bool ManageBonus { get; set; }
 }

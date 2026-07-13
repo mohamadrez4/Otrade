@@ -96,6 +96,7 @@ builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
 builder.Services.AddHostedService<NotificationBackgroundWorker>();
 builder.Services.AddScoped<AdminPermissionService>();
 builder.Services.AddScoped<InvestmentWaitListService>();
+builder.Services.AddScoped<BonusCodeService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

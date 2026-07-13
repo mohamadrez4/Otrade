@@ -37,6 +37,9 @@ public class OtradeDbContext : DbContext
     public DbSet<ReferralRelation> ReferralRelations { get; set; }
     public DbSet<ReferralBonusRecord> ReferralBonusRecords { get; set; }
 
+    public DbSet<BonusCode> BonusCodes => Set<BonusCode>();
+
+    public DbSet<BonusCodeUsage> BonusCodeUsages => Set<BonusCodeUsage>();
     // ================= WALLET =================
     public DbSet<WalletTransaction> WalletTransactions { get; set; }
     public DbSet<WalletTransfer> WalletTransfers { get; set; }
@@ -638,7 +641,112 @@ public class OtradeDbContext : DbContext
             entity.HasIndex(x => x.SourceUserId);
             entity.HasIndex(x => x.CreatedAt);
         });
+        modelBuilder.Entity<BonusCode>(entity =>
+        {
+            entity.ToTable("BonusCodes");
 
+            entity.HasKey(x => x.BonusCodeId);
+
+            entity.Property(x => x.Code)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.HasIndex(x => x.Code)
+                .IsUnique();
+
+            entity.Property(x => x.CampaignName)
+                .HasMaxLength(150);
+
+            entity.Property(x => x.Description)
+                .HasMaxLength(500);
+
+            entity.Property(x => x.IsActive)
+                .HasDefaultValue(true);
+
+            entity.Property(x => x.IsSingleUse)
+                .HasDefaultValue(true);
+
+            entity.Property(x => x.MaxUsageCount)
+                .HasDefaultValue(1);
+
+            entity.Property(x => x.UsedCount)
+                .HasDefaultValue(0);
+
+            entity.Property(x => x.BonusType)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.BonusCapitalPercent)
+                .HasPrecision(9, 4);
+
+            entity.HasOne(x => x.BonusRank)
+                .WithMany()
+                .HasForeignKey(x => x.BonusRankId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.CreatedByAdmin)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedByAdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.IsActive,
+                x.ExpiresAt
+            });
+        });
+
+        modelBuilder.Entity<BonusCodeUsage>(entity =>
+        {
+            entity.ToTable("BonusCodeUsages");
+
+            entity.HasKey(x => x.UsageId);
+
+            entity.Property(x => x.RealCapitalAmount)
+                .HasPrecision(18, 8)
+                .HasDefaultValue(0);
+
+            entity.Property(x => x.BonusCapitalAmount)
+                .HasPrecision(18, 8)
+                .HasDefaultValue(0);
+
+            entity.Property(x => x.Status)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+
+            entity.Property(x => x.AdminNote)
+                .HasMaxLength(1000);
+
+            entity.HasOne(x => x.BonusCode)
+                .WithMany(x => x.Usages)
+                .HasForeignKey(x => x.BonusCodeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(x => x.AppliedRank)
+                .WithMany()
+                .HasForeignKey(x => x.AppliedRankId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.Status
+            });
+
+            entity.HasIndex(x => new
+            {
+                x.BonusCodeId,
+                x.UserId
+            })
+            .IsUnique();
+        });
         modelBuilder.Entity<JobLock>()
             .HasKey(x => x.JobName);
         foreach (var foreignKey in modelBuilder.Model.GetEntityTypes()

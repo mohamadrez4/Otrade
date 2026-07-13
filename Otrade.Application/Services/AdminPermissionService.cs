@@ -48,7 +48,8 @@ public class AdminPermissionService
             AdminRole.Finance => permission is
                 AdminPermission.ManageDeposits or
                 AdminPermission.ManageWithdrawals or
-                AdminPermission.ViewReports,
+                AdminPermission.ViewReports or
+                AdminPermission.ManageBonus,
 
             AdminRole.Support => permission is
                 AdminPermission.ManageKyc or
@@ -100,7 +101,8 @@ public class AdminPermissionService
                 AdminRole.Finance => permission is
                     AdminPermission.ManageDeposits or
                     AdminPermission.ManageWithdrawals or
-                    AdminPermission.ViewReports,
+                    AdminPermission.ViewReports or
+                    AdminPermission.ManageBonus,
 
                 AdminRole.Support => permission is
                     AdminPermission.ManageKyc or
@@ -132,7 +134,8 @@ public class AdminPermissionService
             ManageRanks = Has(AdminPermission.ManageRanks),
             ManageTickets = Has(AdminPermission.ManageTickets),
             ManageHangfire = Has(AdminPermission.ManageHangfire),
-            ManageAdminRoles = Has(AdminPermission.ManageAdminRoles)
+            ManageAdminRoles = Has(AdminPermission.ManageAdminRoles),
+            ManageBonus = Has(AdminPermission.ManageBonus)
         };
 
         return ResponseFactory.Success(dto);

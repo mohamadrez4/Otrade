@@ -24,4 +24,5 @@ public interface IEmailTemplateService
     string GetInvestmentCapacityAvailableEmail(decimal requestedAmount);
     string GetInvestmentWaitListNotifiedEmail(decimal requestedAmount);
     string GetInvestWalletTransferEmail(decimal amount,string fromWalletType,decimal investWalletBalance);
+    string GetBonusCodeAppliedEmail(string code,decimal bonusCapitalAmount,string? appliedRankName);
 }
