@@ -11,7 +11,9 @@ public class UserDepositHistoryDto
     public string Status { get; set; } = string.Empty;
 
     public string? AdminNote { get; set; }
+    public string? SiteWalletAddress { get; set; }
 
+    public string? Network { get; set; }
     public DateTime CreatedAt { get; set; }
 
     public DateTime? ProcessedAt { get; set; }

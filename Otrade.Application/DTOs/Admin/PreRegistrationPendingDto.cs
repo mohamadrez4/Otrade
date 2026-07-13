@@ -17,7 +17,9 @@ public class PreRegistrationPendingDto
     public string? DepositTxId { get; set; }
 
     public string Status { get; set; } = string.Empty;
+    public string? SiteWalletAddress { get; set; }
 
+    public string? Network { get; set; }
     public DateTime ExpiresAt { get; set; }
 
     public DateTime CreatedAt { get; set; }

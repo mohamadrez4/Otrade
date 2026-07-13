@@ -28,7 +28,9 @@ public class AdminDepositDto
     public string TxId { get; set; } = string.Empty;
 
     public string Status { get; set; } = string.Empty;
+    public string? SiteWalletAddress { get; set; }
 
+    public string? Network { get; set; }
     public string? AdminNote { get; set; }
 
     public DateTime CreatedAt { get; set; }

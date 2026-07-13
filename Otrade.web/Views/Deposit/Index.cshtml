@@ -88,6 +88,7 @@
                 <tr>
                     <th>Date</th>
                     <th>Tx Hash</th>
+                    <th>Payment Snapshot</th>
                     <th>Amount</th>
                     <th>Status</th>
                     <th>Note</th>
@@ -178,8 +179,10 @@
                 return;
             }
 
-            if (!txId) {
-                showNotification("Please enter the transaction hash.", "warning");
+            const txValidationError = validateTxHash(txId);
+
+            if (txValidationError) {
+                showNotification(txValidationError, "warning");
                 return;
             }
 
@@ -300,7 +303,21 @@
                                 }
                             </div>
                         </td>
+                        <td>
+                            <div class="deposit-payment-snapshot">
+                                <span>${escapeHtml(item.network || "-")}</span>
 
+                                <small title="${escapeHtml(item.siteWalletAddress || "")}">
+                                    ${escapeHtml(shortWallet(item.siteWalletAddress))}
+                                </small>
+
+                                ${
+                                    item.siteWalletAddress
+                                        ? `<button type="button" onclick="copyText('${escapeForJs(item.siteWalletAddress)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
                         <td>
                             <span class="deposit-amount">
                                 ${formatMoney(item.amount)} USDT
@@ -381,11 +398,41 @@
                 showNotification("Copied to clipboard.", "success");
             }
         }
+        function shortWallet(value) {
+            if (!value) return "-";
+            if (value.length <= 24) return value;
 
+            return value.substring(0, 12) + "..." + value.substring(value.length - 8);
+        }
+        function validateTxHash(value) {
+            const tx = String(value || "").trim();
+
+            if (!tx) {
+                return "Please enter the transaction hash.";
+            }
+
+            if (tx.length < 10) {
+                return "Transaction hash is too short.";
+            }
+
+            if (tx.length > 200) {
+                return "Transaction hash is too long.";
+            }
+
+            if (/\s/.test(tx)) {
+                return "Transaction hash cannot contain spaces.";
+            }
+
+            if (!/^[A-Za-z0-9]{10,200}$/.test(tx)) {
+                return "Transaction hash format is invalid.";
+            }
+
+            return null;
+        }
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 8
+                maximumFractionDigits: 2
             });
         }
 

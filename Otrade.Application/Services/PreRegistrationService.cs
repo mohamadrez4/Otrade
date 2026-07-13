@@ -9,6 +9,7 @@ using Otrade.Application.Common.Interfaces;
 using Otrade.Application.DTOs.Admin;
 using Otrade.Application.Services.Security;
 using System.Security.Cryptography;
+using System.Data;
 namespace Otrade.Application.Services;
 
 public class PreRegistrationService
@@ -18,18 +19,21 @@ public class PreRegistrationService
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly INotificationQueue _notificationQueue;
     private readonly JwtService _jwtService;
+    private readonly PaymentTransactionGuardService _paymentTransactionGuardService;
     public PreRegistrationService(
         OtradeDbContext context,
         SystemSettingService settingService,
         IEmailTemplateService emailTemplateService,
         INotificationQueue notificationQueue,
-        JwtService jwtService)
+        JwtService jwtService,
+        PaymentTransactionGuardService paymentTransactionGuardService)
     {
         _context = context;
         _settingService = settingService;
         _emailTemplateService = emailTemplateService;
         _notificationQueue = notificationQueue;
         _jwtService = jwtService;
+        _paymentTransactionGuardService = paymentTransactionGuardService;
     }
 
     public async Task<ApiResponse<StartPreRegistrationResponse>> StartAsync(
@@ -249,16 +253,12 @@ public class PreRegistrationService
         if (request.Amount <= 0)
             return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Amount must be greater than zero");
 
-        var txId = request.TxId?.Trim();
+        var txId = _paymentTransactionGuardService.NormalizeTxId(request.TxId);
 
-        if (string.IsNullOrWhiteSpace(txId))
-            return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Transaction hash is required");
+        var txValidationError = _paymentTransactionGuardService.ValidateTxId(txId);
 
-        if (txId.Length < 10)
-            return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Transaction hash is invalid");
-
-        if (txId.Length > 200)
-            return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Transaction hash is too long");
+        if (txValidationError != null)
+            return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>(txValidationError);
 
         var now = DateTime.Now;
 
@@ -288,20 +288,15 @@ public class PreRegistrationService
         if (temporaryRegistration.Status == TemporaryRegistrationStatus.Approved)
             return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Pre-registration is already approved");
 
-        var txIdUsedInTemporaryRegistrations = await _context.TemporaryRegistrations
-            .AnyAsync(x =>
-                x.DepositTxId == txId &&
-                x.Id != temporaryRegistration.Id);
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+           IsolationLevel.Serializable);
 
-        if (txIdUsedInTemporaryRegistrations)
+        var txIdAlreadyUsed = await _paymentTransactionGuardService.IsTxIdUsedAsync(
+            txId,
+            temporaryRegistration.Id);
+
+        if (txIdAlreadyUsed)
             return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Transaction hash is already used");
-
-        var txIdUsedInDeposits = await _context.Deposits
-            .AnyAsync(x => x.TxId == txId);
-
-        if (txIdUsedInDeposits)
-            return ResponseFactory.Fail<SubmitPreRegistrationDepositResponse>("Transaction hash is already used");
-
         var trackingToken = temporaryRegistration.TrackingToken;
 
         if (string.IsNullOrWhiteSpace(trackingToken))
@@ -309,14 +304,17 @@ public class PreRegistrationService
             trackingToken = GenerateTrackingToken();
             temporaryRegistration.TrackingToken = trackingToken;
         }
-
+        var siteWalletAddress = await _settingService.GetValueAsync("SiteWalletAddress");
+        var network = await _settingService.GetValueAsync("Network");
         temporaryRegistration.DeclaredAmount = request.Amount;
         temporaryRegistration.DepositTxId = txId;
+        temporaryRegistration.SiteWalletAddress = siteWalletAddress;
+        temporaryRegistration.Network = network;
         temporaryRegistration.Status = TemporaryRegistrationStatus.DepositSubmitted;
         temporaryRegistration.UpdatedAt = now;
 
         await _context.SaveChangesAsync();
-
+        await transaction.CommitAsync();
         var emailBody = _emailTemplateService.GetDepositNotification(
             temporaryRegistration.Email,
             request.Amount,
@@ -377,6 +375,8 @@ public class PreRegistrationService
                 DeclaredAmount = x.DeclaredAmount,
                 DepositTxId = x.DepositTxId,
                 Status = x.Status.ToString(),
+                SiteWalletAddress = x.SiteWalletAddress,
+                Network = x.Network,
                 ExpiresAt = x.ExpiresAt,
                 CreatedAt = x.CreatedAt,
                 UpdatedAt = x.UpdatedAt
@@ -553,12 +553,21 @@ public class PreRegistrationService
         if (emailExists)
             return ResponseFactory.Fail<CompletePreRegistrationResponse>("Email already exists");
 
-        var depositTxExists = await _context.Deposits
-            .AnyAsync(x => x.TxId == temporaryRegistration.DepositTxId);
+        var normalizedDepositTxId = _paymentTransactionGuardService.NormalizeTxId(
+            temporaryRegistration.DepositTxId);
 
-        if (depositTxExists)
+        var txValidationError = _paymentTransactionGuardService.ValidateTxId(
+            normalizedDepositTxId);
+
+        if (txValidationError != null)
+            return ResponseFactory.Fail<CompletePreRegistrationResponse>(txValidationError);
+
+        var depositTxAlreadyUsed = await _paymentTransactionGuardService.IsTxIdUsedAsync(
+            normalizedDepositTxId,
+            temporaryRegistration.Id);
+
+        if (depositTxAlreadyUsed)
             return ResponseFactory.Fail<CompletePreRegistrationResponse>("Transaction hash is already used");
-
         await using var transaction = await _context.Database.BeginTransactionAsync();
 
         var referralCode = await GenerateCode();
@@ -634,9 +643,13 @@ public class PreRegistrationService
         {
             UserId = user.UserId,
             Amount = approvedAmount,
-            TxId = temporaryRegistration.DepositTxId,
+            TxId = normalizedDepositTxId,
+            SiteWalletAddress = temporaryRegistration.SiteWalletAddress,
+            Network = temporaryRegistration.Network,
             Status = DepositStatus.Approved,
-            CreatedAt = now
+            CreatedAt = now,
+            ProcessedAt = now,
+            AdminNote = "Pre-registration deposit approved and credited to Main Wallet"
         });
 
         _context.WalletTransactions.Add(new WalletTransaction
@@ -647,7 +660,7 @@ public class PreRegistrationService
             BalanceBefore = 0,
             BalanceAfter = approvedAmount,
             Type = TransactionType.Deposit,
-            Description = $"Pre-registration deposit approved and credited to Main Wallet (TxId: {temporaryRegistration.DepositTxId})",
+            Description = $"Pre-registration deposit approved and credited to Main Wallet (TxId: {normalizedDepositTxId})",
             CreatedAt = now
         });
 
@@ -803,7 +816,7 @@ public class PreRegistrationService
             return ResponseFactory.Fail<RecoverPreRegistrationResponse>("Invalid request");
 
         var email = request.Email?.Trim().ToLowerInvariant();
-        var txId = request.TxId?.Trim();
+        var txId = _paymentTransactionGuardService.NormalizeTxId(request.TxId);
 
         if (string.IsNullOrWhiteSpace(email))
             return ResponseFactory.Fail<RecoverPreRegistrationResponse>("Email is required");
@@ -813,7 +826,10 @@ public class PreRegistrationService
 
         if (string.IsNullOrWhiteSpace(txId))
             return ResponseFactory.Fail<RecoverPreRegistrationResponse>("Transaction hash is required");
+        var txValidationError = _paymentTransactionGuardService.ValidateTxId(txId);
 
+        if (txValidationError != null)
+            return ResponseFactory.Fail<RecoverPreRegistrationResponse>(txValidationError);
         var now = DateTime.Now;
 
         var temporaryRegistration = await _context.TemporaryRegistrations
@@ -909,7 +925,7 @@ public class PreRegistrationService
             return ResponseFactory.Fail<RecoverPreRegistrationResponse>("Invalid request");
 
         var email = request.Email?.Trim().ToLowerInvariant();
-        var txId = request.TxId?.Trim();
+        var txId = _paymentTransactionGuardService.NormalizeTxId(request.TxId);
         var code = request.Code?.Trim();
 
         if (string.IsNullOrWhiteSpace(email))
@@ -920,7 +936,10 @@ public class PreRegistrationService
 
         if (string.IsNullOrWhiteSpace(txId))
             return ResponseFactory.Fail<RecoverPreRegistrationResponse>("Transaction hash is required");
+        var txValidationError = _paymentTransactionGuardService.ValidateTxId(txId);
 
+        if (txValidationError != null)
+            return ResponseFactory.Fail<RecoverPreRegistrationResponse>(txValidationError);
         if (string.IsNullOrWhiteSpace(code) || code.Length != 6)
             return ResponseFactory.Fail<RecoverPreRegistrationResponse>("Verification code is invalid");
 

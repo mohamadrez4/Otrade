@@ -33,6 +33,7 @@
                         <th>Sponsor</th>
                         <th>Declared Amount</th>
                         <th>Transaction Hash</th>
+                        <th>Payment Snapshot</th>
                         <th>Submitted At</th>
                         <th>Action</th>
                     </tr>
@@ -70,7 +71,10 @@
                 <span>Declared Amount</span>
                 <strong id="approveDeclaredAmount">$0.00</strong>
             </div>
-
+            <div class="pre-modal-info">
+                <span>Network / Site Wallet</span>
+                <strong id="approveNetworkWallet">-</strong>
+            </div>
             <div class="mb-3">
                 <label class="pre-modal-label">Approved Amount</label>
                 <input type="number"
@@ -225,7 +229,26 @@
                         </button>
                     </div>
                 `;
+                const paymentTd = document.createElement("td");
+                paymentTd.innerHTML = `
+                    <div class="pre-payment-snapshot">
+                        <span>${escapeHtml(item.network || "-")}</span>
 
+                        <small title="${escapeHtml(item.siteWalletAddress || "")}">
+                            ${escapeHtml(shortWallet(item.siteWalletAddress))}
+                        </small>
+
+                        ${
+                            item.siteWalletAddress
+                                ? `<button type="button"
+                                           class="pre-copy-btn"
+                                           onclick="copyTx('${escapeJs(item.siteWalletAddress || "")}')">
+                                       Copy
+                                   </button>`
+                                : ""
+                        }
+                    </div>
+                `;
                 const dateTd = document.createElement("td");
                 dateTd.innerHTML = `
                     <div class="pre-date-cell">
@@ -255,6 +278,7 @@
                 row.appendChild(sponsorTd);
                 row.appendChild(amountTd);
                 row.appendChild(txTd);
+                row.appendChild(paymentTd);
                 row.appendChild(dateTd);
                 row.appendChild(actionTd);
 
@@ -273,6 +297,8 @@
             document.getElementById("approveId").value = item.id;
             document.getElementById("approveEmail").innerText = item.email || "-";
             document.getElementById("approveDeclaredAmount").innerText = formatMoney(item.declaredAmount);
+            document.getElementById("approveNetworkWallet").innerText =
+            `${item.network || "-"} / ${shortWallet(item.siteWalletAddress)}`;
             document.getElementById("approvedAmount").value = Number(item.declaredAmount || 0);
 
             document.getElementById("approveModal").classList.add("show");
@@ -405,7 +431,12 @@
             if (!value) return "?";
             return value.trim().charAt(0).toUpperCase();
         }
+        function shortWallet(value) {
+            if (!value) return "-";
+            if (value.length <= 24) return value;
 
+            return value.substring(0, 12) + "..." + value.substring(value.length - 8);
+        }
         function shortTx(value) {
             if (!value) return "-";
             if (value.length <= 18) return value;

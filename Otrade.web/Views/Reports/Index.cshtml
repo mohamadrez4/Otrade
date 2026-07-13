@@ -206,17 +206,16 @@
                     <tr>
                         <th>Date</th>
                         <th>Tx Hash</th>
+                        <th>Payment Snapshot</th>
                         <th>Status</th>
                         <th>Note</th>
                         <th>Processed At</th>
                         <th class="text-end">Amount</th>
                     </tr>
                 `;
-
                 items.forEach(item => {
                     const status = String(item.status || "").toLowerCase();
                     const note = item.adminNote || "-";
-
                     appendRow(`
                         <td>${formatDate(item.createdAt)}</td>
 
@@ -233,7 +232,21 @@
                                 }
                             </div>
                         </td>
+                         <td>
+                            <div class="report-payment-snapshot">
+                                <span>${escapeHtml(item.network || "-")}</span>
 
+                                <small title="${escapeHtml(item.siteWalletAddress || "")}">
+                                    ${escapeHtml(shortWallet(item.siteWalletAddress))}
+                                </small>
+
+                                ${
+                                    item.siteWalletAddress
+                                        ? `<button type="button" onclick="copyReportText('${escapeForJs(item.siteWalletAddress)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
                         <td>
                             <span class="report-status ${escapeHtml(status)}">
                                 ${escapeHtml(item.status || "-")}
@@ -511,13 +524,18 @@
             if (type === "mainInvestBonuses") return "Main → Invest Bonus";
             return type;
         }
+        function shortWallet(value) {
+            if (!value) return "-";
+            if (value.length <= 24) return value;
 
+            return value.substring(0, 12) + "..." + value.substring(value.length - 8);
+        }
         function formatMoney(value) {
             const number = Number(value || 0);
 
             return number.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 8
+                maximumFractionDigits: 2
             }) + " USDT";
         }
 

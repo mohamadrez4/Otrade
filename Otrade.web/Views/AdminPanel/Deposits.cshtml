@@ -24,6 +24,7 @@
                         <th>User</th>
                         <th>Requested Amount</th>
                         <th>Tx Hash</th>
+                        <th>Network</th>
                         <th>Created At</th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -72,7 +73,10 @@
                 <span>Tx Hash</span>
                 <strong id="approveDepositTx">-</strong>
             </div>
-
+            <div class="admin-modal-info admin-tx-modal-info">
+                <span>Network / Site Wallet</span>
+                <strong id="approveDepositNetworkWallet">-</strong>
+            </div>
             <label class="admin-modal-label" for="approvedAmountInput">
                 Approved Amount
             </label>
@@ -190,7 +194,7 @@
         const rejectRequestedAmount = document.getElementById("rejectRequestedAmount");
         const rejectDepositReason = document.getElementById("rejectDepositReason");
         const confirmRejectDepositBtn = document.getElementById("confirmRejectDepositBtn");
-
+        const approveDepositNetworkWallet = document.getElementById("approveDepositNetworkWallet");
         let depositsCache = [];
 
         async function loadPendingDeposits() {
@@ -249,7 +253,11 @@
                                 }
                             </div>
                         </td>
-
+                                <td>
+                                    <span class="admin-status approved">
+                                        ${escapeHtml(deposit.network || "-")}
+                                    </span>
+                                </td>
                         <td>${formatDate(deposit.createdAt)}</td>
 
                         <td class="text-end">
@@ -296,7 +304,8 @@
 
             approveDepositTx.innerText =
                 deposit.txId || "-";
-
+            approveDepositNetworkWallet.innerText =
+            `${deposit.network || "-"} / ${deposit.siteWalletAddress || "-"}`;
             approvedAmountInput.value =
                 Number(deposit.amount || 0);
 
@@ -315,6 +324,7 @@
             approveDepositUser.innerText = "-";
             approveRequestedAmount.innerText = "0.00 USDT";
             approveDepositTx.innerText = "-";
+            approveDepositNetworkWallet.innerText = "-";
             approvedAmountInput.value = "";
         }
 

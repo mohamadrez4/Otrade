@@ -235,7 +235,7 @@ public class BonusCodeService
 
         if (pageSize > 100)
             pageSize = 100;
-
+        await ExpireOutdatedBonusUsagesAsync();
         var query = _context.BonusCodeUsages
             .AsNoTracking()
             .Include(x => x.BonusCode)
@@ -313,7 +313,7 @@ public class BonusCodeService
 
         if (string.IsNullOrWhiteSpace(code))
             return ResponseFactory.Fail<MyBonusCodeUsageDto>("Bonus code is required");
-
+        await ExpireOutdatedBonusUsagesAsync();
         await using var transaction =
             await _context.Database.BeginTransactionAsync();
 
@@ -412,7 +412,7 @@ public class BonusCodeService
 
         if (pageSize > 100)
             pageSize = 100;
-
+        await ExpireOutdatedBonusUsagesAsync();
         var query = _context.BonusCodeUsages
             .AsNoTracking()
             .Include(x => x.BonusCode)
@@ -540,6 +540,33 @@ public class BonusCodeService
         return ResponseFactory.Success(
             dto,
             $"Bonus usage marked as {targetStatus} successfully");
+    }
+    private async Task ExpireOutdatedBonusUsagesAsync()
+    {
+        var now = DateTime.Now;
+
+        var expiredUsages = await _context.BonusCodeUsages
+            .Where(x =>
+                x.Status == BonusCodeUsageStatus.Active &&
+                x.ExpiresAt != null &&
+                x.ExpiresAt < now)
+            .ToListAsync();
+
+        if (!expiredUsages.Any())
+            return;
+
+        foreach (var usage in expiredUsages)
+        {
+            usage.Status = BonusCodeUsageStatus.Expired;
+            usage.CompletedAt = now;
+
+            if (string.IsNullOrWhiteSpace(usage.AdminNote))
+            {
+                usage.AdminNote = "Expired automatically.";
+            }
+        }
+
+        await _context.SaveChangesAsync();
     }
     private async Task<ApiResponse<bool>> ValidateBonusDefinitionAsync(
         BonusCodeType bonusType,

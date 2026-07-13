@@ -246,7 +246,11 @@ public class OtradeDbContext : DbContext
             entity.HasIndex(x => x.TxId).IsUnique();
 
             entity.Property(x => x.Amount).HasPrecision(18, 8);
+            entity.Property(x => x.SiteWalletAddress)
+                 .HasMaxLength(300);
 
+            entity.Property(x => x.Network)
+                .HasMaxLength(50);
             entity.Property(x => x.Status)
                 .HasConversion<string>()
                 .HasMaxLength(30);
@@ -462,6 +466,11 @@ public class OtradeDbContext : DbContext
                 .HasMaxLength(200);
             entity.Property(x => x.RecoveryVerificationCode)
                 .HasMaxLength(10);
+            entity.Property(x => x.SiteWalletAddress)
+                .HasMaxLength(300);
+
+            entity.Property(x => x.Network)
+                .HasMaxLength(50);
             entity.HasIndex(x => x.Email);
 
             entity.HasIndex(x => new { x.Status, x.CreatedAt });

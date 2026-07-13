@@ -9,7 +9,9 @@ public class Deposit
     public decimal Amount { get; set; }
 
     public string TxId { get; set; }
+    public string? SiteWalletAddress { get; set; }
 
+    public string? Network { get; set; }
     public DepositStatus Status { get; set; }
 
     public string? AdminNote { get; set; }

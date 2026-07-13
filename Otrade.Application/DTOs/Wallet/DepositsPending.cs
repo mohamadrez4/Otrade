@@ -11,7 +11,9 @@
         public string UserFullName { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
+        public string? SiteWalletAddress { get; set; }
 
+        public string? Network { get; set; }
         public string TxId { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; }

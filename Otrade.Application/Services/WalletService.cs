@@ -20,6 +20,7 @@ public class WalletService
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly INotificationQueue _notificationQueue;
     private readonly InvestmentCapacityService _investmentCapacityService;
+    private readonly PaymentTransactionGuardService _paymentTransactionGuardService;
     public WalletService(
      OtradeDbContext context,
      MainInvestBonusService mainInvestBonusService,
@@ -27,7 +28,8 @@ public class WalletService
      SystemSettingService systemSettingService,
      IEmailService emailService,
      IEmailTemplateService emailTemplateService,
-     INotificationQueue notificationQueue)
+     INotificationQueue notificationQueue,
+     PaymentTransactionGuardService paymentTransactionGuardService)
     {
         _context = context;
         _mainInvestBonusService = mainInvestBonusService;
@@ -35,6 +37,7 @@ public class WalletService
         _settingService = systemSettingService;
         _emailTemplateService = emailTemplateService;
         _notificationQueue = notificationQueue;
+        _paymentTransactionGuardService = paymentTransactionGuardService;
     }
     public async Task<ApiResponse<InternalTransferRecipientDto>> FindInternalTransferRecipientAsync(
     string query,
@@ -526,33 +529,53 @@ public class WalletService
     }
 
     public async Task<ApiResponse<bool>> CreateDepositRequestAsync(
-    DepositRequest request,
-    long userId)
+        DepositRequest request,
+        long userId)
     {
+        if (request == null)
+            return ResponseFactory.Fail<bool>("Invalid request");
+
         if (request.Amount <= 0)
             return ResponseFactory.Fail<bool>("Invalid amount");
 
-        var exists = await _context.Deposits
-            .AnyAsync(x => x.TxId == request.TxId);
+        var txId = _paymentTransactionGuardService.NormalizeTxId(request.TxId);
 
-        if (exists)
-            return ResponseFactory.Fail<bool>("TxId already used");
+        var txValidationError = _paymentTransactionGuardService.ValidateTxId(txId);
+
+        if (txValidationError != null)
+            return ResponseFactory.Fail<bool>(txValidationError);
+
+        await using var transaction = await _context.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable);
+
+        var txIdAlreadyUsed = await _paymentTransactionGuardService.IsTxIdUsedAsync(txId);
+
+        if (txIdAlreadyUsed)
+            return ResponseFactory.Fail<bool>("Transaction hash is already used");
+
+        var siteWalletAddress = await _settingService.GetValueAsync("SiteWalletAddress");
+        var network = await _settingService.GetValueAsync("Network");
 
         var deposit = new Deposit
         {
             UserId = userId,
             Amount = request.Amount,
-            TxId = request.TxId,
-            Status =DepositStatus.Pending,
-            CreatedAt =  DateTime.Now
+            TxId = txId,
+            SiteWalletAddress = siteWalletAddress,
+            Network = network,
+            Status = DepositStatus.Pending,
+            CreatedAt = DateTime.Now
         };
 
         _context.Deposits.Add(deposit);
+
         await _context.SaveChangesAsync();
 
+        await transaction.CommitAsync();
+
         var user = await _context.Users
-    .AsNoTracking()
-    .FirstOrDefaultAsync(x => x.UserId == userId);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.UserId == userId);
 
         var userDisplay = user != null
             ? $"{user.Email} / UID: {user.ReferralCode}"
@@ -561,11 +584,12 @@ public class WalletService
         var emailBody = _emailTemplateService.GetDepositNotification(
             userDisplay,
             request.Amount,
-            request.TxId);
+            txId);
 
         await _notificationQueue.QueueAdminAsync(
             "New Deposit Request",
             emailBody);
+
         return ResponseFactory.Success(true, "Deposit request submitted");
     }
 
@@ -1073,6 +1097,8 @@ public class WalletService
                 Amount = x.Amount,
                 TxId = x.TxId,
                 Status = x.Status.ToString(),
+                SiteWalletAddress = x.SiteWalletAddress,
+                Network = x.Network,
                 AdminNote = x.AdminNote,
                 CreatedAt = x.CreatedAt,
                 ProcessedAt = x.ProcessedAt

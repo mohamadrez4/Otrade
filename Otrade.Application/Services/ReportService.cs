@@ -725,6 +725,8 @@ public class ReportService
                     TxId = x.TxId,
                     Status = x.Status.ToString(),
                     AdminNote = x.AdminNote,
+                    SiteWalletAddress = x.SiteWalletAddress,
+                    Network = x.Network,
                     CreatedAt = x.CreatedAt,
                     ProcessedAt = x.ProcessedAt
                 })
@@ -1226,6 +1228,8 @@ public class ReportService
                     TxId = x.TxId,
                     Status = x.Status.ToString(),
                     AdminNote = x.AdminNote,
+                    SiteWalletAddress=x.SiteWalletAddress,
+                    Network=x.Network,
                     CreatedAt = x.CreatedAt,
                     ProcessedAt = x.ProcessedAt
                 })

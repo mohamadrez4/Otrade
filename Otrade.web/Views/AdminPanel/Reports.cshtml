@@ -457,17 +457,18 @@
             adminReportsTableWrapper.style.display = "block";
 
             if (type === "deposits") {
-                adminReportsTableHead.innerHTML = `
-                    <tr>
-                        <th>User</th>
-                        <th>Tx Hash</th>
-                        <th>Status</th>
-                        <th>Note</th>
-                        <th>Created At</th>
-                        <th>Processed At</th>
-                        <th class="text-end">Amount</th>
-                    </tr>
-                `;
+                    adminReportsTableHead.innerHTML = `
+                        <tr>
+                            <th>User</th>
+                            <th>Tx Hash</th>
+                            <th>Payment Snapshot</th>
+                            <th>Status</th>
+                            <th>Note</th>
+                            <th>Created At</th>
+                            <th>Processed At</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    `;
 
                 items.forEach(item => {
                     const status = String(item.status || "").toLowerCase();
@@ -499,7 +500,21 @@
                                 }
                             </div>
                         </td>
+                        <td>
+                            <div class="admin-tx-cell wide">
+                                <span>${escapeHtml(item.network || "-")}</span>
 
+                                <small title="${escapeHtml(item.siteWalletAddress || "")}">
+                                    ${escapeHtml(shortWallet(item.siteWalletAddress))}
+                                </small>
+
+                                ${
+                                    item.siteWalletAddress
+                                        ? `<button type="button" onclick="copyReportText('${escapeForJs(item.siteWalletAddress)}')">Copy</button>`
+                                        : ""
+                                }
+                            </div>
+                        </td>
                         <td>
                             <span class="admin-status ${escapeHtml(status)}">
                                 ${escapeHtml(item.status || "-")}
@@ -879,13 +894,18 @@
             row.innerHTML = html;
             adminReportsTableBody.appendChild(row);
         }
+        function shortWallet(value) {
+            if (!value) return "-";
+            if (value.length <= 24) return value;
 
+            return value.substring(0, 12) + "..." + value.substring(value.length - 8);
+        }
         function formatMoney(value) {
             const number = Number(value || 0);
 
             return number.toLocaleString("en-US", {
                 minimumFractionDigits: 2,
-                maximumFractionDigits: 8
+                maximumFractionDigits: 2
             }) + " USDT";
         }
 

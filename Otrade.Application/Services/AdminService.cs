@@ -52,6 +52,8 @@ namespace Otrade.Application.Services
                     UserUid = x.User.ReferralCode,
                     UserFullName = (x.User.FirstName + " " + x.User.LastName).Trim(),
                     TxId = x.TxId,
+                    SiteWalletAddress = x.SiteWalletAddress,
+                    Network = x.Network,
                     Amount = x.Amount,
                     CreatedAt = x.CreatedAt
                 })
@@ -97,7 +99,7 @@ namespace Otrade.Application.Services
             deposit.Amount = approvedAmount;
             deposit.Status = DepositStatus.Approved;
             deposit.ProcessedAt = now;
-            deposit.AdminNote = $"Requested: {requestedAmount}, Approved: {approvedAmount}";
+            deposit.AdminNote = $"Requested: {requestedAmount.ToString("F2")}, Approved: {approvedAmount.ToString("F2")}";
 
             _context.WalletTransactions.Add(new WalletTransaction
             {
@@ -107,7 +109,7 @@ namespace Otrade.Application.Services
                 BalanceBefore = before,
                 BalanceAfter = after,
                 Type = TransactionType.Deposit,
-                Description = $"Deposit approved. Requested: {requestedAmount}, Approved: {approvedAmount}, TxId: {deposit.TxId}",
+                Description = $"Deposit approved. Requested: {requestedAmount.ToString("F2")}, Approved: {approvedAmount.ToString("F2")}, TxId: {deposit.TxId}",
                 CreatedAt = now
             });
 

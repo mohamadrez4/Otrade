@@ -17,7 +17,9 @@ public class TemporaryRegistration
     public decimal? DeclaredAmount { get; set; }
 
     public string? DepositTxId { get; set; }
+    public string? SiteWalletAddress { get; set; }
 
+    public string? Network { get; set; }
     public decimal? ApprovedAmount { get; set; }
 
     public long? ApprovedByUserId { get; set; }
