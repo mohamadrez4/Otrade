@@ -22,11 +22,28 @@
             <strong id="mainWallet">0</strong>
         </div>
 
-        <div class="panel-card wallet-card">
-            <span>Invest Wallet</span>
-            <strong id="investWallet">0</strong>
-        </div>
+        <div class="panel-card wallet-card invest-wallet-card" id="investWalletCard">
+            <div class="dashboard-wallet-card-head">
+                <span>Invest Wallet</span>
 
+                <span id="investBonusBadge"
+                      class="dashboard-mini-bonus-badge"
+                      style="display:none;">
+                    Bonus
+                </span>
+            </div>
+
+            <strong id="investWallet">0</strong>
+
+            <div id="investBonusMiniLine"
+                 class="dashboard-bonus-mini-line"
+                 style="display:none;">
+
+                <span id="investBonusAmount">+0.00 Bonus</span>
+                <i></i>
+                <span id="investProfitBase">Base 0.00</span>
+            </div>
+        </div>
         <div class="panel-card wallet-card">
             <span>Profit Wallet</span>
             <strong id="profitWallet">0</strong>
@@ -63,11 +80,28 @@
         </div>
     </div>
     <div class="info-grid">
-        <div class="panel-card">
-            <span class="card-label">Current Rank</span>
-            <h3 id="currentRank">-</h3>
-        </div>
+        <div class="panel-card dashboard-rank-card" id="currentRankCard">
+            <div class="dashboard-wallet-card-head">
+                <span class="card-label">Current Rank</span>
 
+                <span id="rankBonusBadge"
+                      class="dashboard-mini-bonus-badge rank"
+                      style="display:none;">
+                    Bonus Rank
+                </span>
+            </div>
+
+            <h3 id="currentRank">-</h3>
+
+            <div id="rankBonusMiniLine"
+                 class="dashboard-rank-mini-line"
+                 style="display:none;">
+
+                <span id="baseRankText">Base: -</span>
+                <i></i>
+                <span id="rankBonusExpireText">-</span>
+            </div>
+        </div>
         <div class="panel-card">
             <span class="card-label">Your Referred Capital</span>
             <h3 id="networkVolume">0 USDT</h3>
@@ -121,9 +155,105 @@
                 (data.nextRankProgressPercent ?? 100) + "%";
 
             fillWallets(data.wallets);
+            fillDashboardBonusHighlights(data);
             fillInvestmentCapacity(data.currentInvestmentCapacity);
         });
+                function fillDashboardBonusHighlights(data) {
+            fillInvestBonusHighlight(data);
+            fillRankBonusHighlight(data);
+        }
 
+        function fillDashboardBonusHighlights(data) {
+            fillInvestBonusHighlight(data);
+            fillRankBonusHighlight(data);
+        }
+
+        function fillInvestBonusHighlight(data) {
+            const investWalletCard = document.getElementById("investWalletCard");
+            const investBonusBadge = document.getElementById("investBonusBadge");
+            const investBonusMiniLine = document.getElementById("investBonusMiniLine");
+            const investBonusAmount = document.getElementById("investBonusAmount");
+            const investProfitBase = document.getElementById("investProfitBase");
+
+            if (!investWalletCard) {
+                return;
+            }
+
+            const activeBonusCapital = Number(data.activeBonusCapital || 0);
+            const profitBase = Number(data.investProfitBase || 0);
+
+            investWalletCard.classList.remove("has-bonus");
+
+            if (activeBonusCapital <= 0) {
+                investBonusBadge.style.display = "none";
+                investBonusMiniLine.style.display = "none";
+                return;
+            }
+
+            investWalletCard.classList.add("has-bonus");
+
+            investBonusBadge.style.display = "inline-flex";
+            investBonusMiniLine.style.display = "flex";
+
+            investBonusAmount.innerText =
+                "+" + formatMoney(activeBonusCapital) + " Bonus";
+
+            investProfitBase.innerText =
+                "Profit Base " + formatMoney(profitBase);
+        }
+
+        function fillRankBonusHighlight(data) {
+            const currentRankCard = document.getElementById("currentRankCard");
+            const currentRank = document.getElementById("currentRank");
+            const rankBonusBadge = document.getElementById("rankBonusBadge");
+            const rankBonusMiniLine = document.getElementById("rankBonusMiniLine");
+            const baseRankText = document.getElementById("baseRankText");
+            const rankBonusExpireText = document.getElementById("rankBonusExpireText");
+
+            if (!currentRankCard) {
+                return;
+            }
+
+            currentRankCard.classList.remove("has-rank-bonus");
+
+            currentRank.innerText = data.currentRank ?? "-";
+
+            if (!data.hasActiveBonusRank) {
+                rankBonusBadge.style.display = "none";
+                rankBonusMiniLine.style.display = "none";
+                return;
+            }
+
+            currentRankCard.classList.add("has-rank-bonus");
+
+            currentRank.innerText =
+                data.bonusRankName || data.effectiveRank || data.currentRank || "-";
+
+            rankBonusBadge.style.display = "inline-flex";
+            rankBonusMiniLine.style.display = "flex";
+
+            baseRankText.innerText =
+                "Base: " + (data.baseRank || "-");
+
+            if (data.bonusRankExpiresAt) {
+                rankBonusExpireText.innerText =
+                    "Expires " + formatDate(data.bonusRankExpiresAt);
+            } else {
+                rankBonusExpireText.innerText = "No expiration";
+            }
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
         function fillWallets(wallets) {
             wallets.forEach(w => {
                 const type = w.walletType;
@@ -186,6 +316,7 @@
 
             statusText.innerText = "Active";
         }
+
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,

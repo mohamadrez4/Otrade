@@ -31,7 +31,60 @@ public class DashboardService
         var totalAssets = wallets.Sum(x => x.Balance);
 
         var currentRank = await _context.Ranks
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.RankId == user.CurrentRankId);
+
+        currentRank ??= await _context.Ranks
+            .AsNoTracking()
+            .OrderBy(x => x.SortOrder)
+            .FirstOrDefaultAsync();
+
+        var now = DateTime.Now;
+
+        var activeBonusUsages = await _context.BonusCodeUsages
+            .AsNoTracking()
+            .Include(x => x.AppliedRank)
+            .Where(x =>
+                x.UserId == userId &&
+                x.Status == BonusCodeUsageStatus.Active &&
+                (
+                    x.ExpiresAt == null ||
+                    x.ExpiresAt >= now
+                ))
+            .ToListAsync();
+
+        var activeBonusCapital = activeBonusUsages
+            .Sum(x => x.BonusCapitalAmount);
+
+        var bestBonusRankUsage = activeBonusUsages
+            .Where(x => x.AppliedRank != null)
+            .OrderByDescending(x => x.AppliedRank!.SortOrder)
+            .FirstOrDefault();
+
+        var hasActiveBonusRank =
+            bestBonusRankUsage?.AppliedRank != null &&
+            (
+                currentRank == null ||
+                bestBonusRankUsage.AppliedRank.SortOrder > currentRank.SortOrder
+            );
+
+        var effectiveRank = hasActiveBonusRank
+            ? bestBonusRankUsage!.AppliedRank!
+            : currentRank;
+
+        var investWalletBalance = wallets
+            .Where(x => x.WalletType == WalletType.Invest)
+            .Sum(x => x.Balance);
+
+        var investProfitBase = investWalletBalance + activeBonusCapital;
+
+        var bonusCapitalExpiresAt = activeBonusUsages
+            .Where(x =>
+                x.BonusCapitalAmount > 0 &&
+                x.ExpiresAt.HasValue)
+            .OrderBy(x => x.ExpiresAt)
+            .Select(x => x.ExpiresAt)
+            .FirstOrDefault();
 
         var networkVolume = await GetNetworkInvestVolumeAsync(userId);
 
@@ -60,7 +113,23 @@ public class DashboardService
         var response = new DashboardResponse
         {
             TotalAssets = totalAssets,
-            CurrentRank = currentRank?.Name ?? "Basic",
+            BaseRank = currentRank?.Name ?? "Basic",
+            EffectiveRank = effectiveRank?.Name ?? currentRank?.Name ?? "Basic",
+            CurrentRank = effectiveRank?.Name ?? currentRank?.Name ?? "Basic",
+
+            HasActiveBonusRank = hasActiveBonusRank,
+            BonusRankName = hasActiveBonusRank
+        ? bestBonusRankUsage?.AppliedRank?.Name
+        : null,
+            BonusRankExpiresAt = hasActiveBonusRank
+        ? bestBonusRankUsage?.ExpiresAt
+        : null,
+
+            ActiveBonusCapital = activeBonusCapital,
+            BonusCapitalExpiresAt = bonusCapitalExpiresAt,
+            ActiveBonusCount = activeBonusUsages.Count,
+            InvestProfitBase = investProfitBase,
+
             NetworkVolume = networkVolume,
             NextRank = nextRank?.Name,
             RequiredForNextRank = requiredForNext,

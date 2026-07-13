@@ -3944,3 +3944,220 @@ select.panel-input:focus {
         min-width: 100%;
     }
 }
+
+.dashboard-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.dashboard-bonus-badge {
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 6px 9px;
+    color: #0B0F14;
+    background: linear-gradient(135deg, #11E9A1, #18F5AC);
+    box-shadow: 0 10px 24px rgba(17, 233, 161, 0.18);
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+    .dashboard-bonus-badge.rank {
+        background: linear-gradient(135deg, #FBBF24, #F59E0B);
+        box-shadow: 0 10px 24px rgba(251, 191, 36, 0.18);
+    }
+
+.wallet-card.bonus-active,
+.dashboard-rank-card.bonus-active {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(17, 233, 161, 0.34);
+    background: radial-gradient(circle at top right, rgba(17, 233, 161, 0.14), transparent 34%), #121821;
+}
+
+.dashboard-rank-card.bonus-active {
+    border-color: rgba(251, 191, 36, 0.38);
+    background: radial-gradient(circle at top right, rgba(251, 191, 36, 0.15), transparent 35%), #121821;
+}
+
+    .invest-wallet-card.bonus-active > strong,
+    .dashboard-rank-card.bonus-active > h3 {
+        color: #11E9A1;
+    }
+
+    .dashboard-rank-card.bonus-active > h3 {
+        color: #FBBF24;
+    }
+
+.dashboard-invest-bonus-box {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(28, 37, 50, 0.95);
+}
+
+    .dashboard-invest-bonus-box div {
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(17, 233, 161, 0.07);
+        border: 1px solid rgba(17, 233, 161, 0.14);
+    }
+
+        .dashboard-invest-bonus-box div span {
+            display: block;
+            color: #94A3B8;
+            font-size: 11px;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .dashboard-invest-bonus-box div strong {
+            display: block;
+            color: #11E9A1;
+            font-size: 15px;
+            font-weight: 900;
+        }
+
+    .dashboard-invest-bonus-box small {
+        grid-column: 1 / -1;
+        color: #94A3B8;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+.dashboard-rank-bonus-box {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.18);
+}
+
+    .dashboard-rank-bonus-box span {
+        display: block;
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 900;
+        margin-bottom: 5px;
+    }
+
+    .dashboard-rank-bonus-box small {
+        display: block;
+        color: #94A3B8;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+@media (max-width: 576px) {
+    .dashboard-invest-bonus-box {
+        grid-template-columns: 1fr;
+    }
+}
+.invest-wallet-card,
+.dashboard-rank-card {
+    min-height: unset !important;
+    overflow: hidden;
+}
+
+    .invest-wallet-card.has-bonus,
+    .dashboard-rank-card.has-rank-bonus {
+        border-color: rgba(17, 233, 161, 0.26);
+        background: linear-gradient(135deg, rgba(17, 233, 161, 0.075), transparent 48%), #121821;
+    }
+
+    .dashboard-rank-card.has-rank-bonus {
+        border-color: rgba(251, 191, 36, 0.28);
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.085), transparent 48%), #121821;
+    }
+
+.dashboard-wallet-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 22px;
+}
+
+    .dashboard-wallet-card-head > span:first-child,
+    .dashboard-wallet-card-head .card-label {
+        color: #94A3B8;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+.dashboard-mini-bonus-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 9px;
+    border-radius: 999px;
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.10);
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+    .dashboard-mini-bonus-badge.rank {
+        color: #FBBF24;
+        background: rgba(251, 191, 36, 0.10);
+        border-color: rgba(251, 191, 36, 0.22);
+    }
+
+.invest-wallet-card > strong,
+.dashboard-rank-card > h3 {
+    display: block;
+    margin-top: 14px;
+}
+
+.invest-wallet-card.has-bonus > strong {
+    color: #11E9A1;
+}
+
+.dashboard-rank-card.has-rank-bonus > h3 {
+    color: #FBBF24;
+}
+
+.dashboard-bonus-mini-line,
+.dashboard-rank-mini-line {
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    min-height: 20px;
+    color: #94A3B8;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+    .dashboard-bonus-mini-line span:first-child {
+        color: #11E9A1;
+    }
+
+    .dashboard-rank-mini-line span:first-child {
+        color: #FBBF24;
+    }
+
+    .dashboard-bonus-mini-line i,
+    .dashboard-rank-mini-line i {
+        width: 4px;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(148, 163, 184, 0.7);
+    }
+
+.dashboard-invest-bonus-box,
+.dashboard-invest-bonus-box div,
+.dashboard-invest-bonus-box small,
+.dashboard-rank-bonus-box {
+    display: none !important;
+}
