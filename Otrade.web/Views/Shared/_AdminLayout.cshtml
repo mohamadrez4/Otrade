@@ -88,9 +88,17 @@
 
             <button class="logout-btn" onclick="logout()">Logout</button>
         </aside>
+        <div class="sidebar-mobile-overlay" id="sidebarMobileOverlay"></div>
 
         <main class="panel-main">
             <header class="topbar">
+                <button type="button"
+                        class="mobile-menu-btn"
+                        id="mobileMenuBtn"
+                        aria-label="Open menu">
+                    ☰
+                </button>
+
                 <div>
                     <h4>@ViewData["Title"]</h4>
                 </div>
@@ -185,6 +193,36 @@
                     "error"
                 );
             }
+        }
+            initializeMobileSidebar();
+
+        function initializeMobileSidebar() {
+            const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+            const sidebarMobileOverlay = document.getElementById("sidebarMobileOverlay");
+
+            if (!mobileMenuBtn || !sidebarMobileOverlay) {
+                return;
+            }
+
+            mobileMenuBtn.addEventListener("click", function () {
+                document.body.classList.add("sidebar-open");
+            });
+
+            sidebarMobileOverlay.addEventListener("click", function () {
+                document.body.classList.remove("sidebar-open");
+            });
+
+            document.querySelectorAll(".sidebar-nav a").forEach(link => {
+                link.addEventListener("click", function () {
+                    document.body.classList.remove("sidebar-open");
+                });
+            });
+
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    document.body.classList.remove("sidebar-open");
+                }
+            });
         }
     </script>
 

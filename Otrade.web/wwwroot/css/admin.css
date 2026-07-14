@@ -4032,3 +4032,113 @@ span.flatpickr-weekday {
         width: 100%;
     }
 }
+/* ================================
+   Admin Mobile Optimization
+================================ */
+
+@media (max-width: 992px) {
+    .admin-page {
+        gap: 16px;
+    }
+
+    .admin-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .admin-kpi-card strong {
+        font-size: 21px;
+        word-break: break-word;
+    }
+
+    .admin-section-header {
+        margin-bottom: 14px;
+    }
+
+        .admin-section-header h3 {
+            font-size: 19px;
+        }
+
+        .admin-section-header p {
+            font-size: 13px;
+        }
+
+    .admin-filter-row {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .admin-ticket-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .admin-action-btn {
+        min-height: 38px;
+        margin-left: 0;
+        margin-right: 6px;
+        margin-bottom: 6px;
+    }
+
+    .admin-status {
+        min-height: 28px;
+        align-items: center;
+    }
+
+    .ow-modal-shell,
+    .bonus-code-modal-shell,
+    .bonus-usage-action-modal-shell {
+        width: calc(100vw - 22px) !important;
+        max-height: calc(100dvh - 22px) !important;
+        border-radius: 18px;
+    }
+
+    .ow-modal-body {
+        overflow-y: auto;
+    }
+
+    .ow-modal-footer {
+        gap: 10px;
+    }
+
+        .ow-modal-footer .ow-btn {
+            flex: 1;
+            min-height: 42px;
+        }
+}
+
+@media (max-width: 576px) {
+    .admin-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-table {
+        min-width: 760px;
+    }
+
+    .admin-action-btn {
+        width: auto;
+        white-space: nowrap;
+    }
+
+    .ow-modal-header {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .ow-modal-title-wrap {
+        align-items: flex-start;
+    }
+
+    .ow-modal-footer {
+        flex-direction: column-reverse;
+    }
+
+        .ow-modal-footer .ow-btn {
+            width: 100%;
+        }
+
+    .bonus-usage-actions {
+        justify-content: flex-start;
+    }
+}
