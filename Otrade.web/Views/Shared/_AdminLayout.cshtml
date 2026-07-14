@@ -194,38 +194,79 @@
                 );
             }
         }
-            initializeMobileSidebar();
 
-        function initializeMobileSidebar() {
-            const mobileMenuBtn = document.getElementById("mobileMenuBtn");
-            const sidebarMobileOverlay = document.getElementById("sidebarMobileOverlay");
+        </script>
+    <script>
+        (function () {
+            const desktopWidth = 993;
 
-            if (!mobileMenuBtn || !sidebarMobileOverlay) {
-                return;
+            function isDesktop() {
+                return window.innerWidth >= desktopWidth;
             }
 
-            mobileMenuBtn.addEventListener("click", function () {
-                document.body.classList.add("sidebar-open");
-            });
-
-            sidebarMobileOverlay.addEventListener("click", function () {
+            function applySidebarStartupState() {
                 document.body.classList.remove("sidebar-open");
-            });
 
-            document.querySelectorAll(".sidebar-nav a").forEach(link => {
-                link.addEventListener("click", function () {
+                if (isDesktop()) {
+                    document.body.classList.add("sidebar-collapsed");
+                } else {
+                    document.body.classList.remove("sidebar-collapsed");
+                }
+            }
+
+            function toggleSidebar() {
+                if (isDesktop()) {
+                    document.body.classList.toggle("sidebar-collapsed");
                     document.body.classList.remove("sidebar-open");
-                });
-            });
+                    return;
+                }
+
+                document.body.classList.add("sidebar-open");
+            }
+
+            function closeMobileSidebar() {
+                document.body.classList.remove("sidebar-open");
+            }
+
+            applySidebarStartupState();
+
+            document.addEventListener("click", function (e) {
+                const menuBtn = e.target.closest("#mobileMenuBtn");
+
+                if (menuBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleSidebar();
+                    return;
+                }
+
+                const overlay = e.target.closest("#sidebarMobileOverlay");
+
+                if (overlay) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeMobileSidebar();
+                    return;
+                }
+
+                const sidebarLink = e.target.closest(".sidebar-nav a");
+
+                if (sidebarLink && !isDesktop()) {
+                    closeMobileSidebar();
+                }
+            }, true);
 
             document.addEventListener("keydown", function (e) {
                 if (e.key === "Escape") {
-                    document.body.classList.remove("sidebar-open");
+                    closeMobileSidebar();
                 }
             });
-        }
-    </script>
 
+            window.addEventListener("resize", function () {
+                applySidebarStartupState();
+            });
+        })();
+    </script>
     @RenderSection("Scripts", required: false)
 
 </body>
