@@ -225,9 +225,18 @@ public class WalletController : ControllerBase
     [Authorize]
     [HttpGet("referral")]
     public async Task<IActionResult> GetReferral(
+    [FromQuery] int referralsPage,
+    [FromQuery] int referralsPageSize,
+    [FromQuery] int bonusesPage,
+    [FromQuery] int bonusesPageSize,
     [FromServices] CurrentUserService currentUser)
     {
-        var result = await _walletService.GetReferralOverviewAsync(currentUser.UserId);
+        var result = await _walletService.GetReferralOverviewAsync(
+            currentUser.UserId,
+            referralsPage,
+            referralsPageSize,
+            bonusesPage,
+            bonusesPageSize);
 
         if (!result.Success)
             return BadRequest(result);

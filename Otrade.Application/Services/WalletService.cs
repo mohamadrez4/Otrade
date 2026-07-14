@@ -951,64 +951,126 @@ public class WalletService
         };
 
         return ResponseFactory.Success(response);
-    }   
-    public async Task<ApiResponse<object>> GetReferralOverviewAsync(long userId)
+    }
+    public async Task<ApiResponse<ReferralOverviewResponse>> GetReferralOverviewAsync(
+        long userId,
+        int referralsPage,
+        int referralsPageSize,
+        int bonusesPage,
+        int bonusesPageSize)
     {
+        referralsPage = referralsPage <= 0 ? 1 : referralsPage;
+        bonusesPage = bonusesPage <= 0 ? 1 : bonusesPage;
+
+        referralsPageSize = referralsPageSize <= 0 ? 10 : referralsPageSize;
+        bonusesPageSize = bonusesPageSize <= 0 ? 10 : bonusesPageSize;
+
+        referralsPageSize = referralsPageSize > 50 ? 50 : referralsPageSize;
+        bonusesPageSize = bonusesPageSize > 50 ? 50 : bonusesPageSize;
+
         var user = await _context.Users
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.UserId == userId);
 
         if (user == null)
-            return ResponseFactory.Fail<object>("User not found");
+            return ResponseFactory.Fail<ReferralOverviewResponse>("User not found");
 
         var rank = await _context.Ranks
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.RankId == user.CurrentRankId);
 
         var referralWallet = await _context.Wallets
+            .AsNoTracking()
             .FirstOrDefaultAsync(x =>
                 x.UserId == userId &&
                 x.WalletType == WalletType.Referral);
 
-        var referrals = await _context.Users
-            .Where(x => x.SponsorId == userId)
+        var referralsQuery = _context.Users
+            .AsNoTracking()
+            .Where(x => x.SponsorId == userId);
+
+        var totalReferrals = await referralsQuery.CountAsync();
+
+        var referrals = await referralsQuery
             .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new
+            .Skip((referralsPage - 1) * referralsPageSize)
+            .Take(referralsPageSize)
+            .Select(x => new DirectReferralDto
             {
-                x.UserId,
-                FullName = x.FirstName + " " + x.LastName,
-                x.Email,
-                x.ReferralCode,
-                x.CreatedAt
+                UserId = x.UserId,
+                FullName = (x.FirstName + " " + x.LastName).Trim(),
+                Email = x.Email,
+                ReferralCode = x.ReferralCode,
+                CreatedAt = x.CreatedAt
             })
             .ToListAsync();
 
-        var bonuses = await _context.ReferralBonusRecords
-             .Include(x => x.FromUser)
-            .Where(x => x.ToUserId == userId)
+        var bonusesQuery = _context.ReferralBonusRecords
+            .AsNoTracking()
+            .Include(x => x.FromUser)
+            .Where(x => x.ToUserId == userId);
+
+        var totalBonusRecords = await bonusesQuery.CountAsync();
+
+        var totalBonus = await bonusesQuery
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var bonuses = await bonusesQuery
             .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new
+            .Skip((bonusesPage - 1) * bonusesPageSize)
+            .Take(bonusesPageSize)
+            .Select(x => new ReferralBonusHistoryDto
             {
-                x.BonusId,
-                x.FromUser.Email,
-                x.Amount,
-                x.Type,
-                x.CreatedAt
+                BonusId = x.BonusId,
+                Amount = x.Amount,
+                Type = x.Type,
+                CreatedAt = x.CreatedAt,
+
+                FromUserUid = x.FromUser != null
+                    ? x.FromUser.ReferralCode
+                    : string.Empty,
+
+                FromUserEmail = x.FromUser != null
+                    ? x.FromUser.Email
+                    : string.Empty,
+
+                FromUserFullName = x.FromUser != null
+                    ? (x.FromUser.FirstName + " " + x.FromUser.LastName).Trim()
+                    : string.Empty
             })
             .ToListAsync();
 
-        return ResponseFactory.Success<object>(new
+        var response = new ReferralOverviewResponse
         {
             ReferralCode = user.ReferralCode,
             CurrentRank = rank != null ? rank.Name : "-",
             ReferralProfitPercent = rank != null ? rank.ReferralProfitPercent : 0,
             MainToInvestPercent = rank != null ? rank.MainToInvestPercent : 0,
             ReferralWalletBalance = referralWallet != null ? referralWallet.Balance : 0,
-            TotalReferrals = referrals.Count,
-            TotalBonus = bonuses.Sum(x => x.Amount),
-            Referrals = referrals,
-            Bonuses = bonuses
-        });
-    }
+            TotalReferrals = totalReferrals,
+            TotalBonus = totalBonus,
 
+            Referrals = new PagedResponse<DirectReferralDto>
+            {
+                Page = referralsPage,
+                PageSize = referralsPageSize,
+                TotalCount = totalReferrals,
+                TotalPages = (int)Math.Ceiling(totalReferrals / (double)referralsPageSize),
+                Items = referrals
+            },
+
+            Bonuses = new PagedResponse<ReferralBonusHistoryDto>
+            {
+                Page = bonusesPage,
+                PageSize = bonusesPageSize,
+                TotalCount = totalBonusRecords,
+                TotalPages = (int)Math.Ceiling(totalBonusRecords / (double)bonusesPageSize),
+                Items = bonuses
+            }
+        };
+
+        return ResponseFactory.Success(response);
+    }
     public async Task<ApiResponse<object>> GetDepositInfoAsync()
     {
         var walletAddress = await _settingService.GetValueAsync("SiteWalletAddress");

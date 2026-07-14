@@ -1,10 +1,10 @@
-﻿@{ 
+﻿@{
     ViewData["Title"] = "Referral";
 }
 
 <div class="referral-page">
 
-    <div class="panel-card">
+    <div class="panel-card referral-hero-card">
         <div class="referral-header">
             <div>
                 <h3>Referral Program</h3>
@@ -30,7 +30,7 @@
             </div>
 
             <div class="referral-summary-grid">
-                <div class="referral-summary-item">
+                <div class="referral-summary-item rank">
                     <span>Current Rank</span>
                     <strong id="currentRank">-</strong>
                 </div>
@@ -40,12 +40,12 @@
                     <strong id="totalReferrals">0</strong>
                 </div>
 
-                <div class="referral-summary-item">
+                <div class="referral-summary-item bonus">
                     <span>Total Bonus</span>
                     <strong id="totalBonus">$0.00</strong>
                 </div>
 
-                <div class="referral-summary-item">
+                <div class="referral-summary-item wallet">
                     <span>Referral Wallet</span>
                     <strong id="referralWalletBalance">$0.00</strong>
                 </div>
@@ -66,10 +66,14 @@
         </div>
     </div>
 
-    <div class="panel-card">
+    <div class="panel-card referral-list-card">
         <div class="referral-section-header">
-            <h3>Direct Referrals</h3>
-            <p>Users registered with your referral code.</p>
+            <div>
+                <h3>Direct Referrals</h3>
+                <p>Users registered with your referral code.</p>
+            </div>
+
+            <span id="directReferralsCount" class="referral-section-count">0 users</span>
         </div>
 
         <div id="referralsEmpty" class="referral-message" style="display:none;">
@@ -77,24 +81,33 @@
         </div>
 
         <div id="referralsTableWrapper" class="referral-table-wrapper" style="display:none;">
-            <table class="referral-table">
+            <table class="referral-table referral-modern-table">
                 <thead>
                     <tr>
                         <th>User</th>
-                        <th>Email</th>
-                        <th>Referral Code</th>
+                        <th>UID</th>
                         <th>Joined At</th>
                     </tr>
                 </thead>
                 <tbody id="referralsTableBody"></tbody>
             </table>
         </div>
+
+        <div id="referralsPagination" class="referral-pagination" style="display:none;">
+            <button type="button" id="referralsPrevBtn">Previous</button>
+            <span id="referralsPageInfo">Page 1 of 1</span>
+            <button type="button" id="referralsNextBtn">Next</button>
+        </div>
     </div>
 
-    <div class="panel-card">
+    <div class="panel-card referral-list-card">
         <div class="referral-section-header">
-            <h3>Bonus History</h3>
-            <p>Your received referral bonuses.</p>
+            <div>
+                <h3>Bonus History</h3>
+                <p>Your received referral bonuses.</p>
+            </div>
+
+            <span id="bonusHistoryCount" class="referral-section-count">$0.00 total</span>
         </div>
 
         <div id="bonusesEmpty" class="referral-message" style="display:none;">
@@ -102,7 +115,7 @@
         </div>
 
         <div id="bonusesTableWrapper" class="referral-table-wrapper" style="display:none;">
-            <table class="referral-table">
+            <table class="referral-table referral-modern-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -113,6 +126,12 @@
                 </thead>
                 <tbody id="bonusesTableBody"></tbody>
             </table>
+        </div>
+
+        <div id="bonusesPagination" class="referral-pagination" style="display:none;">
+            <button type="button" id="bonusesPrevBtn">Previous</button>
+            <span id="bonusesPageInfo">Page 1 of 1</span>
+            <button type="button" id="bonusesNextBtn">Next</button>
         </div>
     </div>
 
@@ -133,33 +152,93 @@
 
         const copyReferralBtn = document.getElementById("copyReferralBtn");
 
+        const directReferralsCount = document.getElementById("directReferralsCount");
         const referralsEmpty = document.getElementById("referralsEmpty");
         const referralsTableWrapper = document.getElementById("referralsTableWrapper");
         const referralsTableBody = document.getElementById("referralsTableBody");
+        const referralsPagination = document.getElementById("referralsPagination");
+        const referralsPrevBtn = document.getElementById("referralsPrevBtn");
+        const referralsNextBtn = document.getElementById("referralsNextBtn");
+        const referralsPageInfo = document.getElementById("referralsPageInfo");
 
+        const bonusHistoryCount = document.getElementById("bonusHistoryCount");
         const bonusesEmpty = document.getElementById("bonusesEmpty");
         const bonusesTableWrapper = document.getElementById("bonusesTableWrapper");
         const bonusesTableBody = document.getElementById("bonusesTableBody");
+        const bonusesPagination = document.getElementById("bonusesPagination");
+        const bonusesPrevBtn = document.getElementById("bonusesPrevBtn");
+        const bonusesNextBtn = document.getElementById("bonusesNextBtn");
+        const bonusesPageInfo = document.getElementById("bonusesPageInfo");
 
         let referralLink = "";
 
+        let referralsPage = 1;
+        let referralsTotalPages = 1;
+
+        let bonusesPage = 1;
+        let bonusesTotalPages = 1;
+
+        const referralsPageSize = 5;
+        const bonusesPageSize = 5;
+
+        referralsPrevBtn.addEventListener("click", async function () {
+            if (referralsPage <= 1) return;
+            referralsPage--;
+            await loadReferral();
+        });
+
+        referralsNextBtn.addEventListener("click", async function () {
+            if (referralsPage >= referralsTotalPages) return;
+            referralsPage++;
+            await loadReferral();
+        });
+
+        bonusesPrevBtn.addEventListener("click", async function () {
+            if (bonusesPage <= 1) return;
+            bonusesPage--;
+            await loadReferral();
+        });
+
+        bonusesNextBtn.addEventListener("click", async function () {
+            if (bonusesPage >= bonusesTotalPages) return;
+            bonusesPage++;
+            await loadReferral();
+        });
+
         async function loadReferral() {
             try {
-                const result = await api("/api/wallet/referral");
-                const data = result.data;
+                const params = new URLSearchParams();
+
+                params.set("referralsPage", referralsPage);
+                params.set("referralsPageSize", referralsPageSize);
+                params.set("bonusesPage", bonusesPage);
+                params.set("bonusesPageSize", bonusesPageSize);
+
+                const result = await api(`/api/wallet/referral?${params.toString()}`);
+
+                if (!result || !result.success) {
+                    referralMessage.innerText = result?.message || "Could not load referral information.";
+                    referralMessage.style.display = "block";
+                    return;
+                }
+
+                const data = result.data || {};
 
                 referralCode.innerText = data.referralCode || "-";
-                currentRank.innerText = data.currentRank || "-";
+                setReferralRankVisual(data.currentRank || "-");
                 totalReferrals.innerText = data.totalReferrals || 0;
                 totalBonus.innerText = formatMoney(data.totalBonus);
                 referralWalletBalance.innerText = formatMoney(data.referralWalletBalance);
                 referralProfitPercent.innerText = `${data.referralProfitPercent || 0}%`;
                 mainToInvestPercent.innerText = `${data.mainToInvestPercent || 0}%`;
 
+                directReferralsCount.innerText = `${data.totalReferrals || 0} users`;
+                bonusHistoryCount.innerText = `${formatMoney(data.totalBonus)} total`;
+
                 referralLink = `${window.location.origin}/auth/register?ref=${data.referralCode || ""}`;
 
-                renderReferrals(data.referrals || []);
-                renderBonuses(data.bonuses || []);
+                renderReferrals(data.referrals || {});
+                renderBonuses(data.bonuses || {});
 
                 referralMessage.style.display = "none";
                 referralContent.style.display = "block";
@@ -170,12 +249,18 @@
             }
         }
 
-        function renderReferrals(items) {
+        function renderReferrals(pagedData) {
+            const items = pagedData.items || [];
+
             referralsTableBody.innerHTML = "";
+
+            referralsPage = pagedData.page || referralsPage;
+            referralsTotalPages = pagedData.totalPages || 1;
 
             if (!items.length) {
                 referralsEmpty.style.display = "block";
                 referralsTableWrapper.style.display = "none";
+                referralsPagination.style.display = "none";
                 return;
             }
 
@@ -183,9 +268,19 @@
                 const row = document.createElement("tr");
 
                 row.innerHTML = `
-                    <td>${item.fullName || "-"}</td>
-                    <td>${item.email || "-"}</td>
-                    <td>${item.referralCode || "-"}</td>
+                    <td>
+                        <div class="referral-user-cell">
+                            <strong>${escapeHtml(item.fullName || "-")}</strong>
+                            <span>${escapeHtml(item.email || "-")}</span>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="referral-uid-chip">
+                            ${escapeHtml(item.referralCode || "-")}
+                        </span>
+                    </td>
+
                     <td>${formatDate(item.createdAt)}</td>
                 `;
 
@@ -194,27 +289,51 @@
 
             referralsEmpty.style.display = "none";
             referralsTableWrapper.style.display = "block";
+            renderReferralsPagination(pagedData);
         }
 
-        function renderBonuses(items) {
+        function renderBonuses(pagedData) {
+            const items = pagedData.items || [];
+
             bonusesTableBody.innerHTML = "";
+
+            bonusesPage = pagedData.page || bonusesPage;
+            bonusesTotalPages = pagedData.totalPages || 1;
 
             if (!items.length) {
                 bonusesEmpty.style.display = "block";
                 bonusesTableWrapper.style.display = "none";
+                bonusesPagination.style.display = "none";
                 return;
             }
 
             items.forEach(item => {
                 const row = document.createElement("tr");
-                debugger;
+
                 row.innerHTML = `
-                    <td>${formatDate(item.createdAt)}</td>
-                    <td>#${item.email || "-"}</td>
                     <td>
-                        <span class="referral-bonus-type">${item.type || "-"}</span>
+                        <strong>${formatDate(item.createdAt)}</strong>
                     </td>
-                    <td class="text-end">${formatMoney(item.amount)}</td>
+
+                    <td>
+                        <div class="referral-source-card">
+                            <span>${escapeHtml(item.fromUserUid || "-")}</span>
+                            <strong>${escapeHtml(item.fromUserEmail || "-")}</strong>
+                            <small>${escapeHtml(item.fromUserFullName || "-")}</small>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="referral-bonus-type">
+                            ${formatBonusType(item.type || "-")}
+                        </span>
+                    </td>
+
+                    <td class="text-end">
+                        <strong class="referral-bonus-amount">
+                            ${formatMoney(item.amount)}
+                        </strong>
+                    </td>
                 `;
 
                 bonusesTableBody.appendChild(row);
@@ -222,6 +341,39 @@
 
             bonusesEmpty.style.display = "none";
             bonusesTableWrapper.style.display = "block";
+            renderBonusesPagination(pagedData);
+        }
+
+        function renderReferralsPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= referralsPageSize) {
+                referralsPagination.style.display = "none";
+                return;
+            }
+
+            referralsPagination.style.display = "flex";
+            referralsPageInfo.innerText =
+                `Page ${referralsPage} of ${referralsTotalPages} - Total: ${totalCount}`;
+
+            referralsPrevBtn.disabled = referralsPage <= 1;
+            referralsNextBtn.disabled = referralsPage >= referralsTotalPages;
+        }
+
+        function renderBonusesPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= bonusesPageSize) {
+                bonusesPagination.style.display = "none";
+                return;
+            }
+
+            bonusesPagination.style.display = "flex";
+            bonusesPageInfo.innerText =
+                `Page ${bonusesPage} of ${bonusesTotalPages} - Total: ${totalCount}`;
+
+            bonusesPrevBtn.disabled = bonusesPage <= 1;
+            bonusesNextBtn.disabled = bonusesPage >= bonusesTotalPages;
         }
 
         copyReferralBtn.addEventListener("click", async function () {
@@ -238,16 +390,13 @@
                     document.body.removeChild(textarea);
                 }
 
-                copyReferralBtn.innerText = "Copied!";
+                showNotification("Referral link copied.", "success");
 
-                setTimeout(() => {
-                    copyReferralBtn.innerText = "Copy Referral Link";
-                }, 1000);
             } catch {
-                   showNotification("Could not copy referral link.","error");
-               
+                showNotification("Could not copy referral link.", "error");
             }
         });
+
         function formatMoney(value) {
             const number = Number(value || 0);
 
@@ -267,6 +416,37 @@
             });
         }
 
+        function formatBonusType(value) {
+            return String(value || "-")
+                .replaceAll("MainToInvestBonus", "Main → Invest Bonus")
+                .replaceAll("ReferralProfit", "Referral Profit");
+        }
+
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+        function setReferralRankVisual(rankName) {
+            currentRank.innerText = rankName || "-";
+
+            currentRank.className = "referral-rank-value " + getReferralRankClass(rankName);
+        }
+
+        function getReferralRankClass(rankName) {
+            const value = String(rankName || "").trim().toLowerCase();
+
+            if (value === "basic") return "rank-basic";
+            if (value === "bronze") return "rank-bronze";
+            if (value === "silver") return "rank-silver";
+            if (value === "gold") return "rank-gold";
+            if (value === "diamond") return "rank-diamond";
+
+            return "rank-default";
+        }
         loadReferral();
     </script>
 }

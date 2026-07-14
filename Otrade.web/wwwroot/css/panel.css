@@ -5175,3 +5175,269 @@ select.panel-input:focus {
             font-size: 14px !important;
         }
 }
+/* ================================
+   Referral Page - Pagination + Better UI
+================================ */
+
+.referral-hero-card {
+    position: relative;
+    overflow: hidden;
+}
+
+    .referral-hero-card::before {
+        content: "";
+        position: absolute;
+        top: -90px;
+        right: -80px;
+        width: 240px;
+        height: 240px;
+        border-radius: 999px;
+        background: rgba(17, 233, 161, 0.10);
+        filter: blur(3px);
+        pointer-events: none;
+    }
+
+    .referral-hero-card > * {
+        position: relative;
+        z-index: 1;
+    }
+
+.referral-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+    .referral-section-header h3 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 20px;
+        font-weight: 900;
+    }
+
+    .referral-section-header p {
+        margin: 7px 0 0;
+        color: #94A3B8;
+        font-size: 13px;
+    }
+
+.referral-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.09);
+    border: 1px solid rgba(17, 233, 161, 0.17);
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+
+
+.referral-summary-item.bonus strong,
+.referral-summary-item.wallet strong {
+    color: #11E9A1;
+}
+
+.referral-modern-table {
+    min-width: 820px;
+}
+
+.referral-user-cell {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+    .referral-user-cell strong {
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .referral-user-cell span {
+        color: #94A3B8;
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+.referral-uid-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 999px;
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.10);
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.referral-source-card {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 230px;
+    border-left: 2px solid rgba(17, 233, 161, 0.35);
+    padding-left: 10px;
+}
+
+    .referral-source-card span {
+        color: #11E9A1;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+    .referral-source-card strong {
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+    }
+
+    .referral-source-card small {
+        color: #94A3B8;
+        font-size: 12px;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+.referral-bonus-type {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 11px;
+    border-radius: 999px;
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.10);
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.referral-bonus-amount {
+    color: #11E9A1;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.referral-pagination {
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+    .referral-pagination button {
+        min-width: 92px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(17, 233, 161, 0.18);
+        background: rgba(17, 233, 161, 0.08);
+        color: #11E9A1;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+        .referral-pagination button:hover:not(:disabled) {
+            border-color: rgba(17, 233, 161, 0.42);
+            background: rgba(17, 233, 161, 0.14);
+        }
+
+        .referral-pagination button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+@media (max-width: 768px) {
+    .referral-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .referral-modern-table {
+        min-width: 760px;
+    }
+
+    .referral-source-card {
+        min-width: 210px;
+    }
+}
+/* ================================
+   Referral Rank Visual Colors
+================================ */
+
+.referral-rank-value {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 18px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.01em;
+    width: fit-content;
+}
+
+    /* Basic → خاکستری/نقره‌ای ملایم */
+    .referral-rank-value.rank-basic {
+        color: #F8FAFC !important;
+        background: linear-gradient(135deg, rgba(148, 163, 184, 0.20), rgba(71, 85, 105, 0.22)), rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(148, 163, 184, 0.32);
+        box-shadow: 0 0 16px rgba(148, 163, 184, 0.08);
+    }
+
+    /* Bronze → برنزی */
+    .referral-rank-value.rank-bronze {
+        color: #FFD7A8 !important;
+        background: linear-gradient(135deg, rgba(205, 127, 50, 0.25), rgba(140, 85, 35, 0.26)), rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(205, 127, 50, 0.42);
+        box-shadow: 0 0 16px rgba(205, 127, 50, 0.12);
+    }
+
+    /* Silver → نقره‌ای روشن */
+    .referral-rank-value.rank-silver {
+        color: #FFFFFF !important;
+        background: linear-gradient(135deg, rgba(229, 231, 235, 0.22), rgba(156, 163, 175, 0.22)), rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(229, 231, 235, 0.38);
+        box-shadow: 0 0 16px rgba(229, 231, 235, 0.10);
+    }
+
+    /* Gold → طلایی */
+    .referral-rank-value.rank-gold {
+        color: #FFF3B0 !important;
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0.26), rgba(184, 134, 11, 0.25)), rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(255, 215, 0, 0.44);
+        box-shadow: 0 0 18px rgba(255, 215, 0, 0.14);
+        text-shadow: 0 0 8px rgba(255, 215, 0, 0.18);
+    }
+
+    /* Diamond → آبی/فیروزه‌ای براق */
+    .referral-rank-value.rank-diamond {
+        color: #E0F2FE !important;
+        background: linear-gradient(135deg, rgba(96, 165, 250, 0.24), rgba(34, 211, 238, 0.24)), rgba(15, 23, 42, 0.72);
+        border: 1px solid rgba(56, 189, 248, 0.46);
+        box-shadow: 0 0 18px rgba(34, 211, 238, 0.15);
+        text-shadow: 0 0 8px rgba(34, 211, 238, 0.18);
+    }
+
+    .referral-rank-value.rank-default {
+        color: #D1FAE5 !important;
+        background: rgba(17, 233, 161, 0.10);
+        border: 1px solid rgba(17, 233, 161, 0.24);
+    }
