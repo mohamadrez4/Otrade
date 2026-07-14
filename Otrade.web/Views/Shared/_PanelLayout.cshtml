@@ -137,13 +137,19 @@
 
     <script>
         (function () {
-            const desktopWidth = 993;
-
-            function isDesktop() {
-                return window.innerWidth >= desktopWidth;
+            if (window.__otradeSidebarInitialized) {
+                return;
             }
 
-            function applySidebarStartupState() {
+            window.__otradeSidebarInitialized = true;
+
+            const desktopMedia = window.matchMedia("(min-width: 993px)");
+
+            function isDesktop() {
+                return desktopMedia.matches;
+            }
+
+            function syncSidebarForViewport() {
                 document.body.classList.remove("sidebar-open");
 
                 if (isDesktop()) {
@@ -163,13 +169,13 @@
                 document.body.classList.add("sidebar-open");
             }
 
-            function closeMobileSidebar() {
+            function closeSidebar() {
                 document.body.classList.remove("sidebar-open");
             }
 
-            applySidebarStartupState();
+            syncSidebarForViewport();
 
-            document.addEventListener("click", function (e) {
+            document.addEventListener("pointerdown", function (e) {
                 const menuBtn = e.target.closest("#mobileMenuBtn");
 
                 if (menuBtn) {
@@ -184,25 +190,26 @@
                 if (overlay) {
                     e.preventDefault();
                     e.stopPropagation();
-                    closeMobileSidebar();
-                    return;
+                    closeSidebar();
                 }
+            }, true);
 
+            document.addEventListener("click", function (e) {
                 const sidebarLink = e.target.closest(".sidebar-nav a");
 
                 if (sidebarLink && !isDesktop()) {
-                    closeMobileSidebar();
+                    closeSidebar();
                 }
             }, true);
 
             document.addEventListener("keydown", function (e) {
                 if (e.key === "Escape") {
-                    closeMobileSidebar();
+                    closeSidebar();
                 }
             });
 
             window.addEventListener("resize", function () {
-                applySidebarStartupState();
+                syncSidebarForViewport();
             });
         })();
     </script>

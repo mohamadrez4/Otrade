@@ -4488,208 +4488,12 @@ select.panel-input:focus {
     }
 }
 /* ================================
-   Desktop Collapsible Sidebar
-================================ */
-
-@media (min-width: 993px) {
-    .mobile-menu-btn {
-        display: inline-flex;
-    }
-
-    .panel-layout {
-        transition: grid-template-columns 0.22s ease;
-    }
-
-    body.sidebar-collapsed .panel-layout {
-        grid-template-columns: 0 1fr !important;
-    }
-
-    body.sidebar-collapsed .sidebar {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        flex: 0 0 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        border-right: 0 !important;
-        overflow: hidden !important;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    body.sidebar-collapsed .panel-main {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-    }
-
-    body.sidebar-collapsed .content {
-        max-width: 100% !important;
-    }
-
-    body.sidebar-collapsed .mobile-menu-btn {
-        border-color: rgba(17, 233, 161, 0.45);
-        background: rgba(17, 233, 161, 0.14);
-        box-shadow: 0 0 0 3px rgba(17, 233, 161, 0.06);
-    }
-}
-/* ================================
-   Stable Sidebar: Desktop Auto Hide + Mobile Overlay
-================================ */
-
-.mobile-menu-btn {
-    display: inline-flex;
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
-    border: 1px solid rgba(17, 233, 161, 0.22);
-    background: rgba(17, 233, 161, 0.08);
-    color: var(--primary);
-    font-size: 22px;
-    font-weight: 900;
-    line-height: 1;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: relative;
-    z-index: 10030;
-    flex: 0 0 auto;
-}
-
-    .mobile-menu-btn:hover {
-        border-color: rgba(17, 233, 161, 0.45);
-        background: rgba(17, 233, 161, 0.13);
-    }
-
-.sidebar-mobile-overlay {
-    display: none;
-}
-
-/* Desktop: sidebar auto collapsed */
-@media (min-width: 993px) {
-    .panel-layout {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        flex: 0 0 260px;
-        width: 260px;
-        transition: width 0.22s ease, flex-basis 0.22s ease, padding 0.22s ease, opacity 0.16s ease;
-    }
-
-    .panel-main {
-        flex: 1 1 auto;
-        min-width: 0;
-        width: 100%;
-    }
-
-    body.sidebar-collapsed .sidebar {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        flex: 0 0 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        border-right: 0 !important;
-        overflow: hidden !important;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    body.sidebar-collapsed .panel-main {
-        flex: 1 1 100%;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-    }
-
-    body.sidebar-collapsed .content {
-        max-width: 100% !important;
-    }
-
-    body.sidebar-collapsed .mobile-menu-btn {
-        border-color: rgba(17, 233, 161, 0.48);
-        background: rgba(17, 233, 161, 0.15);
-        box-shadow: 0 0 0 3px rgba(17, 233, 161, 0.07);
-    }
-}
-
-/* Mobile: overlay menu */
-@media (max-width: 992px) {
-    .panel-layout {
-        display: block;
-        min-height: 100vh;
-    }
-
-    .topbar {
-        position: sticky;
-        top: 0;
-        z-index: 10020 !important;
-        height: 64px;
-        padding: 0 16px;
-        gap: 12px;
-        background: rgba(11, 15, 20, 0.96);
-        backdrop-filter: blur(14px);
-    }
-
-    .sidebar {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: min(286px, 86vw) !important;
-        min-width: 0 !important;
-        max-width: min(286px, 86vw) !important;
-        height: 100dvh !important;
-        z-index: 10060 !important;
-        transform: translateX(-105%) !important;
-        transition: transform 0.22s ease !important;
-        overflow-y: auto !important;
-        padding: 18px !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        border-right: 1px solid rgba(17, 233, 161, 0.18) !important;
-        background: radial-gradient(circle at top left, rgba(17, 233, 161, 0.12), transparent 36%), #0B0F14 !important;
-        box-shadow: 28px 0 70px rgba(0, 0, 0, 0.55);
-    }
-
-    body.sidebar-open {
-        overflow: hidden;
-    }
-
-        body.sidebar-open .sidebar {
-            transform: translateX(0) !important;
-        }
-
-    .sidebar-mobile-overlay {
-        position: fixed;
-        inset: 0;
-        z-index: 10050;
-        background: rgba(0, 0, 0, 0.58);
-        backdrop-filter: blur(3px);
-    }
-
-    body.sidebar-open .sidebar-mobile-overlay {
-        display: block;
-    }
-
-    .panel-main {
-        width: 100% !important;
-        min-width: 0;
-        margin-left: 0 !important;
-    }
-
-    .content {
-        padding: 18px 14px 24px;
-    }
-}
-/* ================================
-   Final Stable Sidebar
+   Final Sidebar Fix
    Desktop Auto Collapsed + Mobile Overlay
 ================================ */
 
 .mobile-menu-btn {
-    display: inline-flex !important;
+    display: inline-flex;
     width: 42px;
     height: 42px;
     border-radius: 14px;
@@ -4703,8 +4507,9 @@ select.panel-input:focus {
     justify-content: center;
     cursor: pointer;
     position: relative;
-    z-index: 20010;
+    z-index: 3010;
     flex: 0 0 auto;
+    touch-action: manipulation;
 }
 
     .mobile-menu-btn:hover {
@@ -4784,12 +4589,17 @@ select.panel-input:focus {
     .topbar {
         position: sticky;
         top: 0;
-        z-index: 20000 !important;
+        z-index: 3000 !important;
         height: 64px;
         padding: 0 16px;
         gap: 12px;
         background: rgba(11, 15, 20, 0.96);
         backdrop-filter: blur(14px);
+    }
+
+    .mobile-menu-btn {
+        z-index: 3010 !important;
+        pointer-events: auto !important;
     }
 
     .sidebar {
@@ -4800,8 +4610,8 @@ select.panel-input:focus {
         min-width: 0 !important;
         max-width: min(286px, 86vw) !important;
         height: 100dvh !important;
-        z-index: 20030 !important;
-        transform: translateX(-105%) !important;
+        z-index: 4010 !important;
+        transform: translateX(-110%) !important;
         transition: transform 0.22s ease !important;
         overflow-y: auto !important;
         padding: 18px !important;
@@ -4823,7 +4633,7 @@ select.panel-input:focus {
     .sidebar-mobile-overlay {
         position: fixed;
         inset: 0;
-        z-index: 20020;
+        z-index: 4000;
         background: rgba(0, 0, 0, 0.58);
         backdrop-filter: blur(3px);
     }
@@ -4837,9 +4647,5 @@ select.panel-input:focus {
         min-width: 0 !important;
         max-width: 100% !important;
         margin-left: 0 !important;
-    }
-
-    .content {
-        padding: 18px 14px 24px;
     }
 }

@@ -4143,109 +4143,6 @@ span.flatpickr-weekday {
     }
 }
 /* ================================
-   Admin Desktop Collapsible Sidebar
-================================ */
-
-@media (min-width: 993px) {
-    .mobile-menu-btn {
-        display: inline-flex;
-    }
-
-    .panel-layout {
-        transition: grid-template-columns 0.22s ease;
-    }
-
-    body.sidebar-collapsed .panel-layout {
-        grid-template-columns: 0 1fr !important;
-    }
-
-    body.sidebar-collapsed .sidebar {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        flex: 0 0 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        border-right: 0 !important;
-        overflow: hidden !important;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    body.sidebar-collapsed .panel-main {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-    }
-
-    body.sidebar-collapsed .content {
-        max-width: 100% !important;
-    }
-
-    body.sidebar-collapsed .mobile-menu-btn {
-        border-color: rgba(17, 233, 161, 0.45);
-        background: rgba(17, 233, 161, 0.14);
-        box-shadow: 0 0 0 3px rgba(17, 233, 161, 0.06);
-    }
-}
-/*@media (min-width: 993px) {
-    body.sidebar-collapsed .panel-main,
-    body.sidebar-collapsed main,
-    body.sidebar-collapsed .content-wrapper {
-        margin-left: 0 !important;
-        padding-left: 0 !important;
-    }
-}*/
-/* ================================
-   Admin Stable Sidebar Fix
-================================ */
-
-@media (min-width: 993px) {
-    body.sidebar-collapsed .sidebar {
-        width: 0 !important;
-        min-width: 0 !important;
-        max-width: 0 !important;
-        flex: 0 0 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        border-right: 0 !important;
-        overflow: hidden !important;
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    body.sidebar-collapsed .panel-main {
-        flex: 1 1 100%;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-    }
-}
-
-@media (max-width: 992px) {
-    .topbar {
-        z-index: 10020 !important;
-    }
-
-    .mobile-menu-btn {
-        position: relative;
-        z-index: 10030 !important;
-        pointer-events: auto !important;
-    }
-
-    .sidebar {
-        z-index: 10060 !important;
-    }
-
-    .sidebar-mobile-overlay {
-        z-index: 10050 !important;
-    }
-
-    body.sidebar-open .sidebar {
-        transform: translateX(0) !important;
-    }
-}
-/* ================================
    Admin Sidebar Final Override
 ================================ */
 
@@ -4280,20 +4177,20 @@ span.flatpickr-weekday {
 @media (max-width: 992px) {
     .mobile-menu-btn {
         position: relative;
-        z-index: 20010 !important;
+        z-index: 3010 !important;
         pointer-events: auto !important;
     }
 
     .topbar {
-        z-index: 20000 !important;
+        z-index: 3000 !important;
     }
 
     .sidebar-mobile-overlay {
-        z-index: 20020 !important;
+        z-index: 4000 !important;
     }
 
     .sidebar {
-        z-index: 20030 !important;
+        z-index: 4010 !important;
     }
 
     body.sidebar-open .sidebar {
