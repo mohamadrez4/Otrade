@@ -98,7 +98,8 @@ builder.Services.AddHostedService<NotificationBackgroundWorker>();
 builder.Services.AddScoped<AdminPermissionService>();
 builder.Services.AddScoped<InvestmentWaitListService>();
 builder.Services.AddScoped<BonusCodeService>();
-
+builder.Services.AddScoped<WalletBalanceSnapshotService>();
+builder.Services.AddScoped<WalletBalanceSnapshotJob>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

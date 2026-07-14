@@ -25,6 +25,7 @@ public class AdminController : ControllerBase
     private readonly AdminPermissionService _adminPermissionService;
     private readonly InvestmentWaitListService _investmentWaitListService;
     private readonly BonusCodeService _bonusCodeService;
+    private readonly WalletBalanceSnapshotService _walletBalanceSnapshotService;
     public AdminController(
     AdminService adminService,
     OtradeDbContext context,
@@ -32,7 +33,8 @@ public class AdminController : ControllerBase
     InvestmentCapacityService investmentCapacityService,
     AdminPermissionService adminPermissionService,
     InvestmentWaitListService investmentWaitListService,
-    BonusCodeService bonusCodeService)
+    BonusCodeService bonusCodeService,
+    WalletBalanceSnapshotService walletBalanceSnapshotService)
     {
         _adminService = adminService;
         _context = context;
@@ -41,6 +43,7 @@ public class AdminController : ControllerBase
         _adminPermissionService = adminPermissionService;
         _investmentWaitListService = investmentWaitListService;
         _bonusCodeService = bonusCodeService;
+        _walletBalanceSnapshotService = walletBalanceSnapshotService;
     }
     [Authorize]
     [HttpGet("me/access")]
@@ -645,6 +648,59 @@ public class AdminController : ControllerBase
         return Ok(result);
     }
 
+    [Authorize]
+    [HttpGet("wallet-snapshots")]
+    public async Task<IActionResult> GetWalletSnapshots(
+    [FromQuery] int page,
+    [FromQuery] int pageSize,
+    [FromQuery] DateTime? fromDate,
+    [FromQuery] DateTime? toDate,
+    [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ViewReports);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _walletBalanceSnapshotService.GetSnapshotsAsync(
+            page,
+            pageSize,
+            fromDate,
+            toDate);
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("wallet-snapshots/today")]
+    public async Task<IActionResult> CreateTodayWalletSnapshot(
+        [FromServices] CurrentUserService currentUser)
+    {
+        if (!currentUser.IsAdmin)
+            return Forbid();
+
+        var access = await _adminPermissionService.EnsurePermissionAsync(
+            currentUser.UserId,
+            AdminPermission.ViewReports);
+
+        if (!access.Success)
+            return Forbid();
+
+        var result = await _walletBalanceSnapshotService.CreateOrUpdateTodaySnapshotAsync();
+
+        if (!result.Success)
+            return BadRequest(result);
+
+        return Ok(result);
+    }
     [Authorize]
     [HttpPost("investment-wait-list/{waitListId:long}/status")]
     public async Task<IActionResult> UpdateInvestmentWaitListStatus(

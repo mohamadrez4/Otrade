@@ -33,5 +33,15 @@ public static class JobScheduler
             "investment-profit-job",
             job => job.ExecuteAsync(),
             "0 0 * * *", new RecurringJobOptions { TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran") });
+
+        recurringJobManager.AddOrUpdate<WalletBalanceSnapshotJob>(
+            "wallet-balance-snapshot-job",
+            job => job.ExecuteAsync(),
+            "58 23 * * *",
+            new RecurringJobOptions
+            {
+                TimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Tehran")
+            });
     }
+
 }

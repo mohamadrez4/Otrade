@@ -1,0 +1,396 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Wallet Overview";
+}
+
+<div class="admin-page wallet-overview-page">
+
+    <div class="panel-card wallet-overview-hero">
+        <div>
+            <span class="wallet-overview-eyebrow">Daily Financial Snapshot</span>
+            <h3>Wallet Balance Overview</h3>
+            <p>
+                Track total wallet balances across the platform by day. These snapshots are created automatically every night.
+            </p>
+        </div>
+
+        <button type="button"
+                class="wallet-overview-primary-btn"
+                id="createTodaySnapshotBtn">
+            Create / Update Today
+        </button>
+    </div>
+
+    <div class="wallet-overview-filters panel-card">
+        <div class="wallet-overview-filter-group">
+            <label for="fromDateInput">From Date</label>
+            <input id="fromDateInput"
+                   type="text"
+                   class="wallet-overview-input"
+                   placeholder="From date" />
+        </div>
+
+        <div class="wallet-overview-filter-group">
+            <label for="toDateInput">To Date</label>
+            <input id="toDateInput"
+                   type="text"
+                   class="wallet-overview-input"
+                   placeholder="To date" />
+        </div>
+
+        <button type="button"
+                class="wallet-overview-secondary-btn"
+                id="applyWalletSnapshotFilterBtn">
+            Apply Filter
+        </button>
+
+        <button type="button"
+                class="wallet-overview-ghost-btn"
+                id="clearWalletSnapshotFilterBtn">
+            Clear
+        </button>
+    </div>
+
+    <div id="latestSnapshotCards" class="wallet-overview-kpi-grid" style="display:none;">
+        <div class="panel-card wallet-overview-kpi total">
+            <span>Total Assets</span>
+            <strong id="latestTotalAssets">$0.00</strong>
+        </div>
+
+        <div class="panel-card wallet-overview-kpi">
+            <span>Main</span>
+            <strong id="latestMain">$0.00</strong>
+        </div>
+
+        <div class="panel-card wallet-overview-kpi">
+            <span>Invest</span>
+            <strong id="latestInvest">$0.00</strong>
+        </div>
+
+        <div class="panel-card wallet-overview-kpi">
+            <span>Profit</span>
+            <strong id="latestProfit">$0.00</strong>
+        </div>
+
+        <div class="panel-card wallet-overview-kpi">
+            <span>Referral</span>
+            <strong id="latestReferral">$0.00</strong>
+        </div>
+    </div>
+
+    <div class="panel-card wallet-overview-table-card">
+        <div class="admin-section-header">
+            <h3>Snapshot History</h3>
+            <p>Daily records of total wallet balances across the platform.</p>
+        </div>
+
+        <div id="walletSnapshotMessage" class="admin-message">
+            Loading wallet snapshots...
+        </div>
+
+        <div id="walletSnapshotTableWrapper" class="wallet-overview-table-wrapper" style="display:none;">
+            <table class="wallet-overview-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Total Assets</th>
+                        <th>Main</th>
+                        <th>Invest</th>
+                        <th>Profit</th>
+                        <th>Referral</th>
+                        <th>Total Wallets</th>
+                        <th>Users With Balance</th>
+                        <th>Created At</th>
+                        <th>Updated At</th>
+                    </tr>
+                </thead>
+
+                <tbody id="walletSnapshotTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="walletSnapshotPagination" class="wallet-overview-pagination" style="display:none;">
+            <button type="button" id="walletSnapshotPrevBtn">Previous</button>
+
+            <span id="walletSnapshotPageInfo">Page 1 of 1</span>
+
+            <button type="button" id="walletSnapshotNextBtn">Next</button>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const createTodaySnapshotBtn = document.getElementById("createTodaySnapshotBtn");
+        const applyWalletSnapshotFilterBtn = document.getElementById("applyWalletSnapshotFilterBtn");
+        const clearWalletSnapshotFilterBtn = document.getElementById("clearWalletSnapshotFilterBtn");
+
+        const fromDateInput = document.getElementById("fromDateInput");
+        const toDateInput = document.getElementById("toDateInput");
+
+        const latestSnapshotCards = document.getElementById("latestSnapshotCards");
+        const latestTotalAssets = document.getElementById("latestTotalAssets");
+        const latestMain = document.getElementById("latestMain");
+        const latestInvest = document.getElementById("latestInvest");
+        const latestProfit = document.getElementById("latestProfit");
+        const latestReferral = document.getElementById("latestReferral");
+
+        const walletSnapshotMessage = document.getElementById("walletSnapshotMessage");
+        const walletSnapshotTableWrapper = document.getElementById("walletSnapshotTableWrapper");
+        const walletSnapshotTableBody = document.getElementById("walletSnapshotTableBody");
+
+        const walletSnapshotPagination = document.getElementById("walletSnapshotPagination");
+        const walletSnapshotPrevBtn = document.getElementById("walletSnapshotPrevBtn");
+        const walletSnapshotNextBtn = document.getElementById("walletSnapshotNextBtn");
+        const walletSnapshotPageInfo = document.getElementById("walletSnapshotPageInfo");
+
+        let walletSnapshotPage = 1;
+        const walletSnapshotPageSize = 20;
+        let walletSnapshotTotalPages = 1;
+
+        let fromDatePicker = null;
+        let toDatePicker = null;
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            initializeWalletSnapshotDatePickers();
+            await loadWalletSnapshots();
+        });
+
+        createTodaySnapshotBtn.addEventListener("click", createTodaySnapshot);
+
+        applyWalletSnapshotFilterBtn.addEventListener("click", async function () {
+            walletSnapshotPage = 1;
+            await loadWalletSnapshots();
+        });
+
+        clearWalletSnapshotFilterBtn.addEventListener("click", async function () {
+            if (fromDatePicker) fromDatePicker.clear();
+            if (toDatePicker) toDatePicker.clear();
+
+            fromDateInput.value = "";
+            toDateInput.value = "";
+
+            walletSnapshotPage = 1;
+            await loadWalletSnapshots();
+        });
+
+        walletSnapshotPrevBtn.addEventListener("click", async function () {
+            if (walletSnapshotPage <= 1) {
+                return;
+            }
+
+            walletSnapshotPage--;
+            await loadWalletSnapshots();
+        });
+
+        walletSnapshotNextBtn.addEventListener("click", async function () {
+            if (walletSnapshotPage >= walletSnapshotTotalPages) {
+                return;
+            }
+
+            walletSnapshotPage++;
+            await loadWalletSnapshots();
+        });
+
+        function initializeWalletSnapshotDatePickers() {
+            fromDatePicker = flatpickr("#fromDateInput", {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                disableMobile: true
+            });
+
+            toDatePicker = flatpickr("#toDateInput", {
+                dateFormat: "Y-m-d",
+                allowInput: true,
+                disableMobile: true
+            });
+        }
+
+        async function createTodaySnapshot() {
+            const confirmed = await showConfirm(
+                "Create or update today's wallet snapshot?",
+                "Wallet Snapshot"
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            createTodaySnapshotBtn.disabled = true;
+            createTodaySnapshotBtn.innerText = "Saving...";
+
+            try {
+                const result = await api("/api/admin/wallet-snapshots/today", {
+                    method: "POST"
+                });
+
+                if (!result || !result.success) {
+                    showNotification(result?.message || "Could not save wallet snapshot.", "error");
+                    return;
+                }
+
+                showNotification(result.message || "Wallet snapshot saved successfully.", "success");
+
+                walletSnapshotPage = 1;
+                await loadWalletSnapshots();
+
+            } catch (error) {
+                showNotification(error.message || "Could not save wallet snapshot.", "error");
+            } finally {
+                createTodaySnapshotBtn.disabled = false;
+                createTodaySnapshotBtn.innerText = "Create / Update Today";
+            }
+        }
+
+        async function loadWalletSnapshots() {
+            walletSnapshotMessage.style.display = "block";
+            walletSnapshotMessage.innerText = "Loading wallet snapshots...";
+            walletSnapshotTableWrapper.style.display = "none";
+            walletSnapshotPagination.style.display = "none";
+            walletSnapshotTableBody.innerHTML = "";
+
+            const params = new URLSearchParams();
+
+            params.set("page", walletSnapshotPage);
+            params.set("pageSize", walletSnapshotPageSize);
+
+            if (fromDateInput.value) {
+                params.set("fromDate", fromDateInput.value);
+            }
+
+            if (toDateInput.value) {
+                params.set("toDate", toDateInput.value);
+            }
+
+            try {
+                const result = await api(`/api/admin/wallet-snapshots?${params.toString()}`);
+
+                if (!result || !result.success) {
+                    walletSnapshotMessage.innerText =
+                        result?.message || "Could not load wallet snapshots.";
+                    return;
+                }
+
+                const data = result.data || {};
+                const items = data.items || [];
+
+                walletSnapshotPage = data.page || 1;
+                walletSnapshotTotalPages = data.totalPages || 1;
+
+                if (!items.length) {
+                    walletSnapshotMessage.innerText = "No wallet snapshots found.";
+                    latestSnapshotCards.style.display = "none";
+                    return;
+                }
+
+                renderLatestSnapshot(items[0]);
+                renderWalletSnapshots(items);
+                renderWalletSnapshotPagination(data);
+
+                walletSnapshotMessage.style.display = "none";
+                walletSnapshotTableWrapper.style.display = "block";
+
+            } catch (error) {
+                walletSnapshotMessage.innerText =
+                    error.message || "Could not load wallet snapshots.";
+            }
+        }
+
+        function renderLatestSnapshot(item) {
+            latestSnapshotCards.style.display = "grid";
+
+            latestTotalAssets.innerText = formatMoney(item.totalAssets);
+            latestMain.innerText = formatMoney(item.totalMainWallet);
+            latestInvest.innerText = formatMoney(item.totalInvestWallet);
+            latestProfit.innerText = formatMoney(item.totalProfitWallet);
+            latestReferral.innerText = formatMoney(item.totalReferralWallet);
+        }
+
+        function renderWalletSnapshots(items) {
+            walletSnapshotTableBody.innerHTML = "";
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>
+                        <strong>${formatDate(item.snapshotDate)}</strong>
+                    </td>
+
+                    <td>
+                        <strong class="wallet-overview-total">
+                            ${formatMoney(item.totalAssets)}
+                        </strong>
+                    </td>
+
+                    <td>${formatMoney(item.totalMainWallet)}</td>
+
+                    <td>${formatMoney(item.totalInvestWallet)}</td>
+
+                    <td>${formatMoney(item.totalProfitWallet)}</td>
+
+                    <td>${formatMoney(item.totalReferralWallet)}</td>
+
+                    <td>${Number(item.totalWallets || 0).toLocaleString("en-US")}</td>
+
+                    <td>${Number(item.usersWithBalance || 0).toLocaleString("en-US")}</td>
+
+                    <td>${formatDateTime(item.createdAt)}</td>
+
+                    <td>${formatDateTime(item.updatedAt)}</td>
+                `;
+
+                walletSnapshotTableBody.appendChild(row);
+            });
+        }
+
+        function renderWalletSnapshotPagination(data) {
+            const totalCount = data.totalCount || 0;
+
+            if (totalCount <= 0) {
+                walletSnapshotPagination.style.display = "none";
+                return;
+            }
+
+            walletSnapshotPagination.style.display = "flex";
+
+            walletSnapshotPageInfo.innerText =
+                `Page ${walletSnapshotPage} of ${walletSnapshotTotalPages} - Total: ${totalCount}`;
+
+            walletSnapshotPrevBtn.disabled = walletSnapshotPage <= 1;
+            walletSnapshotNextBtn.disabled = walletSnapshotPage >= walletSnapshotTotalPages;
+        }
+
+        function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit"
+            });
+        }
+
+        function formatDateTime(value) {
+            if (!value) return "-";
+
+            return new Date(value).toLocaleString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+    </script>
+}

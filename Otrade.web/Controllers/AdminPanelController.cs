@@ -47,6 +47,12 @@ public class AdminPanelController : Controller
     {
         return View();
     }
+    [AdminPagePermission(AdminPermission.ViewReports)]
+    [HttpGet("/admin/wallet-overview")]
+    public IActionResult WalletOverview()
+    {
+        return View();
+    }
     [AdminPagePermission(AdminPermission.ManageSettings)]
     [HttpGet("/admin/settings")]
     public IActionResult Settings()

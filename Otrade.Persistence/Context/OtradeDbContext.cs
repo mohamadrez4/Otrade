@@ -66,6 +66,7 @@ public class OtradeDbContext : DbContext
     public DbSet<InternalTransferVerification> InternalTransferVerifications => Set<InternalTransferVerification>();
     public DbSet<WithdrawalVerification> WithdrawalVerifications => Set<WithdrawalVerification>();
     public DbSet<UserWalletAddress> UserWalletAddresses { get; set; }
+    public DbSet<WalletBalanceSnapshot> WalletBalanceSnapshots { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -144,7 +145,34 @@ public class OtradeDbContext : DbContext
             entity.HasIndex(x => new { x.UserId, x.WalletType })
                 .IsUnique();
         });
+        modelBuilder.Entity<WalletBalanceSnapshot>(entity =>
+        {
+            entity.ToTable("WalletBalanceSnapshots");
 
+            entity.HasKey(x => x.SnapshotId);
+
+            entity.Property(x => x.SnapshotDate)
+                .HasColumnType("date")
+                .IsRequired();
+
+            entity.Property(x => x.TotalMainWallet)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.TotalInvestWallet)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.TotalProfitWallet)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.TotalReferralWallet)
+                .HasPrecision(18, 8);
+
+            entity.Property(x => x.TotalAssets)
+                .HasPrecision(18, 8);
+
+            entity.HasIndex(x => x.SnapshotDate)
+                .IsUnique();
+        });
         modelBuilder.Entity<Rank>(entity =>
         {
             entity.ToTable("Ranks");
