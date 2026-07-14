@@ -4649,3 +4649,529 @@ select.panel-input:focus {
         margin-left: 0 !important;
     }
 }
+/* ================================
+   Profits Page - Pagination + SRS Details
+================================ */
+
+.profit-summary-card.total {
+    border-color: rgba(17, 233, 161, 0.28);
+    background: radial-gradient(circle at top right, rgba(17, 233, 161, 0.12), transparent 40%), #121821;
+}
+
+    .profit-summary-card.total strong {
+        color: #11E9A1;
+    }
+
+.profits-toolbar {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.profits-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 180px;
+}
+
+    .profits-filter-group label {
+        color: #94A3B8;
+        font-size: 12px;
+        font-weight: 900;
+    }
+
+.profits-select {
+    height: 42px;
+    border-radius: 14px;
+    border: 1px solid #1C2532;
+    background: #0B0F14;
+    color: #FFFFFF;
+    padding: 0 12px;
+    outline: none;
+}
+
+    .profits-select:focus {
+        border-color: rgba(17, 233, 161, 0.55);
+        box-shadow: 0 0 0 3px rgba(17, 233, 161, 0.08);
+    }
+
+.profits-table {
+    min-width: 980px;
+}
+
+.profit-reference {
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 13px;
+    word-break: break-word;
+}
+
+.profit-amount {
+    color: #11E9A1;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.profit-detail-box {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+    gap: 8px;
+    min-width: 430px;
+}
+
+    .profit-detail-box.referral {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
+    }
+
+    .profit-detail-box div {
+        border-radius: 12px;
+        border: 1px solid rgba(28, 37, 50, 0.92);
+        background: rgba(11, 15, 20, 0.55);
+        padding: 9px 10px;
+    }
+
+        .profit-detail-box div.wide {
+            grid-column: 1 / -1;
+        }
+
+    .profit-detail-box span {
+        display: block;
+        color: #94A3B8;
+        font-size: 10px;
+        font-weight: 800;
+        margin-bottom: 4px;
+    }
+
+    .profit-detail-box strong {
+        display: block;
+        color: #FFFFFF;
+        font-size: 12px;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+    }
+
+    .profit-detail-box.investment {
+        border-left: 2px solid rgba(17, 233, 161, 0.35);
+        padding-left: 8px;
+    }
+
+    .profit-detail-box.referral {
+        border-left: 2px solid rgba(148, 163, 184, 0.35);
+        padding-left: 8px;
+    }
+
+.profit-bonus-value {
+    color: #11E9A1 !important;
+}
+
+.profits-pagination {
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 18px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+    .profits-pagination button {
+        min-width: 92px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid rgba(17, 233, 161, 0.18);
+        background: rgba(17, 233, 161, 0.08);
+        color: #11E9A1;
+        font-size: 12px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+        .profits-pagination button:hover:not(:disabled) {
+            border-color: rgba(17, 233, 161, 0.42);
+            background: rgba(17, 233, 161, 0.14);
+        }
+
+        .profits-pagination button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+@media (max-width: 768px) {
+    .profits-filter-group,
+    .profits-select {
+        width: 100%;
+    }
+
+    .profits-table th,
+    .profits-table td {
+        padding: 12px 10px;
+        font-size: 12px;
+    }
+}
+/* ================================
+   Profits Page Compact Details
+================================ */
+
+.profits-table {
+    min-width: 820px;
+}
+
+.profit-detail-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+    .profit-detail-inline span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 30px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        color: #FFFFFF;
+        background: rgba(11, 15, 20, 0.55);
+        border: 1px solid rgba(28, 37, 50, 0.95);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+        .profit-detail-inline span b {
+            color: #94A3B8;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+    .profit-detail-inline.investment {
+        border-left: 2px solid rgba(17, 233, 161, 0.35);
+        padding-left: 10px;
+    }
+
+    .profit-detail-inline strong {
+        color: #11E9A1;
+    }
+
+.profit-referral-detail {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 260px;
+    border-left: 2px solid rgba(17, 233, 161, 0.30);
+    padding-left: 10px;
+}
+
+.profit-referral-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+    .profit-referral-main strong {
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 900;
+    }
+
+.profit-referral-uid {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    color: #11E9A1;
+    background: rgba(17, 233, 161, 0.10);
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.profit-referral-detail small {
+    color: #94A3B8;
+    font-size: 12px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    .profits-table {
+        min-width: 760px;
+    }
+
+    .profit-detail-inline {
+        max-width: 420px;
+    }
+
+    .profit-referral-detail {
+        min-width: 220px;
+    }
+}
+/* ================================
+   Profit Rank Color Chips
+================================ */
+
+.profit-rank-chip {
+    position: relative;
+    overflow: hidden;
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+    border-radius: 999px !important;
+    font-weight: 900;
+}
+
+    .profit-rank-chip::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0.18;
+        pointer-events: none;
+    }
+
+    .profit-rank-chip b {
+        position: relative;
+        z-index: 1;
+    }
+
+    .profit-rank-chip strong {
+        position: relative;
+        z-index: 1;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+    }
+
+    /* Basic */
+    .profit-rank-chip.rank-basic {
+        border: 1px solid rgba(148, 163, 184, 0.28) !important;
+        color: #E2E8F0 !important;
+        background: rgba(148, 163, 184, 0.08) !important;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+    }
+
+        .profit-rank-chip.rank-basic::before {
+            background: linear-gradient(135deg, #64748B, #94A3B8);
+        }
+
+        .profit-rank-chip.rank-basic strong {
+            color: #F8FAFC !important;
+        }
+
+    /* Bronze */
+    .profit-rank-chip.rank-bronze {
+        border: 1px solid rgba(205, 127, 50, 0.35) !important;
+        color: #F5D0A9 !important;
+        background: rgba(205, 127, 50, 0.10) !important;
+        box-shadow: 0 0 14px rgba(205, 127, 50, 0.10);
+    }
+
+        .profit-rank-chip.rank-bronze::before {
+            background: linear-gradient(135deg, #8C5523, #CD7F32);
+        }
+
+        .profit-rank-chip.rank-bronze strong {
+            color: #FFD7A8 !important;
+        }
+
+    /* Silver */
+    .profit-rank-chip.rank-silver {
+        border: 1px solid rgba(192, 192, 192, 0.38) !important;
+        color: #E5E7EB !important;
+        background: rgba(192, 192, 192, 0.09) !important;
+        box-shadow: 0 0 14px rgba(192, 192, 192, 0.10);
+    }
+
+        .profit-rank-chip.rank-silver::before {
+            background: linear-gradient(135deg, #A8B0B8, #E5E7EB);
+        }
+
+        .profit-rank-chip.rank-silver strong {
+            color: #FFFFFF !important;
+        }
+
+    /* Gold */
+    .profit-rank-chip.rank-gold {
+        border: 1px solid rgba(255, 215, 0, 0.40) !important;
+        color: #FFE28A !important;
+        background: rgba(255, 215, 0, 0.10) !important;
+        box-shadow: 0 0 16px rgba(255, 215, 0, 0.12);
+    }
+
+        .profit-rank-chip.rank-gold::before {
+            background: linear-gradient(135deg, #B8860B, #FFD700);
+        }
+
+        .profit-rank-chip.rank-gold strong {
+            color: #FFF3B0 !important;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.18);
+        }
+
+    /* Diamond */
+    .profit-rank-chip.rank-diamond {
+        border: 1px solid rgba(56, 189, 248, 0.42) !important;
+        color: #BAE6FD !important;
+        background: rgba(56, 189, 248, 0.10) !important;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.12);
+    }
+
+        .profit-rank-chip.rank-diamond::before {
+            background: linear-gradient(135deg, #60A5FA, #22D3EE);
+        }
+
+        .profit-rank-chip.rank-diamond strong {
+            color: #E0F2FE !important;
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.18);
+        }
+
+    /* Default */
+    .profit-rank-chip.rank-default {
+        border: 1px solid rgba(17, 233, 161, 0.24) !important;
+        color: #D1FAE5 !important;
+        background: rgba(17, 233, 161, 0.08) !important;
+    }
+
+        .profit-rank-chip.rank-default::before {
+            background: linear-gradient(135deg, #11E9A1, #18F5AC);
+        }
+
+        .profit-rank-chip.rank-default strong {
+            color: #ECFDF5 !important;
+        }
+.profit-rank-chip {
+    min-height: 34px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+    .profit-rank-chip strong {
+        font-size: 14px !important;
+    }
+/* ================================
+   Profit Details Equal Chips
+================================ */
+
+.profit-detail-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+    .profit-detail-inline.investment {
+        border-left: 2px solid rgba(17, 233, 161, 0.45);
+        padding-left: 14px;
+    }
+
+.profit-metric-chip {
+    position: relative;
+    overflow: hidden;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 138px;
+    min-height: 44px !important;
+    padding: 8px 14px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(28, 37, 50, 0.95);
+    background: linear-gradient(135deg, rgba(255,255,255,0.035), transparent 50%), rgba(11, 15, 20, 0.70);
+    color: #FFFFFF;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.015), 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+    .profit-metric-chip::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top left, rgba(255,255,255,0.10), transparent 36%);
+        pointer-events: none;
+        opacity: 0.55;
+    }
+
+    .profit-metric-chip b,
+    .profit-metric-chip strong {
+        position: relative;
+        z-index: 1;
+    }
+
+    .profit-metric-chip b {
+        color: #A7C7EA;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+    }
+
+    .profit-metric-chip strong {
+        color: #FFFFFF;
+        font-size: 16px;
+        font-weight: 950;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+    }
+
+    /* Real */
+    .profit-metric-chip.real {
+        border-color: rgba(96, 165, 250, 0.18);
+        background: linear-gradient(135deg, rgba(96, 165, 250, 0.08), transparent 52%), rgba(11, 15, 20, 0.70);
+    }
+
+        .profit-metric-chip.real strong {
+            color: #FFFFFF;
+        }
+
+    /* Bonus */
+    .profit-metric-chip.bonus {
+        border-color: rgba(17, 233, 161, 0.24);
+        background: linear-gradient(135deg, rgba(17, 233, 161, 0.10), transparent 52%), rgba(11, 15, 20, 0.70);
+    }
+
+        .profit-metric-chip.bonus strong {
+            color: #11E9A1 !important;
+            text-shadow: 0 0 8px rgba(17, 233, 161, 0.18);
+        }
+
+    /* Base */
+    .profit-metric-chip.base {
+        border-color: rgba(251, 191, 36, 0.18);
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.075), transparent 52%), rgba(11, 15, 20, 0.70);
+    }
+
+        .profit-metric-chip.base strong {
+            color: #FFFFFF;
+        }
+
+/* Rank chip هماهنگ با بقیه */
+.profit-rank-chip {
+    min-width: 138px !important;
+    min-height: 44px !important;
+    padding: 8px 14px !important;
+}
+
+    .profit-rank-chip b {
+        color: #A7C7EA !important;
+    }
+
+    .profit-rank-chip strong {
+        font-size: 16px !important;
+    }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profit-detail-inline {
+        gap: 8px;
+    }
+
+    .profit-metric-chip,
+    .profit-rank-chip {
+        min-width: 128px !important;
+        min-height: 42px !important;
+        padding: 7px 12px !important;
+    }
+
+        .profit-metric-chip strong,
+        .profit-rank-chip strong {
+            font-size: 14px !important;
+        }
+}

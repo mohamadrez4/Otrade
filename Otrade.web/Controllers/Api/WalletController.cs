@@ -206,11 +206,23 @@ public class WalletController : ControllerBase
     [Authorize]
     [HttpGet("profits")]
     public async Task<IActionResult> GetProfits(
+        [FromQuery] int page,
+        [FromQuery] int pageSize,
+        [FromQuery] string? type,
         [FromServices] CurrentUserService currentUser)
     {
-        var result = await _walletService.GetUserProfitsAsync(currentUser.UserId);
+        var result = await _walletService.GetUserProfitsAsync(
+            currentUser.UserId,
+            page,
+            pageSize,
+            type);
+
+        if (!result.Success)
+            return BadRequest(result);
+
         return Ok(result);
     }
+    [Authorize]
     [HttpGet("referral")]
     public async Task<IActionResult> GetReferral(
     [FromServices] CurrentUserService currentUser)

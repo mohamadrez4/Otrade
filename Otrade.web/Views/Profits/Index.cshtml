@@ -5,7 +5,7 @@
 <div class="profits-page">
 
     <div class="profits-grid">
-        <div class="panel-card profit-summary-card">
+        <div class="panel-card profit-summary-card total">
             <span>Total Profit</span>
             <strong id="totalProfit">$0.00</strong>
         </div>
@@ -25,8 +25,22 @@
         <div class="profits-header">
             <div>
                 <h3>Profit History</h3>
-                <p>Your investment and referral profit records.</p>
+                <p>
+                    Your investment and referral profit records with bonus capital, effective rank and referral source details.
+                </p>
             </div>
+        </div>
+
+        <div class="profits-toolbar">
+            <div class="profits-filter-group">
+                <label for="profitTypeFilter">Type</label>
+                <select id="profitTypeFilter" class="profits-select">
+                    <option value="all">All Profits</option>
+                    <option value="investment">Investment Profits</option>
+                    <option value="referral">Referral Profits</option>
+                </select>
+            </div>
+
         </div>
 
         <div id="profitsMessage" class="profits-message">
@@ -39,12 +53,21 @@
                     <tr>
                         <th>Date</th>
                         <th>Type</th>
-                        <th>Reference</th>
+                        <th>Details</th>
                         <th class="text-end">Amount</th>
                     </tr>
                 </thead>
+
                 <tbody id="profitsTableBody"></tbody>
             </table>
+        </div>
+
+        <div id="profitsPagination" class="profits-pagination" style="display:none;">
+            <button type="button" id="profitsPrevBtn">Previous</button>
+
+            <span id="profitsPageInfo">Page 1 of 1</span>
+
+            <button type="button" id="profitsNextBtn">Next</button>
         </div>
     </div>
 
@@ -56,56 +79,207 @@
         const investmentProfit = document.getElementById("investmentProfit");
         const referralProfit = document.getElementById("referralProfit");
 
+        const profitTypeFilter = document.getElementById("profitTypeFilter");
+
         const profitsMessage = document.getElementById("profitsMessage");
         const profitsTableWrapper = document.getElementById("profitsTableWrapper");
         const profitsTableBody = document.getElementById("profitsTableBody");
 
+        const profitsPagination = document.getElementById("profitsPagination");
+        const profitsPrevBtn = document.getElementById("profitsPrevBtn");
+        const profitsNextBtn = document.getElementById("profitsNextBtn");
+        const profitsPageInfo = document.getElementById("profitsPageInfo");
+
+        let profitsCurrentPage = 1;
+        let profitsTotalPages = 1;
+
+        profitTypeFilter.addEventListener("change", async function () {
+            profitsCurrentPage = 1;
+            await loadProfits();
+        });
+ 
+
+        profitsPrevBtn.addEventListener("click", async function () {
+            if (profitsCurrentPage <= 1) {
+                return;
+            }
+
+            profitsCurrentPage--;
+            await loadProfits();
+        });
+
+        profitsNextBtn.addEventListener("click", async function () {
+            if (profitsCurrentPage >= profitsTotalPages) {
+                return;
+            }
+
+            profitsCurrentPage++;
+            await loadProfits();
+        });
+
         async function loadProfits() {
+            profitsMessage.style.display = "block";
+            profitsMessage.innerText = "Loading profits...";
+            profitsTableWrapper.style.display = "none";
+            profitsPagination.style.display = "none";
+            profitsTableBody.innerHTML = "";
+
+            const params = new URLSearchParams();
+            params.set("page", profitsCurrentPage);
+            params.set("pageSize", "5");
+            params.set("type", profitTypeFilter.value || "all");
+
             try {
-                const result = await api("/api/wallet/profits");
-                const data = result.data;
+                const result = await api(`/api/wallet/profits?${params.toString()}`);
+
+                if (!result || !result.success) {
+                    profitsMessage.innerText = result?.message || "Could not load profits.";
+                    return;
+                }
+
+                const data = result.data || {};
+                const history = data.history || {};
+                const items = history.items || [];
 
                 totalProfit.innerText = formatMoney(data.totalProfit);
                 investmentProfit.innerText = formatMoney(data.investmentProfit);
                 referralProfit.innerText = formatMoney(data.referralProfit);
 
-                profitsTableBody.innerHTML = "";
+                profitsCurrentPage = history.page || 1;
+                profitsTotalPages = history.totalPages || 1;
 
-                if (!data.history || data.history.length === 0) {
+                if (!items.length) {
                     profitsMessage.innerText = "No profit records found.";
-                    profitsMessage.style.display = "block";
                     profitsTableWrapper.style.display = "none";
+                    profitsPagination.style.display = "none";
                     return;
                 }
 
-                data.history.forEach(item => {
-                    const row = document.createElement("tr");
-
-                    row.innerHTML = `
-                        <td>${formatDate(item.createdAt)}</td>
-                        <td>
-                            <span class="profit-type ${item.type.toLowerCase()}">
-                                ${item.type}
-                            </span>
-                        </td>
-                        <td>${item.referenceId || "-"}</td>
-                        <td class="text-end">${formatMoney(item.amount)}</td>
-                    `;
-
-                    profitsTableBody.appendChild(row);
-                });
+                renderProfitRows(items);
+                renderProfitPagination(history);
 
                 profitsMessage.style.display = "none";
                 profitsTableWrapper.style.display = "block";
 
             } catch (error) {
                 profitsMessage.innerText = error.message || "Could not load profits.";
-                profitsMessage.style.display = "block";
                 profitsTableWrapper.style.display = "none";
+                profitsPagination.style.display = "none";
             }
         }
 
+        function renderProfitRows(items) {
+            profitsTableBody.innerHTML = "";
+
+            items.forEach(item => {
+                const row = document.createElement("tr");
+                const typeClass = String(item.type || "").toLowerCase();
+
+                row.innerHTML = `
+                    <td>
+                        <strong>${formatDate(item.createdAt)}</strong>
+                    </td>
+
+                    <td>
+                        <span class="profit-type ${escapeHtml(typeClass)}">
+                            ${escapeHtml(item.type || "-")}
+                        </span>
+                    </td>
+
+                    <td>
+                        ${renderProfitDetails(item)}
+                    </td>
+
+                    <td class="text-end">
+                        <strong class="profit-amount">
+                            ${formatMoney(item.amount)}
+                        </strong>
+                    </td>
+                `;
+
+                profitsTableBody.appendChild(row);
+            });
+        }
+
+        function renderProfitDetails(item) {
+         if (item.type === "Investment") {
+            const rankName = item.effectiveRankName || "-";
+            const rankClass = getRankClass(rankName);
+
+            return `
+                <div class="profit-detail-inline investment">
+                    <span class="profit-metric-chip profit-rank-chip ${rankClass}">
+                        <b>Rank</b>
+                        <strong>${escapeHtml(rankName)}</strong>
+                    </span>
+
+                    <span class="profit-metric-chip real">
+                        <b>Real</b>
+                        <strong>${formatNullableMoney(item.realCapitalAmount)}</strong>
+                    </span>
+
+                    <span class="profit-metric-chip bonus">
+                        <b>Bonus</b>
+                        <strong>${formatNullableMoney(item.bonusCapitalAmount)}</strong>
+                    </span>
+
+                    <span class="profit-metric-chip base">
+                        <b>Base</b>
+                        <strong>${formatNullableMoney(item.profitBaseAmount)}</strong>
+                    </span>
+                </div>
+            `;
+        }
+
+            return `
+                <div class="profit-referral-detail">
+                    <div class="profit-referral-main">
+                        <span class="profit-referral-uid">
+                            ${escapeHtml(item.sourceUserUid || "-")}
+                        </span>
+
+                        <strong>
+                            ${escapeHtml(item.sourceUserFullName || "Referral User")}
+                        </strong>
+                    </div>
+
+                    <small>
+                        ${escapeHtml(item.sourceUserEmail || "-")}
+                    </small>
+                </div>
+            `;
+        }
+        function renderProfitPagination(history) {
+            const totalCount = history.totalCount || 0;
+
+            if (totalCount <= 0) {
+                profitsPagination.style.display = "none";
+                return;
+            }
+
+            profitsPagination.style.display = "flex";
+
+            profitsPageInfo.innerText =
+                `Page ${profitsCurrentPage} of ${profitsTotalPages} - Total: ${totalCount}`;
+
+            profitsPrevBtn.disabled = profitsCurrentPage <= 1;
+            profitsNextBtn.disabled = profitsCurrentPage >= profitsTotalPages;
+        }
+
         function formatMoney(value) {
+            const number = Number(value || 0);
+
+            return "$" + number.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatNullableMoney(value) {
+            if (value === null || value === undefined) {
+                return "-";
+            }
+
             const number = Number(value || 0);
 
             return "$" + number.toLocaleString("en-US", {
@@ -124,6 +298,25 @@
             });
         }
 
+        function escapeHtml(value) {
+            return String(value || "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+        function getRankClass(rankName) {
+            const value = String(rankName || "").trim().toLowerCase();
+
+            if (value === "basic") return "rank-basic";
+            if (value === "bronze") return "rank-bronze";
+            if (value === "silver") return "rank-silver";
+            if (value === "gold") return "rank-gold";
+            if (value === "diamond") return "rank-diamond";
+
+            return "rank-default";
+        }
         loadProfits();
     </script>
 }

@@ -857,38 +857,101 @@ public class WalletService
 
         return ResponseFactory.Success(true, "Wallet address saved successfully");
     }
-    public async Task<ApiResponse<object>> GetUserProfitsAsync(long userId)
+    public async Task<ApiResponse<UserProfitsResponse>> GetUserProfitsAsync(
+        long userId,
+        int page,
+        int pageSize,
+        string? type)
     {
-        var ledgers = await _context.ProfitLedgers
-            .Where(x => x.UserId == userId)
+        page = page <= 0 ? 1 : page;
+        pageSize = pageSize <= 0 ? 10 : pageSize;
+        pageSize = pageSize > 50 ? 50 : pageSize;
+
+        var normalizedType = type?.Trim().ToLower();
+
+        var totalInvestmentProfit = await _context.ProfitLedgers
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.Type == ProfitType.Investment)
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var totalReferralProfit = await _context.ProfitLedgers
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId &&
+                x.Type == ProfitType.Referral)
+            .SumAsync(x => (decimal?)x.Amount) ?? 0;
+
+        var query = _context.ProfitLedgers
+            .AsNoTracking()
+            .Where(x => x.UserId == userId);
+
+        if (normalizedType == "investment")
+        {
+            query = query.Where(x => x.Type == ProfitType.Investment);
+        }
+        else if (normalizedType == "referral")
+        {
+            query = query.Where(x => x.Type == ProfitType.Referral);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
             .OrderByDescending(x => x.CreatedAt)
-            .Select(x => new
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new UserProfitHistoryDto
             {
-                x.Amount,
-                Type = x.Type.ToString(),
-                x.ReferenceId,
-                x.CreatedAt
+                Id = x.Id,
+                Type = x.Type == ProfitType.Investment
+                    ? "Investment"
+                    : "Referral",
+
+                ReferenceId = x.ReferenceId,
+                Amount = x.Amount,
+                CreatedAt = x.CreatedAt,
+
+                RealCapitalAmount = x.RealCapitalAmount,
+                BonusCapitalAmount = x.BonusCapitalAmount,
+                ProfitBaseAmount = x.ProfitBaseAmount,
+
+                EffectiveRankName = x.EffectiveRank != null
+                    ? x.EffectiveRank.Name
+                    : null,
+
+                SourceUserUid = x.SourceUser != null
+                    ? x.SourceUser.ReferralCode
+                    : null,
+
+                SourceUserEmail = x.SourceUser != null
+                    ? x.SourceUser.Email
+                    : null,
+
+                SourceUserFullName = x.SourceUser != null
+                    ? (x.SourceUser.FirstName + " " + x.SourceUser.LastName).Trim()
+                    : null
             })
             .ToListAsync();
 
-        var totalProfit = ledgers.Sum(x => x.Amount);
-        var investmentProfit = ledgers
-            .Where(x => x.Type == ProfitType.Investment.ToString())
-            .Sum(x => x.Amount);
-
-        var referralProfit = ledgers
-            .Where(x => x.Type == ProfitType.Referral.ToString())
-            .Sum(x => x.Amount);
-
-        return ResponseFactory.Success<object>(new
+        var response = new UserProfitsResponse
         {
-            TotalProfit = totalProfit,
-            InvestmentProfit = investmentProfit,
-            ReferralProfit = referralProfit,
-            History = ledgers
-        });
-    }
+            TotalProfit = totalInvestmentProfit + totalReferralProfit,
+            InvestmentProfit = totalInvestmentProfit,
+            ReferralProfit = totalReferralProfit,
+            History = new PagedResponse<UserProfitHistoryDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+                Items = items
+            }
+        };
 
+        return ResponseFactory.Success(response);
+    }   
     public async Task<ApiResponse<object>> GetReferralOverviewAsync(long userId)
     {
         var user = await _context.Users
