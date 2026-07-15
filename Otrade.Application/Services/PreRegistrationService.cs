@@ -369,8 +369,7 @@ public class PreRegistrationService
             {
                 Id = x.Id,
                 Email = x.Email,
-                ReferralCode = x.ReferralCode,
-                SponsorId = x.SponsorId,
+                ReferralCode = x.ReferralCode, 
                 SponsorEmail = x.Sponsor != null ? x.Sponsor.Email : null,
                 DeclaredAmount = x.DeclaredAmount,
                 DepositTxId = x.DepositTxId,

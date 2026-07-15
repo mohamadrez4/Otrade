@@ -197,8 +197,7 @@
                     <div class="pre-user-cell">
                         <div class="pre-user-avatar">${getInitial(item.email)}</div>
                         <div>
-                            <strong>${escapeHtml(item.email || "-")}</strong>
-                            <span>ID: ${item.id}</span>
+                            <strong>${escapeHtml(item.email || "-")}</strong> 
                         </div>
                     </div>
                 `;
@@ -206,8 +205,7 @@
                 const sponsorTd = document.createElement("td");
                 sponsorTd.innerHTML = `
                     <div class="pre-muted-cell">
-                        <strong>${escapeHtml(item.sponsorEmail || "-")}</strong>
-                        <span>${item.sponsorId ? "Sponsor ID: " + item.sponsorId : ""}</span>
+                        <strong>${escapeHtml(item.sponsorEmail || "-")}</strong> 
                     </div>
                 `;
 
