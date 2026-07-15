@@ -1,9 +1,10 @@
 ﻿using Otrade.Application.Common.Interfaces;
+using Otrade.Application.Services.Security;
 using Otrade.Domain.Entities;
 using Otrade.Persistence.Context;
+using System.Net;
 using System.Net.Http;
 using System.Text.RegularExpressions;
-using Otrade.Application.Services.Security;
 namespace Otrade.Application.Services;
 
 public class NotificationService : INotificationService
@@ -144,9 +145,9 @@ public class NotificationService : INotificationService
             {
                 ["chat_id"] = chatId,
                 ["text"] = text,
+                ["parse_mode"] = "HTML",
                 ["disable_web_page_preview"] = "true"
             });
-
             var response = await client.PostAsync(url, content);
 
             if (!response.IsSuccessStatusCode)
@@ -183,28 +184,261 @@ public class NotificationService : INotificationService
         string subject,
         string body)
     {
-        var plainBody = StripHtml(body);
+        var normalizedSubject = string.IsNullOrWhiteSpace(subject)
+            ? "Otrade Notification"
+            : subject.Trim();
 
-        var text =
-            $"Otrade Notification\n\n" +
-            $"Subject: {subject}\n\n" +
-            plainBody;
+        var plainBody = ConvertEmailHtmlToTelegramText(
+            body,
+            normalizedSubject);
 
-        if (text.Length > 3800)
-            text = text[..3800] + "\n\n...";
+        // محدودیت Telegram برای sendMessage حدود 4096 کاراکتر است.
+        // قبل از HTML Encode کوتاه می‌کنیم تا وسط entity بریده نشود.
+        if (plainBody.Length > 3300)
+        {
+            plainBody = plainBody[..3300].TrimEnd() + "\n\n...";
+        }
 
-        return text;
+        var safeSubject = WebUtility.HtmlEncode(normalizedSubject);
+        var safeBody = WebUtility.HtmlEncode(plainBody);
+
+        return
+            "🔔 <b>Otrade Notification</b>\n\n" +
+            $"📌 <b>Subject:</b> {safeSubject}\n\n" +
+            safeBody;
     }
 
-    private static string StripHtml(string input)
+    private static string ConvertEmailHtmlToTelegramText(
+        string? html,
+        string subject)
     {
-        if (string.IsNullOrWhiteSpace(input))
+        if (string.IsNullOrWhiteSpace(html))
             return string.Empty;
 
-        var text = Regex.Replace(input, "<.*?>", " ");
-        text = Regex.Replace(text, @"\s+", " ");
+        const RegexOptions options =
+            RegexOptions.IgnoreCase |
+            RegexOptions.Singleline |
+            RegexOptions.CultureInvariant;
 
-        return text.Trim();
+        var text = html;
+
+        // بخش‌هایی که هیچ ارزش نمایشی در Telegram ندارند.
+        text = Regex.Replace(
+            text,
+            @"<!doctype[^>]*>",
+            string.Empty,
+            options);
+
+        text = Regex.Replace(
+            text,
+            @"<head\b[^>]*>.*?</head>",
+            string.Empty,
+            options);
+
+        text = Regex.Replace(
+            text,
+            @"<(?:script|style)\b[^>]*>.*?</(?:script|style)>",
+            string.Empty,
+            options);
+
+        text = Regex.Replace(
+            text,
+            @"<!--.*?-->",
+            string.Empty,
+            options);
+
+        // حذف preheader مخفی ایمیل.
+        text = Regex.Replace(
+            text,
+            @"<div\b(?=[^>]*\bstyle\s*=\s*['""][^'""]*display\s*:\s*none)[^>]*>.*?</div>",
+            string.Empty,
+            options);
+
+        // حذف تصاویر و لوگو از متن Telegram.
+        text = Regex.Replace(
+            text,
+            @"<img\b[^>]*>",
+            string.Empty,
+            options);
+
+        /*
+            تبدیل ردیف‌های DetailTable ایمیل از:
+
+            User        test@example.com
+            Amount      100 USDT
+
+            به:
+
+            User: test@example.com
+            Amount: 100 USDT
+        */
+        var detailRowPattern =
+            @"<tr\b[^>]*>\s*" +
+            @"<td\b[^>]*>(?<label>(?:(?!<td\b|</td>).)*)</td>\s*" +
+            @"<td\b[^>]*>(?<value>(?:(?!<td\b|</td>).)*)</td>\s*" +
+            @"</tr>";
+
+        text = Regex.Replace(
+            text,
+            detailRowPattern,
+            match =>
+            {
+                var label = StripInlineHtml(
+                    match.Groups["label"].Value);
+
+                var value = StripInlineHtml(
+                    match.Groups["value"].Value);
+
+                if (string.IsNullOrWhiteSpace(label) &&
+                    string.IsNullOrWhiteSpace(value))
+                {
+                    return "\n";
+                }
+
+                if (string.IsNullOrWhiteSpace(label))
+                    return $"\n{value}\n";
+
+                if (string.IsNullOrWhiteSpace(value))
+                    return $"\n{label}\n";
+
+                return $"\n{label}: {value}\n";
+            },
+            options);
+
+        // نگه‌داشتن دکمه ایمیل به‌صورت متن و لینک قابل کلیک.
+        text = Regex.Replace(
+            text,
+            @"<a\b[^>]*\bhref\s*=\s*['""](?<url>[^'""]+)['""][^>]*>(?<label>.*?)</a>",
+            match =>
+            {
+                var label = StripInlineHtml(
+                    match.Groups["label"].Value);
+
+                var url = WebUtility.HtmlDecode(
+                    match.Groups["url"].Value).Trim();
+
+                if (string.IsNullOrWhiteSpace(label))
+                    return url;
+
+                if (string.IsNullOrWhiteSpace(url) ||
+                    url.StartsWith("mailto:", StringComparison.OrdinalIgnoreCase))
+                {
+                    return label;
+                }
+
+                return $"{label}: {url}";
+            },
+            options);
+
+        // تگ‌های block به خط جدید تبدیل شوند.
+        text = Regex.Replace(
+            text,
+            @"<(?:br|/p|/div|/h[1-6]|/li|/tr|/table)\b[^>]*>",
+            "\n",
+            options);
+
+        // سایر تگ‌ها حذف شوند؛ [^>] تگ‌های چندخطی را هم پوشش می‌دهد.
+        text = Regex.Replace(
+            text,
+            @"<[^>]+>",
+            " ",
+            options);
+
+        text = WebUtility.HtmlDecode(text)
+            .Replace('\u00A0', ' ')
+            .Replace("\r", string.Empty);
+
+        var sourceLines = text.Split('\n');
+
+        var resultLines = new List<string>();
+        string? previousLine = null;
+
+        foreach (var sourceLine in sourceLines)
+        {
+            var line = Regex.Replace(
+                    sourceLine,
+                    @"[ \t]+",
+                    " ")
+                .Trim();
+
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            // حذف موارد تکراری و تزئینی قالب ایمیل.
+            if (line.Equals(
+                    subject,
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.Equals(
+                    "Otrade",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.Equals(
+                    "Online Trading Room",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.Equals(
+                    "Success",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.Equals(
+                    "Action Required",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.Equals(
+                    "Important",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.Equals(
+                    "Otrade Update",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.StartsWith(
+                    "© ",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.StartsWith(
+                    "This is an automated message",
+                    StringComparison.OrdinalIgnoreCase) ||
+                line.StartsWith(
+                    "Need help?",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // جلوگیری از نمایش خطوط تکراری پشت سر هم.
+            if (line.Equals(
+                    previousLine,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            resultLines.Add(line);
+            previousLine = line;
+        }
+
+        return string.Join("\n", resultLines).Trim();
+    }
+
+    private static string StripInlineHtml(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var text = Regex.Replace(
+            value,
+            @"<br\s*/?>",
+            " ",
+            RegexOptions.IgnoreCase |
+            RegexOptions.Singleline |
+            RegexOptions.CultureInvariant);
+
+        text = Regex.Replace(
+            text,
+            @"<[^>]+>",
+            " ",
+            RegexOptions.IgnoreCase |
+            RegexOptions.Singleline |
+            RegexOptions.CultureInvariant);
+
+        text = WebUtility.HtmlDecode(text)
+            .Replace('\u00A0', ' ');
+
+        return Regex.Replace(text, @"\s+", " ").Trim();
     }
 
     private async Task AddEmailLogAsync(

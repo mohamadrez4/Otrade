@@ -29,7 +29,7 @@ public class EmailTemplateService : IEmailTemplateService
 
         _supportEmail =
             configuration["EmailBranding:SupportEmail"]?.Trim()
-            ?? "otradesupport@gmail.com";
+            ?? "traderoom.otr@gmail.com";
     }
 
     public string GetVerificationEmail(string code)
