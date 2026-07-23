@@ -145,19 +145,19 @@ public class AuthController : Controller
 
         return Ok(result);
     }
-    [HttpPost]
-    [Route("api/auth/register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-    {
-        var result = await _authService.RegisterAsync(request);
+    //[HttpPost]
+    //[Route("api/auth/register")]
+    //public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    //{
+    //    var result = await _authService.RegisterAsync(request);
 
-        if (!result.Success)
-        {
-            return BadRequest(result);
-        }
+    //    if (!result.Success)
+    //    {
+    //        return BadRequest(result);
+    //    }
 
-        return Ok(result);
-    }
+    //    return Ok(result);
+    //}
 
     [HttpPost]
     [Route("api/auth/verify-email")]

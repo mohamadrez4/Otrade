@@ -112,6 +112,7 @@ public class DashboardService
         var currentInvestmentCapacity = await GetCurrentInvestmentCapacityAsync();
         var response = new DashboardResponse
         {
+            UserUid = user.ReferralCode,
             TotalAssets = totalAssets,
             BaseRank = currentRank?.Name ?? "Basic",
             EffectiveRank = effectiveRank?.Name ?? currentRank?.Name ?? "Basic",

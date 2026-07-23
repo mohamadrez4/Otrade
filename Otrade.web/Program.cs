@@ -151,5 +151,5 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 
-//app.Run();
-app.Run("http://0.0.0.0:5050");
+app.Run();
+//app.Run("http://0.0.0.0:5050");

@@ -2,6 +2,7 @@
 using Otrade.Application.DTOs.Wallet;
 public class DashboardResponse
 {
+    public string UserUid { get; set; } = string.Empty;
     public decimal TotalAssets { get; set; }
 
     public string CurrentRank { get; set; } = string.Empty;

@@ -2,126 +2,558 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<div class="dashboard-grid">
+<div class="dashboard-v2">
 
-    <div class="panel-card dashboard-hero">
+    <section class="panel-card dashboard-v2-welcome">
         <div>
+            <span class="dashboard-v2-eyebrow">Account Overview</span>
+
             <h2>Welcome to Otrade</h2>
-            <p>Track Your Wallets, Profits, Rank And Your Referred Capital.</p>
+
+            <p>
+                Track your wallets, profits, rank, and referred capital.
+            </p>
         </div>
 
-        <div class="total-assets">
-            <span>Total Assets</span>
-            <strong id="totalAssets">0 USDT</strong>
+        <div class="dashboard-v2-user-uid">
+            <span>User UID</span>
+
+            <strong id="dashboardUserUid">
+                -
+            </strong>
         </div>
+    </section>
+
+    <div class="dashboard-v2-primary-grid">
+
+        <!-- Wallet Overview -->
+        <section class="panel-card dashboard-v2-wallet-panel">
+
+            <div class="dashboard-v2-section-header">
+                <div>
+                    <span class="dashboard-v2-eyebrow">Your Assets</span>
+                    <h3>Wallet Overview</h3>
+                </div>
+
+                <button type="button"
+                        class="dashboard-v2-guide-btn"
+                        id="openWalletGuideBtn"
+                        aria-label="Open wallet guide">
+                    !
+                </button>
+            </div>
+
+            <div class="dashboard-v2-total-assets">
+                <span>Total Assets</span>
+
+                <strong id="totalAssets">
+                    0.00 USDT
+                </strong>
+            </div>
+
+            <div class="dashboard-v2-wallet-list">
+
+                <div class="dashboard-v2-wallet-row wallet-main">
+                    <div class="dashboard-v2-wallet-name">
+                        <span class="dashboard-v2-wallet-icon">M</span>
+
+                        <div>
+                            <strong>Main Wallet</strong>
+                            <small>Deposits and withdrawals</small>
+                        </div>
+                    </div>
+
+                    <span class="dashboard-v2-wallet-balance"
+                          id="mainWallet">
+                        0.00
+                    </span>
+                </div>
+
+                <div class="dashboard-v2-wallet-row wallet-invest"
+                     id="investWalletCard">
+
+                    <div class="dashboard-v2-wallet-name">
+                        <span class="dashboard-v2-wallet-icon">I</span>
+
+                        <div>
+                            <div class="dashboard-v2-wallet-title-line">
+                                <strong>Investing Wallet</strong>
+
+                                <span id="investBonusBadge"
+                                      class="dashboard-v2-mini-badge"
+                                      style="display:none;">
+                                    Bonus
+                                </span>
+                            </div>
+
+                            <small>Active investment capital</small>
+
+                            <div id="investBonusMiniLine"
+                                 class="dashboard-v2-wallet-extra"
+                                 style="display:none;">
+
+                                <span id="investBonusAmount">
+                                    +0.00 Bonus
+                                </span>
+
+                                <i></i>
+
+                                <span id="investProfitBase">
+                                    Profit Base 0.00
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <span class="dashboard-v2-wallet-balance"
+                          id="investWallet">
+                        0.00
+                    </span>
+                </div>
+
+                <div class="dashboard-v2-wallet-row wallet-profit">
+                    <div class="dashboard-v2-wallet-name">
+                        <span class="dashboard-v2-wallet-icon">P</span>
+
+                        <div>
+                            <strong>Profit Wallet</strong>
+                            <small>Daily investment profits</small>
+                        </div>
+                    </div>
+
+                    <span class="dashboard-v2-wallet-balance"
+                          id="profitWallet">
+                        0.00
+                    </span>
+                </div>
+
+                <div class="dashboard-v2-wallet-row wallet-referral">
+                    <div class="dashboard-v2-wallet-name">
+                        <span class="dashboard-v2-wallet-icon">R</span>
+
+                        <div>
+                            <strong>Referral Wallet</strong>
+                            <small>Referral commissions</small>
+                        </div>
+                    </div>
+
+                    <span class="dashboard-v2-wallet-balance"
+                          id="referralWallet">
+                        0.00
+                    </span>
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="panel-card dashboard-v2-actions-panel">
+
+            <div class="dashboard-v2-section-header">
+                <div>
+                    <span class="dashboard-v2-eyebrow">Quick Access</span>
+                    <h3>Account Actions</h3>
+                </div>
+            </div>
+
+            <div class="dashboard-v2-actions-grid">
+
+                <a href="/deposit"
+                   class="dashboard-v2-action-card primary">
+
+                    <span class="dashboard-v2-action-icon">↓</span>
+
+                    <div>
+                        <strong>Deposit</strong>
+                        <small>Add funds to Main Wallet</small>
+                    </div>
+                </a>
+
+                <a href="/withdrawal"
+                   class="dashboard-v2-action-card">
+
+                    <span class="dashboard-v2-action-icon">↑</span>
+
+                    <div>
+                        <strong>Withdraw</strong>
+                        <small>Withdraw from Main Wallet</small>
+                    </div>
+                </a>
+
+                <a href="/wallets"
+                   class="dashboard-v2-action-card">
+
+                    <span class="dashboard-v2-action-icon">⇄</span>
+
+                    <div>
+                        <strong>Transfer</strong>
+                        <small>Transfer between wallets</small>
+                    </div>
+                </a>
+
+                <a href="/profile"
+                   class="dashboard-v2-action-card">
+
+                    <span class="dashboard-v2-action-icon">✓</span>
+
+                    <div>
+                        <strong>KYC</strong>
+                        <small>Verify your identity</small>
+                    </div>
+                </a>
+
+                <a href="/contracts"
+                   class="dashboard-v2-action-card">
+
+                    <span class="dashboard-v2-action-icon">§</span>
+
+                    <div>
+                        <strong>Agreement</strong>
+                        <small>View investment agreement</small>
+                    </div>
+                </a>
+
+                <a href="/profile"
+                   class="dashboard-v2-action-card">
+
+                    <span class="dashboard-v2-action-icon">●</span>
+
+                    <div>
+                        <strong>Complete Profile</strong>
+                        <small>Manage account information</small>
+                    </div>
+                </a>
+
+            </div>
+
+        </section>
+
     </div>
 
-    <div class="wallet-grid">
-        <div class="panel-card wallet-card">
-            <span>Main Wallet</span>
-            <strong id="mainWallet">0</strong>
-        </div>
+    <div class="dashboard-v2-secondary-grid">
 
-        <div class="panel-card wallet-card invest-wallet-card" id="investWalletCard">
-            <div class="dashboard-wallet-card-head">
-                <span>Invest Wallet</span>
+        <!-- Investment Capacity -->
+        <section class="panel-card dashboard-v2-capacity"
+                 id="dashboardCapacityCard">
 
-                <span id="investBonusBadge"
-                      class="dashboard-mini-bonus-badge"
-                      style="display:none;">
-                    Bonus
+            <div class="dashboard-v2-section-header">
+                <div>
+                    <span class="dashboard-v2-eyebrow">
+                        Investment Opportunity
+                    </span>
+
+                    <h3 id="dashboardCapacityMonth">
+                        Current Month
+                    </h3>
+                </div>
+
+                <span class="dashboard-v2-status"
+                      id="dashboardCapacityStatus">
+                    -
                 </span>
             </div>
 
-            <strong id="investWallet">0</strong>
+            <p id="dashboardCapacityMessage"
+               class="dashboard-v2-capacity-message">
+                Only remaining monthly investment capacity is shown here.
+            </p>
 
-            <div id="investBonusMiniLine"
-                 class="dashboard-bonus-mini-line"
-                 style="display:none;">
+            <div class="dashboard-v2-capacity-value">
+                <span>Capacity Remaining</span>
 
-                <span id="investBonusAmount">+0.00 Bonus</span>
-                <i></i>
-                <span id="investProfitBase">Base 0.00</span>
-            </div>
-        </div>
-        <div class="panel-card wallet-card">
-            <span>Profit Wallet</span>
-            <strong id="profitWallet">0</strong>
-        </div>
-
-        <div class="panel-card wallet-card">
-            <span>Referral Wallet</span>
-            <strong id="referralWallet">0</strong>
-        </div>
-    </div>
-
-    <div class="panel-card dashboard-capacity-card" id="dashboardCapacityCard">
-        <div class="dashboard-capacity-header">
-            <div>
-                <span class="dashboard-capacity-eyebrow">Investment Capacity</span>
-                <h3 id="dashboardCapacityMonth">Current Month</h3>
-                <p id="dashboardCapacityMessage">
-                    Only remaining monthly capacity is shown here.
-                </p>
+                <strong id="dashboardCapacityRemaining">
+                    0.00 USDT
+                </strong>
             </div>
 
-            <a href="/wallets" class="dashboard-capacity-action">
-                Transfer to Invest
+            <a href="/wallets"
+               class="dashboard-v2-primary-action">
+                Transfer to Investing Wallet
             </a>
-        </div>
 
-        <div class="dashboard-capacity-remaining-box">
-            <span>Capacity Remaining</span>
-            <strong id="dashboardCapacityRemaining">0.00 USDT</strong>
-        </div>
+        </section>
 
-        <div class="dashboard-capacity-footer">
-            <span id="dashboardCapacityStatus">-</span>
-        </div>
-    </div>
-    <div class="info-grid">
-        <div class="panel-card dashboard-rank-card" id="currentRankCard">
-            <div class="dashboard-wallet-card-head">
-                <span class="card-label">Current Rank</span>
+        <!-- Rank Overview -->
+        <section class="panel-card dashboard-v2-rank"
+                 id="currentRankCard">
+
+            <div class="dashboard-v2-section-header">
+                <div>
+                    <span class="dashboard-v2-eyebrow">
+                        Membership
+                    </span>
+
+                    <h3>Rank Overview</h3>
+                </div>
 
                 <span id="rankBonusBadge"
-                      class="dashboard-mini-bonus-badge rank"
+                      class="dashboard-v2-mini-badge rank"
                       style="display:none;">
                     Bonus Rank
                 </span>
             </div>
 
-            <h3 id="currentRank">-</h3>
+            <div class="dashboard-v2-rank-main">
+
+                <div>
+                    <span>Current Rank</span>
+
+                    <strong id="currentRank">
+                        -
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Your Referred Capital</span>
+
+                    <strong id="networkVolume">
+                        0.00 USDT
+                    </strong>
+                </div>
+
+            </div>
 
             <div id="rankBonusMiniLine"
-                 class="dashboard-rank-mini-line"
+                 class="dashboard-v2-rank-extra"
                  style="display:none;">
 
-                <span id="baseRankText">Base: -</span>
+                <span id="baseRankText">
+                    Base: -
+                </span>
+
                 <i></i>
-                <span id="rankBonusExpireText">-</span>
+
+                <span id="rankBonusExpireText">
+                    -
+                </span>
+
             </div>
-        </div>
-        <div class="panel-card">
-            <span class="card-label">Your Referred Capital</span>
-            <h3 id="networkVolume">0 USDT</h3>
+
+            <div class="dashboard-v2-next-rank">
+
+                <div class="dashboard-v2-next-rank-header">
+                    <span>Next Rank</span>
+
+                    <strong id="nextRank">
+                        -
+                    </strong>
+                </div>
+
+                <div class="dashboard-v2-progress">
+                    <div id="rankProgress"></div>
+                </div>
+
+                <div class="dashboard-v2-progress-footer">
+                    <span>Rank Progress</span>
+
+                    <strong id="rankProgressText">
+                        0%
+                    </strong>
+                </div>
+
+            </div>
+
+            <a href="/rank"
+               class="dashboard-v2-secondary-action">
+                View All Ranks
+            </a>
+
+        </section>
+
+    </div>
+
+</div>
+
+<!-- Wallet Guide Modal -->
+<div class="dashboard-v2-modal-backdrop"
+     id="walletGuideModal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="walletGuideTitle"
+     aria-hidden="true">
+
+    <div class="dashboard-v2-modal">
+
+        <div class="dashboard-v2-modal-header">
+
+            <div>
+                <span class="dashboard-v2-eyebrow">
+                    Asset Type Explanation
+                </span>
+
+                <h3 id="walletGuideTitle">
+                    Wallet Guide
+                </h3>
+            </div>
+
+            <button type="button"
+                    class="dashboard-v2-modal-close"
+                    id="closeWalletGuideBtn"
+                    aria-label="Close wallet guide">
+                ×
+            </button>
+
         </div>
 
-        <div class="panel-card">
-            <span class="card-label">Next Rank</span>
-            <h3 id="nextRank">-</h3>
-            <div class="progress-wrapper">
-                <div id="rankProgress" class="progress-fill"></div>
-            </div>
-            <small id="rankProgressText">0%</small>
+        <div class="dashboard-v2-modal-body">
+
+            <p class="dashboard-v2-guide-intro">
+                Your assets are managed through four separate wallets,
+                each designed for a specific purpose. This structure
+                ensures transparent fund management while giving you
+                full control over your investments, profits, and
+                referral earnings.
+            </p>
+
+            <article class="dashboard-v2-guide-item">
+                <h4>Main Wallet</h4>
+
+                <p>
+                    The Main Wallet serves as the central hub for
+                    managing your funds.
+                </p>
+
+                <ul>
+                    <li>
+                        All deposits are credited to your Main Wallet first.
+                    </li>
+
+                    <li>
+                        All withdrawals can only be made from the Main Wallet.
+                    </li>
+
+                    <li>
+                        You can transfer funds from your Main Wallet to your
+                        Investing Wallet to start earning daily profits.
+                    </li>
+
+                    <li>
+                        Investment profits and referral commissions can be
+                        transferred to the Main Wallet and withdrawn at any time.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="dashboard-v2-guide-item">
+                <h4>Investing Wallet</h4>
+
+                <p>
+                    The Investing Wallet holds the capital actively used
+                    for investment and daily profit generation.
+                </p>
+
+                <ul>
+                    <li>
+                        Funds are transferred here from your Main Wallet.
+                    </li>
+
+                    <li>
+                        Daily investment profits are calculated based on
+                        your current rank and credited to your Profit Wallet.
+                    </li>
+
+                    <li>
+                        You may reinvest your earnings by transferring them
+                        back into the Investing Wallet.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="dashboard-v2-guide-item">
+                <h4>Profit Wallet</h4>
+
+                <p>
+                    The Profit Wallet stores all daily profits generated
+                    from your investments.
+                </p>
+
+                <ul>
+                    <li>
+                        Transfer profits to your Main Wallet for withdrawal.
+                    </li>
+
+                    <li>
+                        Transfer profits to your Investing Wallet to increase
+                        your investment capital.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="dashboard-v2-guide-item">
+                <h4>Referral Wallet</h4>
+
+                <p>
+                    The Referral Wallet stores all commissions earned
+                    through the referral program.
+                </p>
+
+                <ul>
+                    <li>
+                        Transfer referral commissions to the Main Wallet
+                        and withdraw them at any time.
+                    </li>
+
+                    <li>
+                        Transfer referral commissions to the Investing Wallet
+                        to increase your investment capital.
+                    </li>
+                </ul>
+            </article>
+
+            <article class="dashboard-v2-guide-item flow">
+                <h4>How Funds Flow Through the Platform</h4>
+
+                <ol>
+                    <li>Deposit funds into your Main Wallet.</li>
+
+                    <li>
+                        Transfer the desired amount from your Main Wallet
+                        to your Investing Wallet.
+                    </li>
+
+                    <li>
+                        Daily investment profits are credited to your
+                        Profit Wallet.
+                    </li>
+
+                    <li>
+                        Referral commissions are credited to your
+                        Referral Wallet.
+                    </li>
+
+                    <li>
+                        Profit and Referral Wallet funds may be transferred
+                        to either the Main Wallet or the Investing Wallet.
+                    </li>
+                </ol>
+            </article>
+
         </div>
+
+        <div class="dashboard-v2-modal-footer">
+
+            <button type="button"
+                    class="dashboard-v2-primary-action"
+                    id="walletGuideGotItBtn">
+                Got It
+            </button>
+
+        </div>
+
     </div>
 
 </div>
 
 @section Scripts {
+
     <script>
-        document.addEventListener("DOMContentLoaded", async function () {
+        document.addEventListener("DOMContentLoaded", function () {
+            initializeWalletGuide();
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
             checkAuth();
 
             const result = await api("/api/dashboard", {
@@ -129,38 +561,92 @@
             });
 
             if (!result || !result.success) {
-                    showNotification(result?.message || "Dashboard data failed","error");
-                
+                showNotification(
+                    result?.message || "Dashboard data failed",
+                    "error"
+                );
+
                 return;
             }
 
-            const data = result.data;
+            const data = result.data || {};
+            setText(
+            "dashboardUserUid",
+            data.userUid || "-"
+             );
+            setText(
+                "totalAssets",
+                formatMoney(data.totalAssets) + " USDT"
+            );
 
-            document.getElementById("totalAssets").innerText =
-                formatMoney(data.totalAssets) + " USDT";
+            setText(
+                "currentRank",
+                data.currentRank || "-"
+            );
 
-            document.getElementById("currentRank").innerText =
-                data.currentRank ?? "-";
+            setText(
+                "networkVolume",
+                formatMoney(data.networkVolume) + " USDT"
+            );
 
-            document.getElementById("networkVolume").innerText =
-                formatMoney(data.networkVolume) + " USDT";
+            setText(
+                "nextRank",
+                data.nextRank || "Max Rank"
+            );
 
-            document.getElementById("nextRank").innerText =
-                data.nextRank ?? "Max Rank";
+            const progress = Math.min(
+                100,
+                Math.max(
+                    0,
+                    Number(data.nextRankProgressPercent ?? 100)
+                )
+            );
 
-            document.getElementById("rankProgress").style.width =
-                (data.nextRankProgressPercent ?? 100) + "%";
+            const progressElement =
+                document.getElementById("rankProgress");
 
-            document.getElementById("rankProgressText").innerText =
-                (data.nextRankProgressPercent ?? 100) + "%";
+            if (progressElement) {
+                progressElement.style.width = progress + "%";
+            }
 
-            fillWallets(data.wallets);
+            setText(
+                "rankProgressText",
+                formatPercent(progress)
+            );
+
+            fillWallets(data.wallets || []);
             fillDashboardBonusHighlights(data);
             fillInvestmentCapacity(data.currentInvestmentCapacity);
-        });
-                function fillDashboardBonusHighlights(data) {
-            fillInvestBonusHighlight(data);
-            fillRankBonusHighlight(data);
+        }
+
+        function fillWallets(wallets) {
+            setText("mainWallet", "0.00");
+            setText("investWallet", "0.00");
+            setText("profitWallet", "0.00");
+            setText("referralWallet", "0.00");
+
+            wallets.forEach(wallet => {
+                const type = String(wallet.walletType || "")
+                    .toLowerCase();
+
+                const balance = formatMoney(wallet.balance);
+
+                if (type === "main") {
+                    setText("mainWallet", balance);
+                }
+
+                if (type === "invest") {
+                    setText("investWallet", balance);
+                }
+
+                if (type === "profit") {
+                    setText("profitWallet", balance);
+                }
+
+                if (type === "referral") {
+                    setText("referralWallet", balance);
+                }
+            });
         }
 
         function fillDashboardBonusHighlights(data) {
@@ -169,18 +655,26 @@
         }
 
         function fillInvestBonusHighlight(data) {
-            const investWalletCard = document.getElementById("investWalletCard");
-            const investBonusBadge = document.getElementById("investBonusBadge");
-            const investBonusMiniLine = document.getElementById("investBonusMiniLine");
-            const investBonusAmount = document.getElementById("investBonusAmount");
-            const investProfitBase = document.getElementById("investProfitBase");
+            const investWalletCard =
+                document.getElementById("investWalletCard");
 
-            if (!investWalletCard) {
+            const investBonusBadge =
+                document.getElementById("investBonusBadge");
+
+            const investBonusMiniLine =
+                document.getElementById("investBonusMiniLine");
+
+            const activeBonusCapital =
+                Number(data.activeBonusCapital || 0);
+
+            const profitBase =
+                Number(data.investProfitBase || 0);
+
+            if (!investWalletCard ||
+                !investBonusBadge ||
+                !investBonusMiniLine) {
                 return;
             }
-
-            const activeBonusCapital = Number(data.activeBonusCapital || 0);
-            const profitBase = Number(data.investProfitBase || 0);
 
             investWalletCard.classList.remove("has-bonus");
 
@@ -195,28 +689,39 @@
             investBonusBadge.style.display = "inline-flex";
             investBonusMiniLine.style.display = "flex";
 
-            investBonusAmount.innerText =
-                "+" + formatMoney(activeBonusCapital) + " Bonus";
+            setText(
+                "investBonusAmount",
+                "+" + formatMoney(activeBonusCapital) + " Bonus"
+            );
 
-            investProfitBase.innerText =
-                "Profit Base " + formatMoney(profitBase);
+            setText(
+                "investProfitBase",
+                "Profit Base " + formatMoney(profitBase)
+            );
         }
 
         function fillRankBonusHighlight(data) {
-            const currentRankCard = document.getElementById("currentRankCard");
-            const currentRank = document.getElementById("currentRank");
-            const rankBonusBadge = document.getElementById("rankBonusBadge");
-            const rankBonusMiniLine = document.getElementById("rankBonusMiniLine");
-            const baseRankText = document.getElementById("baseRankText");
-            const rankBonusExpireText = document.getElementById("rankBonusExpireText");
+            const currentRankCard =
+                document.getElementById("currentRankCard");
 
-            if (!currentRankCard) {
+            const rankBonusBadge =
+                document.getElementById("rankBonusBadge");
+
+            const rankBonusMiniLine =
+                document.getElementById("rankBonusMiniLine");
+
+            if (!currentRankCard ||
+                !rankBonusBadge ||
+                !rankBonusMiniLine) {
                 return;
             }
 
             currentRankCard.classList.remove("has-rank-bonus");
 
-            currentRank.innerText = data.currentRank ?? "-";
+            setText(
+                "currentRank",
+                data.currentRank || "-"
+            );
 
             if (!data.hasActiveBonusRank) {
                 rankBonusBadge.style.display = "none";
@@ -226,21 +731,185 @@
 
             currentRankCard.classList.add("has-rank-bonus");
 
-            currentRank.innerText =
-                data.bonusRankName || data.effectiveRank || data.currentRank || "-";
+            setText(
+                "currentRank",
+                data.bonusRankName ||
+                data.effectiveRank ||
+                data.currentRank ||
+                "-"
+            );
 
             rankBonusBadge.style.display = "inline-flex";
             rankBonusMiniLine.style.display = "flex";
 
-            baseRankText.innerText =
-                "Base: " + (data.baseRank || "-");
+            setText(
+                "baseRankText",
+                "Base: " + (data.baseRank || "-")
+            );
 
-            if (data.bonusRankExpiresAt) {
-                rankBonusExpireText.innerText =
-                    "Expires " + formatDate(data.bonusRankExpiresAt);
-            } else {
-                rankBonusExpireText.innerText = "No expiration";
+            setText(
+                "rankBonusExpireText",
+                data.bonusRankExpiresAt
+                    ? "Expires " + formatDate(data.bonusRankExpiresAt)
+                    : "No expiration"
+            );
+        }
+
+        function fillInvestmentCapacity(capacity) {
+            const card =
+                document.getElementById("dashboardCapacityCard");
+
+            const monthText =
+                document.getElementById("dashboardCapacityMonth");
+
+            const messageText =
+                document.getElementById("dashboardCapacityMessage");
+
+            const remainingText =
+                document.getElementById("dashboardCapacityRemaining");
+
+            const statusText =
+                document.getElementById("dashboardCapacityStatus");
+
+            if (!card ||
+                !monthText ||
+                !messageText ||
+                !remainingText ||
+                !statusText) {
+                return;
             }
+
+            card.classList.remove(
+                "not-configured",
+                "inactive",
+                "full",
+                "active"
+            );
+
+            if (!capacity || !capacity.isConfigured) {
+                card.classList.add("not-configured");
+
+                monthText.innerText = "Not Configured";
+
+                messageText.innerText =
+                    "Investment capacity has not been configured for the current month.";
+
+                remainingText.innerText = "0.00 USDT";
+                statusText.innerText = "Not Configured";
+
+                return;
+            }
+
+            const remaining =
+                Number(capacity.remainingCapacity || 0);
+
+            monthText.innerText =
+                capacity.monthLabel || "Current Month";
+
+            remainingText.innerText =
+                formatMoney(remaining) + " USDT";
+
+            if (!capacity.isActive) {
+                card.classList.add("inactive");
+
+                messageText.innerText =
+                    "Investment capacity for this month is currently inactive.";
+
+                statusText.innerText = "Inactive";
+
+                return;
+            }
+
+            if (remaining <= 0) {
+                card.classList.add("full");
+
+                messageText.innerText =
+                    "Investment capacity for this month is full.";
+
+                statusText.innerText = "Full";
+
+                return;
+            }
+
+            card.classList.add("active");
+
+            messageText.innerText =
+                "The remaining investment capacity for the current month is available.";
+
+            statusText.innerText = "Active";
+        }
+
+        function initializeWalletGuide() {
+            const modal =
+                document.getElementById("walletGuideModal");
+
+            const openButton =
+                document.getElementById("openWalletGuideBtn");
+
+            const closeButton =
+                document.getElementById("closeWalletGuideBtn");
+
+            const gotItButton =
+                document.getElementById("walletGuideGotItBtn");
+
+            if (!modal || !openButton) {
+                return;
+            }
+
+            function openModal() {
+                modal.classList.add("show");
+                modal.setAttribute("aria-hidden", "false");
+                document.body.classList.add("dashboard-modal-open");
+            }
+
+            function closeModal() {
+                modal.classList.remove("show");
+                modal.setAttribute("aria-hidden", "true");
+                document.body.classList.remove("dashboard-modal-open");
+            }
+
+            openButton.addEventListener("click", openModal);
+
+            closeButton?.addEventListener("click", closeModal);
+            gotItButton?.addEventListener("click", closeModal);
+
+            modal.addEventListener("click", function (event) {
+                if (event.target === modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" &&
+                    modal.classList.contains("show")) {
+                    closeModal();
+                }
+            });
+        }
+
+        function setText(elementId, value) {
+            const element =
+                document.getElementById(elementId);
+
+            if (element) {
+                element.innerText = value;
+            }
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatPercent(value) {
+            const number = Number(value || 0);
+
+            return number.toLocaleString("en-US", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }) + "%";
         }
 
         function formatDate(value) {
@@ -254,74 +923,6 @@
                 day: "2-digit"
             });
         }
-        function fillWallets(wallets) {
-            wallets.forEach(w => {
-                const type = w.walletType;
-                const balance = formatMoney(w.balance);
-
-                if (type === "Main")
-                    document.getElementById("mainWallet").innerText = balance;
-
-                if (type === "Invest")
-                    document.getElementById("investWallet").innerText = balance;
-
-                if (type === "Profit")
-                    document.getElementById("profitWallet").innerText = balance;
-
-                if (type === "Referral")
-                    document.getElementById("referralWallet").innerText = balance;
-            });
-        }
-        function fillInvestmentCapacity(capacity) {
-            const card = document.getElementById("dashboardCapacityCard");
-            const monthText = document.getElementById("dashboardCapacityMonth");
-            const messageText = document.getElementById("dashboardCapacityMessage");
-            const remainingText = document.getElementById("dashboardCapacityRemaining");
-            const statusText = document.getElementById("dashboardCapacityStatus");
-
-            card.classList.remove("not-configured", "inactive", "full");
-
-            if (!capacity || !capacity.isConfigured) {
-                card.classList.add("not-configured");
-
-                monthText.innerText = "Not Configured";
-                messageText.innerText = "Admin has not configured investment capacity for the current month yet.";
-                remainingText.innerText = "0.00 USDT";
-                statusText.innerText = "Not Configured";
-
-                return;
-            }
-
-            const remaining = Number(capacity.remainingCapacity || 0);
-
-            monthText.innerText = capacity.monthLabel || "Current Month";
-            remainingText.innerText = formatMoney(remaining) + " USDT";
-
-            if (!capacity.isActive) {
-                card.classList.add("inactive");
-                messageText.innerText = "Investment capacity for this month is currently inactive.";
-                statusText.innerText = "Inactive";
-                return;
-            }
-
-            if (remaining <= 0) {
-                card.classList.add("full");
-                messageText.innerText = "Investment capacity for this month is full.";
-                statusText.innerText = "Full";
-                return;
-            }
-
-            messageText.innerText =
-                "Only remaining monthly investment capacity is visible to users.";
-
-            statusText.innerText = "Active";
-        }
-
-        function formatMoney(value) {
-            return Number(value || 0).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
     </script>
+
 }
