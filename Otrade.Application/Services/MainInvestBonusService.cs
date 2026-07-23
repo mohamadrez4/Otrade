@@ -63,7 +63,7 @@ public class MainInvestBonusService
             BalanceBefore = before,
             BalanceAfter = after,
             Type = TransactionType.ReferralBonus,
-            Description = $"Main→Invest Bonus from User #{userId}",
+            Description = $"Referral Commission from User #{userId}",
             CreatedAt =  DateTime.Now
         });
 

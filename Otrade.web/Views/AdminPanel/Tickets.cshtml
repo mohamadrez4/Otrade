@@ -3,275 +3,802 @@
     ViewData["Title"] = "Admin Tickets";
 }
 
-<div class="admin-page">
+<div class="admin-tickets-v2-page">
 
-    <div class="panel-card">
-        <div class="admin-section-header">
-            <h3>Tickets</h3>
-            <p>Review, reply, and close user support tickets.</p>
+    <section class="panel-card admin-tickets-v2-header">
+        <div>
+            <span class="admin-tickets-v2-eyebrow">
+                Support Management
+            </span>
+
+            <h2>Support Tickets</h2>
+
+            <p>
+                Review user conversations, send replies,
+                and close completed support requests.
+            </p>
         </div>
 
-        <div class="admin-filter-row">
-            <select id="statusFilter" class="panel-input">
-                <option value="">All Statuses</option>
-                <option value="Open">Open</option>
-                <option value="Answered">Answered</option>
-                <option value="Closed">Closed</option>
-            </select>
+        <button type="button"
+                id="adminRefreshTicketsBtn"
+                class="admin-tickets-v2-refresh-btn">
+            Refresh
+        </button>
+    </section>
 
-            <input id="searchInput"
-                   class="panel-input"
-                   type="text"
-                   placeholder="Search by subject or email" />
+    <section class="panel-card admin-tickets-v2-filter-card">
 
-            <button id="searchBtn" class="panel-primary-btn">
+        <div class="admin-tickets-v2-filter-grid">
+
+            <div class="admin-tickets-v2-field">
+                <label for="statusFilter">Status</label>
+
+                <select id="statusFilter"
+                        class="panel-input">
+                    <option value="">All Statuses</option>
+                    <option value="Open">Open</option>
+                    <option value="Answered">Answered</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+
+            <div class="admin-tickets-v2-field search">
+                <label for="searchInput">Search</label>
+
+                <input id="searchInput"
+                       class="panel-input"
+                       type="text"
+                       autocomplete="off"
+                       placeholder="Search by name, UID, or subject" />
+            </div>
+
+            <button id="searchBtn"
+                    type="button"
+                    class="admin-tickets-v2-search-btn">
                 Search
             </button>
+
         </div>
 
-        <div id="ticketsMessage" class="admin-message">
+    </section>
+
+    <section class="panel-card admin-tickets-v2-list-card">
+
+        <div class="admin-tickets-v2-list-header">
+            <div>
+                <span class="admin-tickets-v2-eyebrow">
+                    Ticket Queue
+                </span>
+
+                <h3>Conversations</h3>
+            </div>
+
+            <span id="adminTicketCount"
+                  class="admin-tickets-v2-count">
+                0 Tickets
+            </span>
+        </div>
+
+        <div id="ticketsMessage"
+             class="admin-tickets-v2-empty-state">
             Loading tickets...
         </div>
 
-        <div id="ticketsList" class="admin-tickets-list" style="display:none;"></div>
-    </div>
+        <div id="ticketsList"
+             class="admin-tickets-v2-list"
+             style="display:none;">
+        </div>
+
+        <div id="ticketsPagination"
+             class="admin-tickets-v2-pagination"
+             style="display:none;">
+        </div>
+
+    </section>
 
 </div>
 
 @section Scripts {
     <script>
-        const statusFilter = document.getElementById("statusFilter");
-        const searchInput = document.getElementById("searchInput");
-        const searchBtn = document.getElementById("searchBtn");
-        const ticketsMessage = document.getElementById("ticketsMessage");
-        const ticketsList = document.getElementById("ticketsList");
-
         let currentPage = 1;
         const pageSize = 20;
 
-        searchBtn.addEventListener("click", function () {
-            currentPage = 1;
-            loadTickets();
-        });
+        document.addEventListener(
+            "DOMContentLoaded",
+            function () {
+                initializeAdminTicketsPage();
+            }
+        );
 
-        statusFilter.addEventListener("change", function () {
-            currentPage = 1;
-            loadTickets();
-        });
+        function initializeAdminTicketsPage() {
+            const statusFilter =
+                document.getElementById(
+                    "statusFilter"
+                );
 
-        async function loadTickets() {
-            ticketsMessage.style.display = "block";
-            ticketsMessage.innerText = "Loading tickets...";
-            ticketsList.style.display = "none";
-            ticketsList.innerHTML = "";
+            const searchInput =
+                document.getElementById(
+                    "searchInput"
+                );
 
-            const status = statusFilter.value;
-            const search = searchInput.value.trim();
+            const searchButton =
+                document.getElementById(
+                    "searchBtn"
+                );
 
-            let url = `/api/admin/tickets?page=${currentPage}&pageSize=${pageSize}`;
+            const refreshButton =
+                document.getElementById(
+                    "adminRefreshTicketsBtn"
+                );
+
+            searchButton?.addEventListener(
+                "click",
+                function () {
+                    currentPage = 1;
+                    loadAdminTickets();
+                }
+            );
+
+            statusFilter?.addEventListener(
+                "change",
+                function () {
+                    currentPage = 1;
+                    loadAdminTickets();
+                }
+            );
+
+            searchInput?.addEventListener(
+                "keydown",
+                function (event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        currentPage = 1;
+                        loadAdminTickets();
+                    }
+                }
+            );
+
+            refreshButton?.addEventListener(
+                "click",
+                loadAdminTickets
+            );
+
+            loadAdminTickets();
+        }
+
+        async function loadAdminTickets() {
+            const messageBox =
+                document.getElementById(
+                    "ticketsMessage"
+                );
+
+            const list =
+                document.getElementById(
+                    "ticketsList"
+                );
+
+            const pagination =
+                document.getElementById(
+                    "ticketsPagination"
+                );
+
+            const refreshButton =
+                document.getElementById(
+                    "adminRefreshTicketsBtn"
+                );
+
+            messageBox.style.display = "block";
+            messageBox.innerText = "Loading tickets...";
+
+            list.style.display = "none";
+            list.innerHTML = "";
+
+            pagination.style.display = "none";
+            pagination.innerHTML = "";
+
+            refreshButton.disabled = true;
+            refreshButton.innerText = "Loading...";
+
+            const status =
+                document.getElementById(
+                    "statusFilter"
+                ).value;
+
+            const search =
+                document.getElementById(
+                    "searchInput"
+                ).value.trim();
+
+            const params =
+                new URLSearchParams({
+                    page: String(currentPage),
+                    pageSize: String(pageSize)
+                });
 
             if (status) {
-                url += `&status=${encodeURIComponent(status)}`;
+                params.set("status", status);
             }
 
             if (search) {
-                url += `&search=${encodeURIComponent(search)}`;
+                params.set("search", search);
             }
 
             try {
-                const result = await api(url);
+                const result = await api(
+                    `/api/admin/tickets?${params.toString()}`,
+                    {
+                        method: "GET"
+                    }
+                );
 
-                if (!result.success) {
-                    ticketsMessage.innerText = result.message || "Could not load tickets.";
-                    return;
+                if (!result || !result.success) {
+                    throw new Error(
+                        result?.message ||
+                        "Could not load tickets."
+                    );
                 }
 
-                const data = result.data;
-                const items = data.items || [];
+                const data =
+                    result.data || {};
+
+                const items =
+                    Array.isArray(data.items)
+                        ? data.items
+                        : [];
+
+                updateAdminTicketCount(
+                    data.totalCount || 0
+                );
 
                 if (!items.length) {
-                    ticketsMessage.innerText = "No tickets found.";
+                    messageBox.innerHTML = `
+                        <strong>No tickets found</strong>
+                        <span>
+                            Try changing the filters or search text.
+                        </span>
+                    `;
+
                     return;
                 }
 
                 items.forEach(ticket => {
-                    const ticketEl = document.createElement("div");
-                    ticketEl.className = "admin-ticket-card";
-
-                    ticketEl.innerHTML = `
-                        <div class="admin-ticket-header">
-                            <div>
-                                <h4>${escapeHtml(ticket.subject)}</h4>
-                                <p>${escapeHtml(ticket.userEmail)} • ${formatDate(ticket.createdAt)}</p>
-                            </div>
-
-                            <span class="admin-status ${String(ticket.status).toLowerCase()}">
-                                ${escapeHtml(ticket.status)}
-                            </span>
-                        </div>
-
-                        <div class="admin-ticket-messages">
-                            ${(ticket.messages || []).map(msg => `
-                                <div class="admin-ticket-message">
-                                    <div class="admin-ticket-message-meta">
-                                        <strong>${escapeHtml(msg.senderEmail)}</strong>
-                                        <span>${formatDate(msg.createdAt)}</span>
-                                    </div>
-                                    <p>${escapeHtml(msg.message)}</p>
-                                </div>
-                            `).join("")}
-                        </div>
-
-                        ${ticket.status !== "Closed" ? `
-                            <form class="admin-ticket-reply-form" data-ticket-id="${ticket.ticketId}">
-                                <textarea class="panel-input admin-ticket-reply-input"
-                                          placeholder="Write admin reply"
-                                          required></textarea>
-
-                                <div class="admin-ticket-actions">
-                                    <button type="submit" class="admin-action-btn approve">
-                                        Reply
-                                    </button>
-
-                                    <button type="button"
-                                            class="admin-action-btn reject"
-                                            onclick="closeTicket(${ticket.ticketId})">
-                                        Close
-                                    </button>
-                                </div>
-                            </form>
-                        ` : ``}
-                    `;
-
-                    ticketsList.appendChild(ticketEl);
+                    list.appendChild(
+                        buildAdminTicketElement(ticket)
+                    );
                 });
 
-                renderPagination(data);
+                bindAdminTicketReplyForms();
+                renderAdminTicketPagination(data);
 
-                bindReplyForms();
+                messageBox.style.display = "none";
+                list.style.display = "grid";
 
-                ticketsMessage.style.display = "none";
-                ticketsList.style.display = "grid";
             } catch (error) {
-                ticketsMessage.innerText = error.message || "Could not load tickets.";
+                messageBox.innerText =
+                    error.message ||
+                    "Could not load tickets.";
+
+                updateAdminTicketCount(0);
+
+            } finally {
+                refreshButton.disabled = false;
+                refreshButton.innerText = "Refresh";
             }
         }
 
-        function bindReplyForms() {
-            document.querySelectorAll(".admin-ticket-reply-form").forEach(form => {
-                form.addEventListener("submit", async function (e) {
-                    e.preventDefault();
+        function buildAdminTicketElement(ticket) {
+            const card =
+                document.createElement("article");
 
-                    const ticketId = this.dataset.ticketId;
-                    const input = this.querySelector(".admin-ticket-reply-input");
-                    const button = this.querySelector("button[type='submit']");
-                    const message = input.value.trim();
+            const status =
+                normalizeAdminTicketStatus(
+                    ticket?.status
+                );
 
-                    if (!message) {
-                        showNotification("Message is required.","error");
-                        
-                        return;
+            const isClosed =
+                status === "closed";
+
+            const messages =
+                Array.isArray(ticket?.messages)
+                    ? ticket.messages
+                    : [];
+
+            const userName =
+                String(
+                    ticket?.userFullName || ""
+                ).trim() || "User";
+
+            const userUid =
+                String(
+                    ticket?.userUid || ""
+                ).trim() || "-";
+
+            card.className =
+                "admin-tickets-v2-ticket";
+
+            card.innerHTML = `
+                <div class="admin-tickets-v2-ticket-header">
+
+                    <div class="admin-tickets-v2-user">
+
+                        <div class="admin-tickets-v2-user-avatar">
+                            ${escapeHtml(
+                                getInitials(userName)
+                            )}
+                        </div>
+
+                        <div>
+                            <span>
+                                Ticket #${escapeHtml(
+                                    ticket?.ticketId
+                                )}
+                            </span>
+
+                            <h4>
+                                ${escapeHtml(
+                                    ticket?.subject ||
+                                    "Support Ticket"
+                                )}
+                            </h4>
+
+                            <div class="admin-tickets-v2-user-meta">
+                                <strong>
+                                    ${escapeHtml(userName)}
+                                </strong>
+
+                                <span>
+                                    UID: ${escapeHtml(userUid)}
+                                </span>
+
+                                <span>
+                                    ${formatAdminDateTime(
+                                        ticket?.createdAt
+                                    )}
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <span class="admin-tickets-v2-status ${status}">
+                        ${escapeHtml(
+                            getAdminTicketStatusLabel(status)
+                        )}
+                    </span>
+
+                </div>
+
+                <div class="admin-tickets-v2-messages">
+                    ${messages.map(
+                        buildAdminTicketMessageHtml
+                    ).join("")}
+                </div>
+
+                ${
+                    isClosed
+                        ? `
+                            <div class="admin-tickets-v2-closed-note">
+                                This ticket was closed
+                                ${
+                                    ticket?.closedAt
+                                        ? `on ${formatAdminDateTime(
+                                            ticket.closedAt
+                                        )}`
+                                        : ""
+                                }.
+                            </div>
+                        `
+                        : `
+                            <form class="admin-tickets-v2-reply-form"
+                                  data-ticket-id="${escapeHtml(
+                                      ticket?.ticketId
+                                  )}">
+
+                                <textarea class="panel-input admin-tickets-v2-reply-input"
+                                          maxlength="4000"
+                                          placeholder="Write a reply as Support Team"
+                                          required></textarea>
+
+                                <div class="admin-tickets-v2-actions">
+
+                                    <button type="submit"
+                                            class="admin-tickets-v2-reply-btn">
+                                        Send Reply
+                                    </button>
+
+                                    <button type="button"
+                                            class="admin-tickets-v2-close-btn"
+                                            data-close-ticket-id="${escapeHtml(
+                                                ticket?.ticketId
+                                            )}">
+                                        Close Ticket
+                                    </button>
+
+                                </div>
+
+                            </form>
+                        `
+                }
+            `;
+
+            card
+                .querySelector(
+                    "[data-close-ticket-id]"
+                )
+                ?.addEventListener(
+                    "click",
+                    function () {
+                        closeAdminTicket(
+                            this.dataset.closeTicketId
+                        );
                     }
+                );
 
-                    button.disabled = true;
-                    button.innerText = "Sending...";
-
-                    try {
-                        const result = await api(`/api/admin/tickets/reply/${ticketId}`, {
-                            method: "POST",
-                            body: JSON.stringify({
-                                message: message
-                            })
-                        });
-
-                        if (!result.success) {
-                            showNotification(result.message || "Could not send reply.","error");
-                           
-                            return;
-                        }
-
-                        await loadTickets();
-                    } catch (error) {
-                        showNotification(result.message || "Could not send reply.","error");
-                    } finally {
-                        button.disabled = false;
-                        button.innerText = "Reply";
-                    }
-                });
-            });
+            return card;
         }
 
-        async function closeTicket(ticketId) {
-             const confirmed = await showConfirm(
-            "Are you sure you want to close this ticket?",
-            "Close Ticked"
-        );
+        function buildAdminTicketMessageHtml(message) {
+            const isSupport =
+                Boolean(message?.isSupport);
+
+            const senderName =
+                isSupport
+                    ? "Support Team"
+                    : (
+                        message?.senderName ||
+                        "User"
+                    );
+
+            const senderClass =
+                isSupport
+                    ? "support"
+                    : "user";
+
+            return `
+                <div class="admin-tickets-v2-message ${senderClass}">
+
+                    <div class="admin-tickets-v2-message-avatar">
+                        ${isSupport
+                            ? "S"
+                            : escapeHtml(
+                                getInitials(senderName)
+                            )}
+                    </div>
+
+                    <div class="admin-tickets-v2-message-content">
+
+                        <div class="admin-tickets-v2-message-meta">
+                            <strong>
+                                ${escapeHtml(senderName)}
+                            </strong>
+
+                            <span>
+                                ${formatAdminDateTime(
+                                    message?.createdAt
+                                )}
+                            </span>
+                        </div>
+
+                        <p>
+                            ${formatAdminMessage(
+                                message?.message
+                            )}
+                        </p>
+
+                    </div>
+
+                </div>
+            `;
+        }
+
+        function bindAdminTicketReplyForms() {
+            document
+                .querySelectorAll(
+                    ".admin-tickets-v2-reply-form"
+                )
+                .forEach(form => {
+
+                    form.addEventListener(
+                        "submit",
+                        sendAdminTicketReply
+                    );
+
+                });
+        }
+
+        async function sendAdminTicketReply(event) {
+            event.preventDefault();
+
+            const form =
+                event.currentTarget;
+
+            const ticketId =
+                form.dataset.ticketId;
+
+            const input =
+                form.querySelector(
+                    ".admin-tickets-v2-reply-input"
+                );
+
+            const button =
+                form.querySelector(
+                    "button[type='submit']"
+                );
+
+            const message =
+                input.value.trim();
+
+            if (!message) {
+                showNotification(
+                    "Message is required.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            button.disabled = true;
+            button.innerText = "Sending...";
+
+            try {
+                const result = await api(
+                    `/api/admin/tickets/reply/${encodeURIComponent(ticketId)}`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            message: message
+                        })
+                    }
+                );
+
+                if (!result || !result.success) {
+                    showNotification(
+                        result?.message ||
+                        "Could not send the reply.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                showNotification(
+                    result.message ||
+                    "Reply sent successfully.",
+                    "success"
+                );
+
+                await loadAdminTickets();
+
+            } catch (error) {
+                showNotification(
+                    error.message ||
+                    "Could not send the reply.",
+                    "error"
+                );
+
+            } finally {
+                button.disabled = false;
+                button.innerText = "Send Reply";
+            }
+        }
+
+        async function closeAdminTicket(ticketId) {
+            const confirmed = await showConfirm(
+                "Are you sure you want to close this ticket?",
+                "Close Ticket"
+            );
+
             if (!confirmed) {
                 return;
             }
 
             try {
-                const result = await api(`/api/admin/tickets/close/${ticketId}`, {
-                    method: "POST"
-                });
+                const result = await api(
+                    `/api/admin/tickets/close/${encodeURIComponent(ticketId)}`,
+                    {
+                        method: "POST"
+                    }
+                );
 
-                if (!result.success) {
-                    showNotification(result.message || "Could not close ticket.","error");
-                    
+                if (!result || !result.success) {
+                    showNotification(
+                        result?.message ||
+                        "Could not close the ticket.",
+                        "error"
+                    );
+
                     return;
                 }
 
-                await loadTickets();
+                showNotification(
+                    result.message ||
+                    "Ticket closed successfully.",
+                    "success"
+                );
+
+                await loadAdminTickets();
+
             } catch (error) {
-                showNotification(result.message || "Could not close ticket.","error");
-              
+                showNotification(
+                    error.message ||
+                    "Could not close the ticket.",
+                    "error"
+                );
             }
         }
 
-        function renderPagination(data) {
-            const pager = document.createElement("div");
-            pager.className = "admin-pagination";
+        function renderAdminTicketPagination(data) {
+            const pagination =
+                document.getElementById(
+                    "ticketsPagination"
+                );
 
-            pager.innerHTML = `
-                <button class="admin-action-btn approve" ${data.page <= 1 ? "disabled" : ""}
-                        onclick="goPage(${data.page - 1})">
+            const page =
+                Math.max(
+                    1,
+                    Number(data?.page || 1)
+                );
+
+            const totalPages =
+                Math.max(
+                    1,
+                    Number(data?.totalPages || 1)
+                );
+
+            pagination.innerHTML = `
+                <button type="button"
+                        class="admin-tickets-v2-page-btn"
+                        data-page="${page - 1}"
+                        ${page <= 1 ? "disabled" : ""}>
                     Previous
                 </button>
 
-                <span>Page ${data.page} of ${data.totalPages}</span>
+                <span>
+                    Page ${page} of ${totalPages}
+                </span>
 
-                <button class="admin-action-btn approve" ${data.page >= data.totalPages ? "disabled" : ""}
-                        onclick="goPage(${data.page + 1})">
+                <button type="button"
+                        class="admin-tickets-v2-page-btn"
+                        data-page="${page + 1}"
+                        ${page >= totalPages ? "disabled" : ""}>
                     Next
                 </button>
             `;
 
-            ticketsList.appendChild(pager);
+            pagination
+                .querySelectorAll(
+                    "[data-page]"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+                            const targetPage =
+                                Number(
+                                    button.dataset.page
+                                );
+
+                            if (
+                                targetPage < 1 ||
+                                targetPage > totalPages
+                            ) {
+                                return;
+                            }
+
+                            currentPage =
+                                targetPage;
+
+                            loadAdminTickets();
+                        }
+                    );
+
+                });
+
+            pagination.style.display =
+                totalPages > 1
+                    ? "flex"
+                    : "none";
         }
 
-        function goPage(page) {
-            currentPage = page;
-            loadTickets();
+        function updateAdminTicketCount(count) {
+            const element =
+                document.getElementById(
+                    "adminTicketCount"
+                );
+
+            const number =
+                Number(count || 0);
+
+            element.innerText =
+                `${number.toLocaleString("en-US")} ` +
+                `${number === 1 ? "Ticket" : "Tickets"}`;
         }
 
-        function formatDate(value) {
-            if (!value) return "-";
-            return new Date(value).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "2-digit"
-            });
+        function normalizeAdminTicketStatus(value) {
+            const status =
+                String(value || "")
+                    .trim()
+                    .toLowerCase();
+
+            if (status === "answered") {
+                return "answered";
+            }
+
+            if (status === "closed") {
+                return "closed";
+            }
+
+            return "open";
+        }
+
+        function getAdminTicketStatusLabel(status) {
+            if (status === "answered") {
+                return "Answered";
+            }
+
+            if (status === "closed") {
+                return "Closed";
+            }
+
+            return "Open";
+        }
+
+        function getInitials(value) {
+            const words =
+                String(value || "")
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean);
+
+            if (!words.length) {
+                return "U";
+            }
+
+            return words
+                .slice(0, 2)
+                .map(word =>
+                    word.charAt(0).toUpperCase()
+                )
+                .join("");
+        }
+
+        function formatAdminDateTime(value) {
+            if (!value) {
+                return "-";
+            }
+
+            const date =
+                new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return "-";
+            }
+
+            return date.toLocaleString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        }
+
+        function formatAdminMessage(value) {
+            return escapeHtml(value || "")
+                .replace(/\r?\n/g, "<br>");
         }
 
         function escapeHtml(value) {
-            return String(value || "")
+            return String(value ?? "")
                 .replaceAll("&", "&amp;")
                 .replaceAll("<", "&lt;")
                 .replaceAll(">", "&gt;")
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#039;");
         }
-
-        loadTickets();
     </script>
 }

@@ -30,9 +30,36 @@
             </div>
 
             <div class="referral-summary-grid">
-                <div class="referral-summary-item rank">
-                    <span>Current Rank</span>
-                    <strong id="currentRank">-</strong>
+                <div class="referral-summary-item rank referral-rank-summary">
+
+                    <span class="referral-rank-summary-label">
+                        Current Rank
+                    </span>
+
+                    <div class="referral-rank-content">
+
+                        <span class="rank-media-shell">
+
+                            <img id="referralCurrentRankImage"
+                                 class="rank-media-img"
+                                 src="/images/ranks/basic-rank.gif"
+                                 alt="Basic Rank" />
+
+                        </span>
+
+                        <div class="referral-rank-copy">
+
+                            <small>Membership Level</small>
+
+                            <strong id="currentRank"
+                                    class="referral-rank-value rank-basic">
+                                Basic
+                            </strong>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
                 <div class="referral-summary-item">
@@ -58,7 +85,7 @@
                 </div>
 
                 <div>
-                    <span>Main → Invest Bonus Percent</span>
+                    <span>Referral Commission</span>
                     <strong id="mainToInvestPercent">0%</strong>
                 </div>
             </div>
@@ -144,6 +171,8 @@
 
         const referralCode = document.getElementById("referralCode");
         const currentRank = document.getElementById("currentRank");
+        const referralCurrentRankImage =
+            document.getElementById("referralCurrentRankImage");
         const totalReferrals = document.getElementById("totalReferrals");
         const totalBonus = document.getElementById("totalBonus");
         const referralWalletBalance = document.getElementById("referralWalletBalance");
@@ -418,8 +447,14 @@
 
         function formatBonusType(value) {
             return String(value || "-")
-                .replaceAll("MainToInvestBonus", "Main → Invest Bonus")
-                .replaceAll("ReferralProfit", "Referral Profit");
+                .replaceAll(
+                    "MainToInvestBonus",
+                    "Referral Commission"
+                )
+                .replaceAll(
+                    "ReferralProfit",
+                    "Referral Profit"
+                );
         }
 
         function escapeHtml(value) {
@@ -431,19 +466,101 @@
                 .replaceAll("'", "&#039;");
         }
         function setReferralRankVisual(rankName) {
-            currentRank.innerText = rankName || "-";
+            const safeRankName =
+                String(rankName || "Basic").trim() ||
+                "Basic";
 
-            currentRank.className = "referral-rank-value " + getReferralRankClass(rankName);
+            currentRank.innerText =
+                safeRankName;
+
+            currentRank.className =
+                "referral-rank-value " +
+                getReferralRankClass(safeRankName);
+
+            /*
+             * از فایل عمومی rank-assets.js استفاده می‌کند.
+             * در صورت لود نشدن آن، مسیر GIF به‌صورت محلی ساخته می‌شود.
+             */
+            if (
+                typeof setOtradeRankImage ===
+                "function"
+            ) {
+                setOtradeRankImage(
+                    referralCurrentRankImage,
+                    safeRankName,
+                    {
+                        eager: true
+                    }
+                );
+
+                return;
+            }
+
+            const rankKey =
+                normalizeReferralRankName(
+                    safeRankName
+                );
+
+            referralCurrentRankImage.dataset.rankName =
+                rankKey;
+
+            referralCurrentRankImage.alt =
+                `${safeRankName} Rank`;
+
+            referralCurrentRankImage.src =
+                `/images/ranks/${rankKey}-rank.gif`;
+        }
+
+        function normalizeReferralRankName(rankName) {
+            const value =
+                String(rankName || "")
+                    .trim()
+                    .toLowerCase();
+
+            if (value.includes("diamond")) {
+                return "diamond";
+            }
+
+            if (value.includes("gold")) {
+                return "gold";
+            }
+
+            if (value.includes("silver")) {
+                return "silver";
+            }
+
+            if (value.includes("bronze")) {
+                return "bronze";
+            }
+
+            return "basic";
         }
 
         function getReferralRankClass(rankName) {
-            const value = String(rankName || "").trim().toLowerCase();
+            const value =
+                normalizeReferralRankName(
+                    rankName
+                );
 
-            if (value === "basic") return "rank-basic";
-            if (value === "bronze") return "rank-bronze";
-            if (value === "silver") return "rank-silver";
-            if (value === "gold") return "rank-gold";
-            if (value === "diamond") return "rank-diamond";
+            if (value === "basic") {
+                return "rank-basic";
+            }
+
+            if (value === "bronze") {
+                return "rank-bronze";
+            }
+
+            if (value === "silver") {
+                return "rank-silver";
+            }
+
+            if (value === "gold") {
+                return "rank-gold";
+            }
+
+            if (value === "diamond") {
+                return "rank-diamond";
+            }
 
             return "rank-default";
         }

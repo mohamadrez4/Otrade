@@ -40,7 +40,7 @@
             <button class="report-tab" data-target="transfers">Transfers</button>
             <button class="report-tab" data-target="investmentProfits">Investment Profits</button>
             <button class="report-tab" data-target="referralProfits">Referral Profits</button>
-            <button class="report-tab" data-target="mainInvestBonuses">Main → Invest Bonuses</button>
+            <button class="report-tab" data-target="mainInvestBonuses">Referral Commissions</button>
         </div>
 
         <div id="reportsMessage" class="reports-message">
@@ -519,9 +519,18 @@
         });
 
         function getReadableType(type) {
-            if (type === "investmentProfits") return "Investment Profit";
-            if (type === "referralProfits") return "Referral Profit";
-            if (type === "mainInvestBonuses") return "Main → Invest Bonus";
+            if (type === "investmentProfits") {
+                return "Investment Profit";
+            }
+
+            if (type === "referralProfits") {
+                return "Referral Profit";
+            }
+
+            if (type === "mainInvestBonuses") {
+                return "Referral Commission";
+            }
+
             return type;
         }
         function shortWallet(value) {

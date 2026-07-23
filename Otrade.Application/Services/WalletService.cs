@@ -992,28 +992,83 @@ public class WalletService
         string network,
         long userId)
     {
+        var normalizedAddress =
+            address?.Trim() ?? string.Empty;
+
+        var normalizedNetwork =
+            network?.Trim().ToUpperInvariant()
+            ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(normalizedAddress))
+        {
+            return ResponseFactory.Fail<bool>(
+                "Wallet address is required");
+        }
+
+        /*
+         * فقط BSC با استاندارد BEP20 مجاز است.
+         * هر دو عنوان BSC و BEP20 از Frontend پذیرفته می‌شوند،
+         * اما مقدار ذخیره‌شده همیشه BEP20 خواهد بود.
+         */
+        if (
+            normalizedNetwork != "BEP20" &&
+            normalizedNetwork != "BSC"
+        )
+        {
+            return ResponseFactory.Fail<bool>(
+                "Only USDT on the BNB Smart Chain (BEP20) network is supported");
+        }
+
+        /*
+         * آدرس‌های BSC/EVM باید با 0x شروع شوند
+         * و در مجموع 42 کاراکتر داشته باشند.
+         */
+        var isValidBscAddress =
+            normalizedAddress.StartsWith(
+                "0x",
+                StringComparison.OrdinalIgnoreCase) &&
+            normalizedAddress.Length == 42 &&
+            normalizedAddress
+                .Skip(2)
+                .All(Uri.IsHexDigit);
+
+        if (!isValidBscAddress)
+        {
+            return ResponseFactory.Fail<bool>(
+                "Please enter a valid USDT BEP20 withdrawal address");
+        }
+
         var existing = await _context.UserWalletAddresses
-            .FirstOrDefaultAsync(x => x.UserId == userId);
+            .FirstOrDefaultAsync(x =>
+                x.UserId == userId);
 
         if (existing != null)
         {
-            existing.Address = address;
-            existing.Network = network;
+            existing.Address =
+                normalizedAddress;
+
+            existing.Network =
+                "BEP20";
         }
         else
         {
-            var walletAddress = new UserWalletAddress
-            {
-                UserId = userId,
-                Address = address,
-                Network = network
-            };
-            _context.UserWalletAddresses.Add(walletAddress);
+            var walletAddress =
+                new UserWalletAddress
+                {
+                    UserId = userId,
+                    Address = normalizedAddress,
+                    Network = "BEP20"
+                };
+
+            _context.UserWalletAddresses.Add(
+                walletAddress);
         }
 
         await _context.SaveChangesAsync();
 
-        return ResponseFactory.Success(true, "Wallet address saved successfully");
+        return ResponseFactory.Success(
+            true,
+            "USDT BEP20 withdrawal address saved successfully");
     }
     public async Task<ApiResponse<UserProfitsResponse>> GetUserProfitsAsync(
         long userId,

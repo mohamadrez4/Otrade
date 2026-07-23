@@ -1,7 +1,4 @@
-﻿@{
-    ViewData["Title"] = "Profile";
-}
-
+﻿
 <div class="profile-page">
 
     <!-- Profile Info -->
@@ -45,41 +42,113 @@
         </div>
     </div>
 
-    <!-- Wallet Address -->
+    <!-- USDT BEP20 Withdrawal Address -->
     <div class="panel-card">
         <div class="profile-header">
             <div>
-                <h3>Withdrawal Wallet Address</h3>
-                <p>This address will be used for your withdrawal requests.</p>
+                <h3>USDT Withdrawal Address</h3>
+                <p>
+                    This address will be used for USDT withdrawals through
+                    the BNB Smart Chain (BEP20) network.
+                </p>
             </div>
         </div>
 
-        <div id="walletAddressMessage" class="profile-alert" style="display:none;"></div>
+        <form id="walletAddressForm"
+              class="profile-form"
+              autocomplete="off">
 
-        <form id="walletAddressForm" class="profile-form" autocomplete="off">
             <div class="profile-form-group">
-                <label for="network">Network</label>
+                <label>
+                    Withdrawal Asset &amp; Network
+                </label>
 
-                <select id="network" class="panel-input" required>
-                    <option value="">Select network</option>
-                    <option value="TRC20">TRC20</option>
-                    <option value="BEP20">BEP20</option>
-                </select>
+                <div class="profile-usdt-network-box">
+
+                    <div class="profile-usdt-network-icon">
+                        USDT
+                    </div>
+
+                    <div class="profile-usdt-network-info">
+                        <strong>USDT — Tether USD</strong>
+
+                        <span>
+                            BNB Smart Chain (BEP20)
+                        </span>
+                    </div>
+
+                    <span class="profile-usdt-network-status">
+                        Supported
+                    </span>
+
+                </div>
+
+                <input id="network"
+                       type="hidden"
+                       value="BEP20" />
+
+                <small class="profile-usdt-network-note">
+                    Enter only a USDT deposit address that supports the
+                    <strong>BNB Smart Chain (BEP20)</strong> network.
+                </small>
             </div>
 
             <div class="profile-form-group">
-                <label for="walletAddress">Wallet Address</label>
+                <label for="walletAddress">
+                    USDT Withdrawal Address (BEP20)
+                </label>
 
-                <input id="walletAddress"
-                       class="panel-input"
-                       type="text"
-                       autocomplete="new-password"
-                       placeholder="Enter your wallet address"
-                       required />
+                <div class="profile-wallet-address-wrap">
+
+                    <input id="walletAddress"
+                           class="panel-input"
+                           type="text"
+                           maxlength="42"
+                           autocomplete="new-password"
+                           spellcheck="false"
+                           inputmode="text"
+                           placeholder="0x..."
+                           required />
+
+                    <button type="button"
+                            id="clearWalletAddressBtn"
+                            class="profile-wallet-clear-btn">
+                        Clear
+                    </button>
+
+                </div>
+
+                <div class="profile-wallet-address-help">
+
+                    <span id="walletAddressValidationText">
+                        Enter a 42-character USDT BEP20 address.
+                    </span>
+
+                    <span id="walletAddressCounter">
+                        0 / 42
+                    </span>
+
+                </div>
+
+                <div class="profile-usdt-warning">
+
+                    <span>!</span>
+
+                    <p>
+                        Make sure the selected deposit asset is
+                        <strong>USDT</strong> and the selected network is
+                        <strong>BNB Smart Chain (BEP20)</strong>.
+                        Using another asset or network may result in permanent
+                        loss of funds.
+                    </p>
+
+                </div>
             </div>
 
-            <button id="saveWalletBtn" type="submit" class="panel-primary-btn">
-                Save Wallet Address
+            <button id="saveWalletBtn"
+                    type="submit"
+                    class="panel-primary-btn">
+                Save USDT BEP20 Address
             </button>
         </form>
     </div>
@@ -258,7 +327,9 @@
         const networkInput = document.getElementById("network");
         const walletAddressInput = document.getElementById("walletAddress");
         const saveWalletBtn = document.getElementById("saveWalletBtn");
-        const walletAddressMessage = document.getElementById("walletAddressMessage");
+        const clearWalletAddressBtn = document.getElementById("clearWalletAddressBtn");
+        const walletAddressCounter = document.getElementById("walletAddressCounter");
+        const walletAddressValidationText = document.getElementById("walletAddressValidationText");
 
         const kycForm = document.getElementById("kycForm");
         const nationalIdImage = document.getElementById("nationalIdImage");
@@ -540,6 +611,49 @@
             element.style.display = "none";
         }
 
+        function isValidUsdtBep20Address(value) {
+            const address = String(value || "").trim();
+
+            return /^0x[a-fA-F0-9]{40}$/.test(address);
+        }
+
+        function updateWalletAddressState() {
+            const address = walletAddressInput.value.trim();
+
+            walletAddressCounter.innerText =
+                `${address.length} / 42`;
+
+            walletAddressInput.classList.remove(
+                "profile-wallet-valid",
+                "profile-wallet-invalid"
+            );
+
+            if (!address) {
+                walletAddressValidationText.innerText =
+                    "Enter a 42-character USDT BEP20 address.";
+
+                return;
+            }
+
+            if (isValidUsdtBep20Address(address)) {
+                walletAddressInput.classList.add(
+                    "profile-wallet-valid"
+                );
+
+                walletAddressValidationText.innerText =
+                    "Valid USDT BEP20 address format.";
+
+                return;
+            }
+
+            walletAddressInput.classList.add(
+                "profile-wallet-invalid"
+            );
+
+            walletAddressValidationText.innerText =
+                "The address must start with 0x and contain 40 hexadecimal characters.";
+        }
+
         // ---------------------
         // Load Profile
         // ---------------------
@@ -563,10 +677,32 @@
                 kycStatus.innerText = data.kycStatus || "-";
                 kycStatus.className = `profile-status ${String(data.kycStatus || "").toLowerCase()}`;
 
+                networkInput.value = "BEP20";
+
                 if (data.walletAddress) {
-                    networkInput.value = data.walletAddress.network || "";
-                    walletAddressInput.value = data.walletAddress.address || "";
+                    walletAddressInput.value =
+                        data.walletAddress.address || "";
+
+                    const previousNetwork =
+                        String(
+                            data.walletAddress.network || ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+                    if (
+                        previousNetwork &&
+                        previousNetwork !== "BEP20" &&
+                        previousNetwork !== "BSC"
+                    ) {
+                        showNotification(
+                            "Your previous withdrawal network is no longer supported. Please enter a USDT address on the BNB Smart Chain (BEP20) network.",
+                            "warning"
+                        );
+                    }
                 }
+
+                updateWalletAddressState();
 
                 const kycDocs = data.kycDocuments || [];
                 const nationalDoc = getBestKycDocument(kycDocs, "NationalId");
@@ -604,16 +740,31 @@
         }
 
         // ---------------------
-        // Wallet Address
+        // USDT BEP20 Wallet Address
         // ---------------------
         walletAddressForm.addEventListener("submit", async function (e) {
             e.preventDefault();
 
-            const network = networkInput.value.trim();
+            const network = "BEP20";
             const address = walletAddressInput.value.trim();
 
-            if (!network || !address) {
-                showAlert(walletAddressMessage, "Please enter network and wallet address.", false);
+            if (!address) {
+                showNotification(
+                    "Please enter your USDT BEP20 withdrawal address.",
+                    "warning"
+                );
+
+                walletAddressInput.focus();
+                return;
+            }
+
+            if (!isValidUsdtBep20Address(address)) {
+                showNotification(
+                    "Please enter a valid USDT BEP20 address starting with 0x.",
+                    "warning"
+                );
+
+                walletAddressInput.focus();
                 return;
             }
 
@@ -621,28 +772,74 @@
             saveWalletBtn.innerText = "Saving...";
 
             try {
-                const result = await api("/api/wallet/address/save", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        network,
-                        address
-                    })
-                });
+                const result = await api(
+                    "/api/wallet/address/save",
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            network: network,
+                            address: address
+                        })
+                    }
+                );
 
                 if (!result.success) {
-                    showAlert(walletAddressMessage, result.message || "Could not save wallet address.", false);
+                    showNotification(
+                        result.message ||
+                        "Could not save the USDT BEP20 address.",
+                        "error"
+                    );
+
                     return;
                 }
 
-                showAlert(walletAddressMessage, result.message || "Wallet address saved successfully.", true);
+                showNotification(
+                    result.message ||
+                    "USDT BEP20 withdrawal address saved successfully.",
+                    "success"
+                );
+
+                networkInput.value = "BEP20";
+                updateWalletAddressState();
 
             } catch (error) {
-                showAlert(walletAddressMessage, error.message || "Could not save wallet address.", false);
+                showNotification(
+                    error.message ||
+                    "Could not save the USDT BEP20 address.",
+                    "error"
+                );
+
             } finally {
                 saveWalletBtn.disabled = false;
-                saveWalletBtn.innerText = "Save Wallet Address";
+                saveWalletBtn.innerText =
+                    "Save USDT BEP20 Address";
             }
         });
+
+        walletAddressInput.addEventListener(
+            "input",
+            function () {
+                const cleaned =
+                    walletAddressInput.value
+                        .replace(/\s+/g, "");
+
+                if (walletAddressInput.value !== cleaned) {
+                    walletAddressInput.value = cleaned;
+                }
+
+                updateWalletAddressState();
+            }
+        );
+
+        clearWalletAddressBtn.addEventListener(
+            "click",
+            function () {
+                walletAddressInput.value = "";
+
+                updateWalletAddressState();
+                walletAddressInput.focus();
+            }
+        );
 
         // ---------------------
         // KYC Upload
@@ -764,7 +961,10 @@
         setupFileNamePreview(nationalIdImage, nationalIdFileName);
         setupFileNamePreview(selfieImage, selfieFileName);
 
+        networkInput.value = "BEP20";
+        updateWalletAddressState();
+
         setSubmitKycVisible(false);
         loadProfile();
     </script>
-}
+}   
