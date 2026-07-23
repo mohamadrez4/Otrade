@@ -205,7 +205,7 @@ namespace Otrade.Application.Services
 
             withdrawal.Status = DepositStatus.Approved;
             withdrawal.ProcessedAt = now;
-            withdrawal.AdminNote = "Approved by admin";
+            withdrawal.AdminNote = null;
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -421,31 +421,69 @@ namespace Otrade.Application.Services
 
             return ResponseFactory.Success(true, "KYC document rejected");
         }
-        public async Task<ApiResponse<List<AdminTicketDto>>> GetOpenTicketsAsync()
+        public async Task<ApiResponse<List<AdminTicketDto>>>GetOpenTicketsAsync()
         {
             var tickets = await _context.Tickets
                 .AsNoTracking()
-                .Include(x => x.User)
-                .Include(x => x.Messages)
-                    .ThenInclude(x => x.User)
-                .Where(x => x.Status == "Open")
-                .OrderByDescending(x => x.CreatedAt)
+                .Where(x =>
+                    x.Status == "Open")
+                .OrderByDescending(x =>
+                    x.CreatedAt)
                 .Select(x => new AdminTicketDto
                 {
-                    TicketId = x.TicketId,
-                    UserEmail = x.User.Email,
-                    Subject = x.Subject,
-                    Status = x.Status,
-                    CreatedAt = x.CreatedAt,
-                    ClosedAt = x.ClosedAt,
+                    TicketId =
+                        x.TicketId,
+
+                    UserEmail =
+                        x.User.Email,
+
+                    UserFullName =
+                        (x.User.FirstName + " " +
+                         x.User.LastName).Trim(),
+
+                    UserUid =
+                        x.User.ReferralCode,
+
+                    Subject =
+                        x.Subject,
+
+                    Status =
+                        x.Status,
+
+                    CreatedAt =
+                        x.CreatedAt,
+
+                    ClosedAt =
+                        x.ClosedAt,
+
                     Messages = x.Messages
-                        .OrderBy(m => m.CreatedAt)
-                        .Select(m => new AdminTicketMessageDto
-                        {
-                            SenderEmail = m.User.Email,
-                            Message = m.Message,
-                            CreatedAt = m.CreatedAt
-                        })
+                        .OrderBy(m =>
+                            m.CreatedAt)
+                        .Select(m =>
+                            new AdminTicketMessageDto
+                            {
+                                SenderEmail =
+                                    m.User.Email,
+
+                                SenderName =
+                                    m.User.IsAdmin ||
+                                    m.User.IsOwner
+                                        ? "Support Team"
+                                        : (m.User.FirstName +
+                                           " " +
+                                           m.User.LastName)
+                                          .Trim(),
+
+                                IsSupport =
+                                    m.User.IsAdmin ||
+                                    m.User.IsOwner,
+
+                                Message =
+                                    m.Message,
+
+                                CreatedAt =
+                                    m.CreatedAt
+                            })
                         .ToList()
                 })
                 .ToListAsync();
@@ -518,7 +556,8 @@ namespace Otrade.Application.Services
 
             return ResponseFactory.Success(true, "Ticket closed");
         }
-        public async Task<ApiResponse<PagedResponse<AdminTicketDto>>>GetTicketsAsync(TicketQueryRequest request)
+        public async Task<ApiResponse<PagedResponse<AdminTicketDto>>>
+            GetTicketsAsync(TicketQueryRequest request)
         {
             if (request.Page <= 0)
                 request.Page = 1;
@@ -531,57 +570,123 @@ namespace Otrade.Application.Services
 
             var query = _context.Tickets
                 .AsNoTracking()
-                .Include(x => x.User)
-                .Include(x => x.Messages)
-                    .ThenInclude(x => x.User)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(request.Status))
+            if (!string.IsNullOrWhiteSpace(
+                    request.Status))
             {
-                query = query.Where(x => x.Status == request.Status);
-            }
+                var status =
+                    request.Status.Trim();
 
-            if (!string.IsNullOrWhiteSpace(request.Search))
-            {
                 query = query.Where(x =>
-                    x.Subject.Contains(request.Search) ||
-                    x.User.Email.Contains(request.Search));
+                    x.Status == status);
             }
 
-            var totalCount = await query.CountAsync();
+            if (!string.IsNullOrWhiteSpace(
+                    request.Search))
+            {
+                var search =
+                    request.Search.Trim();
+
+                query = query.Where(x =>
+                    x.Subject.Contains(search) ||
+                    x.User.Email.Contains(search) ||
+                    x.User.FirstName.Contains(search) ||
+                    x.User.LastName.Contains(search) ||
+                    x.User.ReferralCode.Contains(search) ||
+                    (x.User.FirstName + " " +
+                     x.User.LastName).Contains(search));
+            }
+
+            var totalCount =
+                await query.CountAsync();
 
             var items = await query
-                .OrderByDescending(x => x.CreatedAt)
-                .Skip((request.Page - 1) * request.PageSize)
+                .OrderByDescending(x =>
+                    x.CreatedAt)
+                .Skip(
+                    (request.Page - 1) *
+                    request.PageSize)
                 .Take(request.PageSize)
                 .Select(x => new AdminTicketDto
                 {
-                    TicketId = x.TicketId,
-                    UserEmail = x.User.Email,
-                    Subject = x.Subject,
-                    Status = x.Status,
-                    CreatedAt = x.CreatedAt,
-                    ClosedAt = x.ClosedAt,
+                    TicketId =
+                        x.TicketId,
+
+                    UserEmail =
+                        x.User.Email,
+
+                    UserFullName =
+                        (x.User.FirstName + " " +
+                         x.User.LastName).Trim(),
+
+                    UserUid =
+                        x.User.ReferralCode,
+
+                    Subject =
+                        x.Subject,
+
+                    Status =
+                        x.Status,
+
+                    CreatedAt =
+                        x.CreatedAt,
+
+                    ClosedAt =
+                        x.ClosedAt,
+
                     Messages = x.Messages
-                        .OrderBy(m => m.CreatedAt)
-                        .Select(m => new AdminTicketMessageDto
-                        {
-                            SenderEmail = m.User.Email,
-                            Message = m.Message,
-                            CreatedAt = m.CreatedAt
-                        })
+                        .OrderBy(m =>
+                            m.CreatedAt)
+                        .Select(m =>
+                            new AdminTicketMessageDto
+                            {
+                                SenderEmail =
+                                    m.User.Email,
+
+                                SenderName =
+                                    m.User.IsAdmin ||
+                                    m.User.IsOwner
+                                        ? "Support Team"
+                                        : (m.User.FirstName +
+                                           " " +
+                                           m.User.LastName)
+                                          .Trim(),
+
+                                IsSupport =
+                                    m.User.IsAdmin ||
+                                    m.User.IsOwner,
+
+                                Message =
+                                    m.Message,
+
+                                CreatedAt =
+                                    m.CreatedAt
+                            })
                         .ToList()
                 })
                 .ToListAsync();
 
-            var result = new PagedResponse<AdminTicketDto>
-            {
-                Page = request.Page,
-                PageSize = request.PageSize,
-                TotalCount = totalCount,
-                TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize),
-                Items = items
-            };
+            var result =
+                new PagedResponse<AdminTicketDto>
+                {
+                    Page =
+                        request.Page,
+
+                    PageSize =
+                        request.PageSize,
+
+                    TotalCount =
+                        totalCount,
+
+                    TotalPages =
+                        (int)Math.Ceiling(
+                            totalCount /
+                            (double)request.PageSize),
+
+                    Items =
+                        items
+                };
 
             return ResponseFactory.Success(result);
         }

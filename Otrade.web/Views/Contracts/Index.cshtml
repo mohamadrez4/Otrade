@@ -853,17 +853,29 @@
             </div>
 
             <div class="contract-v2-rank-detail">
-
                 <div class="contract-v2-rank-detail-header">
 
-                    <div>
-                        <span id="rankPlanLabel">
-                            Membership Plan
+                    <div class="contract-v2-rank-identity">
+
+                        <span class="rank-media-shell rank-media-contract-shell">
+
+                            <img id="rankPlanImage"
+                                 class="rank-media-img"
+                                 src="/images/ranks/basic-rank.gif"
+                                 alt="Basic Rank" />
+
                         </span>
 
-                        <h4 id="rankPlanName">
-                            Basic
-                        </h4>
+                        <div>
+                            <span id="rankPlanLabel">
+                                Membership Plan
+                            </span>
+
+                            <h4 id="rankPlanName">
+                                Basic
+                            </h4>
+                        </div>
+
                     </div>
 
                     <span id="rankPlanBadge"
@@ -872,7 +884,6 @@
                     </span>
 
                 </div>
-
                 <p id="rankPlanDescription"
                    class="contract-v2-rank-description">
                 </p>
@@ -1425,7 +1436,13 @@
             document.getElementById(
                 "rankPlanName"
             ).innerText = rankName;
-
+                    setOtradeRankImage(
+            "rankPlanImage",
+            rankName,
+            {
+                eager: true
+            }
+        );
             document.getElementById(
                 "rankPlanBadge"
             ).innerText = rankName.toUpperCase();

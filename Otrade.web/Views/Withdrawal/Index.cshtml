@@ -99,7 +99,9 @@
     <div class="withdrawal-header">
         <div>
             <h3>Withdrawal History</h3>
-            <p>You can cancel pending withdrawal requests before admin approval.</p>
+            <p>
+                Track your withdrawal requests and cancel them while they are pending.
+            </p>
         </div>
     </div>
 
@@ -435,9 +437,25 @@
                 }
 
                 items.forEach(item => {
-                    const row = document.createElement("tr");
-                    const status = String(item.status || "").toLowerCase();
-                    const note = item.adminNote || "-";
+                 const row = document.createElement("tr");
+                 const status = String(item.status || "").toLowerCase();
+
+                const rawNote =
+                    String(item.adminNote || "").trim();
+
+                const hiddenApprovalNotes = [
+                    "approved by admin",
+                    "approved by financial department",
+                    "approved by finance department"
+                ];
+
+                const note =
+                    hiddenApprovalNotes.includes(
+                        rawNote.toLowerCase()
+                    )
+                        ? "-"
+                        : rawNote || "-";
+                   
 
                     row.innerHTML = `
                         <td>${formatDate(item.createdAt)}</td>

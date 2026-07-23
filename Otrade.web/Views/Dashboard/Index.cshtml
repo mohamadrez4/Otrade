@@ -297,12 +297,25 @@
 
             <div class="dashboard-v2-rank-main">
 
-                <div>
-                    <span>Current Rank</span>
+                <div class="dashboard-v2-rank-current">
 
-                    <strong id="currentRank">
-                        -
-                    </strong>
+                    <span class="rank-media-shell rank-media-dashboard-current-shell">
+
+                        <img id="dashboardCurrentRankImage"
+                             class="rank-media-img"
+                             src="/images/ranks/basic-rank.gif"
+                             alt="Current Rank" />
+
+                    </span>
+
+                    <div>
+                        <span>Current Rank</span>
+
+                        <strong id="currentRank">
+                            -
+                        </strong>
+                    </div>
+
                 </div>
 
                 <div>
@@ -314,7 +327,6 @@
                 </div>
 
             </div>
-
             <div id="rankBonusMiniLine"
                  class="dashboard-v2-rank-extra"
                  style="display:none;">
@@ -331,30 +343,29 @@
 
             </div>
 
-            <div class="dashboard-v2-next-rank">
+            <div class="dashboard-v2-next-rank-header">
 
-                <div class="dashboard-v2-next-rank-header">
+                <div class="dashboard-v2-next-rank-title">
+
+                    <span id="dashboardNextRankImageShell"
+                          class="rank-media-shell rank-media-dashboard-next-shell">
+
+                        <img id="dashboardNextRankImage"
+                             class="rank-media-img"
+                             src="/images/ranks/bronze-rank.gif"
+                             alt="Next Rank" />
+
+                    </span>
+
                     <span>Next Rank</span>
 
-                    <strong id="nextRank">
-                        -
-                    </strong>
                 </div>
 
-                <div class="dashboard-v2-progress">
-                    <div id="rankProgress"></div>
-                </div>
-
-                <div class="dashboard-v2-progress-footer">
-                    <span>Rank Progress</span>
-
-                    <strong id="rankProgressText">
-                        0%
-                    </strong>
-                </div>
+                <strong id="nextRank">
+                    -
+                </strong>
 
             </div>
-
             <a href="/rank"
                class="dashboard-v2-secondary-action">
                 View All Ranks
@@ -590,10 +601,31 @@
                 formatMoney(data.networkVolume) + " USDT"
             );
 
-            setText(
-                "nextRank",
-                data.nextRank || "Max Rank"
+        const nextRankName =
+            data.nextRank || "";
+
+        setText(
+            "nextRank",
+            nextRankName || "Max Rank"
+        );
+
+        const nextRankImageShell =
+            document.getElementById(
+                "dashboardNextRankImageShell"
             );
+
+        if (nextRankName) {
+            nextRankImageShell.style.display =
+                "inline-flex";
+
+            setOtradeRankImage(
+                "dashboardNextRankImage",
+                nextRankName
+            );
+        } else {
+            nextRankImageShell.style.display =
+                "none";
+        }
 
             const progress = Math.min(
                 100,
@@ -723,7 +755,13 @@
                 "currentRank",
                 data.currentRank || "-"
             );
-
+                    setOtradeRankImage(
+            "dashboardCurrentRankImage",
+            data.currentRank || "Basic",
+            {
+                eager: true
+            }
+        );
             if (!data.hasActiveBonusRank) {
                 rankBonusBadge.style.display = "none";
                 rankBonusMiniLine.style.display = "none";
@@ -732,13 +770,24 @@
 
             currentRankCard.classList.add("has-rank-bonus");
 
-            setText(
-                "currentRank",
-                data.bonusRankName ||
-                data.effectiveRank ||
-                data.currentRank ||
-                "-"
-            );
+        const effectiveRankName =
+            data.bonusRankName ||
+            data.effectiveRank ||
+            data.currentRank ||
+            "Basic";
+
+        setText(
+            "currentRank",
+            effectiveRankName
+        );
+
+        setOtradeRankImage(
+            "dashboardCurrentRankImage",
+            effectiveRankName,
+            {
+                eager: true
+            }
+        );
 
             rankBonusBadge.style.display = "inline-flex";
             rankBonusMiniLine.style.display = "flex";
