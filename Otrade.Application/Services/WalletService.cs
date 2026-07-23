@@ -357,26 +357,76 @@ public class WalletService
         TransferRequest request,
         long userId)
     {
+        if (request == null)
+            return ResponseFactory.Fail<bool>("Invalid request");
+
         if (request.Amount <= 0)
             return ResponseFactory.Fail<bool>("Invalid amount");
 
         if (request.FromWalletId == request.ToWalletId)
-            return ResponseFactory.Fail<bool>("Source and destination wallets cannot be the same");
+        {
+            return ResponseFactory.Fail<bool>(
+                "Source and destination wallets cannot be the same");
+        }
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable);
+        await using var transaction =
+            await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
 
         var fromWallet = await _context.Wallets
-            .FirstOrDefaultAsync(x => x.WalletId == request.FromWalletId);
+            .FirstOrDefaultAsync(x =>
+                x.WalletId == request.FromWalletId);
 
         var toWallet = await _context.Wallets
-            .FirstOrDefaultAsync(x => x.WalletId == request.ToWalletId);
+            .FirstOrDefaultAsync(x =>
+                x.WalletId == request.ToWalletId);
 
         if (fromWallet == null || toWallet == null)
             return ResponseFactory.Fail<bool>("Wallet not found");
 
-        if (fromWallet.UserId != userId || toWallet.UserId != userId)
-            return ResponseFactory.Fail<bool>("Unauthorized wallet access");
+        if (fromWallet.UserId != userId ||
+            toWallet.UserId != userId)
+        {
+            return ResponseFactory.Fail<bool>(
+                "Unauthorized wallet access");
+        }
+
+        /*
+         * کنترل مسیرهای مجاز انتقال در Backend.
+         * این کنترل نباید فقط به JavaScript وابسته باشد.
+         */
+        var isAllowedWalletPath =
+            (
+                fromWallet.WalletType == WalletType.Main &&
+                toWallet.WalletType == WalletType.Invest
+            )
+            ||
+            (
+                fromWallet.WalletType == WalletType.Invest &&
+                toWallet.WalletType == WalletType.Main
+            )
+            ||
+            (
+                fromWallet.WalletType == WalletType.Profit &&
+                (
+                    toWallet.WalletType == WalletType.Main ||
+                    toWallet.WalletType == WalletType.Invest
+                )
+            )
+            ||
+            (
+                fromWallet.WalletType == WalletType.Referral &&
+                (
+                    toWallet.WalletType == WalletType.Main ||
+                    toWallet.WalletType == WalletType.Invest
+                )
+            );
+
+        if (!isAllowedWalletPath)
+        {
+            return ResponseFactory.Fail<bool>(
+                "This wallet transfer path is not allowed");
+        }
 
         if (fromWallet.IsLocked)
             return ResponseFactory.Fail<bool>("Wallet is locked");
@@ -395,75 +445,163 @@ public class WalletService
             fromWallet.WalletType == WalletType.Invest &&
             toWallet.WalletType == WalletType.Main;
 
+        Contract? investmentContract = null;
+        var contractActivatedNow = false;
+        /*
+         * برای هر انتقال به Investing Wallet باید قرارداد
+         * Active یا PendingActivation وجود داشته باشد.
+         */
+        if (isTransferToInvest)
+        {
+            investmentContract = await _context.Contracts
+                .Where(x =>
+                    x.UserId == userId &&
+                    (
+                        x.Status == ContractStatus.Active ||
+                        x.Status == ContractStatus.PendingActivation
+                    ))
+                .OrderByDescending(x =>
+                    x.Status == ContractStatus.Active)
+                .ThenByDescending(x => x.ContractId)
+                .FirstOrDefaultAsync();
+
+            if (investmentContract == null)
+            {
+                return ResponseFactory.Fail<bool>(
+                    "No signed investment agreement was found. Please sign the agreement first.");
+            }
+
+            /*
+             * یک قرارداد Active باید حتماً تاریخ شروع و پایان داشته باشد.
+             * این کنترل از ادامه عملیات روی داده خراب جلوگیری می‌کند.
+             */
+            if (investmentContract.Status == ContractStatus.Active &&
+                (
+                    investmentContract.StartDate == null ||
+                    investmentContract.EndDate == null
+                ))
+            {
+                return ResponseFactory.Fail<bool>(
+                    "Active contract dates are invalid. Please contact support.");
+            }
+        }
+
+        /*
+         * تا زمانی که قرارداد Active است،
+         * انتقال اصل سرمایه از Invest به Main مجاز نیست.
+         */
         if (isInvestToMain)
         {
-            var activeContract = await _context.Contracts
-                .FirstOrDefaultAsync(x =>
+            var activeContractExists =
+                await _context.Contracts.AnyAsync(x =>
                     x.UserId == userId &&
-                    x.Status == ContractStatus.Active);
+                    x.Status == ContractStatus.Active &&
+                    (
+                        x.EndDate == null ||
+                        x.EndDate > DateTime.Now
+                    ));
 
-            if (activeContract != null)
+            if (activeContractExists)
+            {
                 return ResponseFactory.Fail<bool>(
-                    "Contract is still active. Withdraw not allowed.");
+                    "Contract is still active. Investment principal cannot be transferred to the Main Wallet.");
+            }
         }
 
-        if (isMainToInvest)
-        {
-            var activeContract = await _context.Contracts
-                .FirstOrDefaultAsync(x =>
-                    x.UserId == userId &&
-                    x.Status == ContractStatus.Active);
-
-            if (activeContract == null)
-                return ResponseFactory.Fail<bool>(
-                    "No active contract. Please create a contract first.");
-        }
-
+        /*
+         * رزرو ظرفیت قبل از تغییر موجودی‌ها انجام می‌شود.
+         * ReserveCurrentMonthCapacityAsync فقط Entity را تغییر می‌دهد
+         * و SaveChanges جداگانه اجرا نمی‌کند؛ بنابراین بخشی از همین
+         * Transaction باقی می‌ماند.
+         */
         if (isTransferToInvest)
         {
             var capacityResult =
-                await _investmentCapacityService.ReserveCurrentMonthCapacityAsync(
-                    request.Amount);
+                await _investmentCapacityService
+                    .ReserveCurrentMonthCapacityAsync(
+                        request.Amount);
 
             if (!capacityResult.Success)
-                return ResponseFactory.Fail<bool>(capacityResult.Message);
+            {
+                return ResponseFactory.Fail<bool>(
+                    capacityResult.Message);
+            }
         }
 
         var now = DateTime.Now;
 
         var fromBefore = fromWallet.Balance;
         var toBefore = toWallet.Balance;
+
         InvestmentWaitListEntry? completedWaitListEntry = null;
+
         fromWallet.Balance -= request.Amount;
         toWallet.Balance += request.Amount;
 
+        /*
+         * فقط قرارداد PendingActivation فعال می‌شود.
+         * قرارداد Active قبلی هرگز دوباره تاریخ‌گذاری نمی‌شود.
+         */
+        if (isTransferToInvest &&
+            investmentContract != null &&
+            investmentContract.Status ==
+                ContractStatus.PendingActivation)
+        {
+            investmentContract.Status =
+                ContractStatus.Active;
+
+            investmentContract.AcceptedAt ??= now;
+            investmentContract.StartDate = now;
+            investmentContract.EndDate =
+                now.AddMonths(6);
+            contractActivatedNow = true;
+            /*
+             * اصل سرمایه تا پایان قرارداد قفل می‌شود.
+             * ورود وجه به کیف پول قفل‌شده همچنان ممکن است؛
+             * فقط انتقال از آن محدود می‌شود.
+             */
+            toWallet.IsLocked = true;
+        }
+
+        /*
+         * Referral Commission فقط برای مسیر Main → Invest
+         * محاسبه می‌شود.
+         */
         if (isMainToInvest)
         {
             await _mainInvestBonusService.HandleBonusAsync(
                 userId,
                 request.Amount);
         }
+
         if (isTransferToInvest)
         {
-            completedWaitListEntry = await _context.InvestmentWaitListEntries
-                .Where(x =>
-                    x.UserId == userId &&
-                    x.Status == InvestmentWaitListStatus.CapacityAvailable &&
-                    x.RequestedAmount <= request.Amount)
-                .OrderBy(x => x.CreatedAt)
-                .FirstOrDefaultAsync();
+            completedWaitListEntry =
+                await _context.InvestmentWaitListEntries
+                    .Where(x =>
+                        x.UserId == userId &&
+                        x.Status ==
+                            InvestmentWaitListStatus.CapacityAvailable &&
+                        x.RequestedAmount <= request.Amount)
+                    .OrderBy(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
 
             if (completedWaitListEntry != null)
             {
-                completedWaitListEntry.Status = InvestmentWaitListStatus.Completed;
+                completedWaitListEntry.Status =
+                    InvestmentWaitListStatus.Completed;
+
                 completedWaitListEntry.CompletedAt = now;
+
                 completedWaitListEntry.AdminNote =
-                    "Completed automatically after transfer to Invest Wallet.";
+                    "Completed automatically after transfer to Investing Wallet.";
             }
         }
-        var transferDescription = string.IsNullOrWhiteSpace(request.Description)
-            ? $"Transfer from {fromWallet.WalletType} to {toWallet.WalletType}"
-            : request.Description.Trim();
+
+        var transferDescription =
+            string.IsNullOrWhiteSpace(request.Description)
+                ? $"Transfer from {fromWallet.WalletType} to {toWallet.WalletType}"
+                : request.Description.Trim();
 
         var transfer = new WalletTransfer
         {
@@ -499,24 +637,38 @@ public class WalletService
         };
 
         _context.WalletTransfers.Add(transfer);
-        _context.WalletTransactions.AddRange(fromTx, toTx);
 
+        _context.WalletTransactions.AddRange(
+            fromTx,
+            toTx);
+
+        /*
+         * تغییر موجودی، ظرفیت، فعال‌شدن قرارداد،
+         * قفل Wallet، Bonus و Wait List همگی با
+         * یک SaveChanges ذخیره می‌شوند.
+         */
         await _context.SaveChangesAsync();
-
         await transaction.CommitAsync();
 
+        /*
+         * ارسال ایمیل بعد از Commit انجام می‌شود.
+         * شکست Queue ایمیل نباید Transaction مالی را Rollback کند.
+         */
         if (isTransferToInvest)
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.UserId == userId);
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId);
 
             if (user != null)
             {
-                var emailBody = _emailTemplateService.GetInvestWalletTransferEmail(
-                    request.Amount,
-                    fromWallet.WalletType.ToString(),
-                    toWallet.Balance);
+                var emailBody =
+                    _emailTemplateService
+                        .GetInvestWalletTransferEmail(
+                            request.Amount,
+                            fromWallet.WalletType.ToString(),
+                            toWallet.Balance);
 
                 await _notificationQueue.QueueEmailAsync(
                     user.Email,
@@ -525,7 +677,13 @@ public class WalletService
             }
         }
 
-        return ResponseFactory.Success(true, "Transfer completed");
+        var successMessage = contractActivatedNow
+            ? "Transfer completed and the six-month investment contract was activated."
+            : "Transfer completed";
+
+        return ResponseFactory.Success(
+            true,
+            successMessage);
     }
 
     public async Task<ApiResponse<bool>> CreateDepositRequestAsync(

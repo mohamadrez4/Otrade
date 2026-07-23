@@ -5,9 +5,9 @@ public class Contract
     public long ContractId { get; set; }
 
     public long UserId { get; set; }
-
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public DateTime? AcceptedAt { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public ContractStatus Status { get; set; }
 

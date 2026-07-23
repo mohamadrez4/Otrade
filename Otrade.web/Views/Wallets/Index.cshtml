@@ -3,65 +3,233 @@
     ViewData["Title"] = "Wallets";
 }
 
-<div class="wallet-page">
+<div class="wallet-v2-page">
 
-    <div class="panel-card page-header-card">
+    <section class="panel-card wallet-v2-header">
         <div>
+            <span class="wallet-v2-eyebrow">Asset Management</span>
             <h2>Wallets</h2>
-            <p>Manage your Otrade wallets and transfer funds between allowed wallets.</p>
+            <p>
+                Manage your Otrade wallets and transfer funds through the allowed wallet paths.
+            </p>
         </div>
 
-        <button type="button" class="btn panel-primary-btn" onclick="openTransferModal()">
-            Transfer
-        </button>
+        <div class="wallet-v2-header-actions">
+            <button type="button"
+                    class="wallet-v2-outline-btn"
+                    data-open-wallet-modal="walletGuideModal">
+                Wallet Guide
+            </button>
+
+            <button type="button"
+                    class="wallet-v2-outline-btn"
+                    data-open-wallet-modal="transferRulesModal">
+                Transfer Rules
+            </button>
+        </div>
+    </section>
+
+    <div class="wallet-v2-main-grid">
+
+        <section class="panel-card wallet-v2-overview">
+            <div class="wallet-v2-section-header">
+                <div>
+                    <span class="wallet-v2-eyebrow">Your Assets</span>
+                    <h3>Wallet Overview</h3>
+                </div>
+
+                <button type="button"
+                        class="wallet-v2-icon-btn wallet-v2-warning-icon"
+                        data-open-wallet-modal="walletGuideModal"
+                        aria-label="Open wallet guide"
+                        title="Important wallet information">
+                    !
+                </button>
+            </div>
+
+            <div class="wallet-v2-total-assets">
+                <span>Total Assets</span>
+                <strong id="walletTotalAssets">0.00 USDT</strong>
+            </div>
+
+            <div class="wallet-v2-wallet-list">
+                <article class="wallet-v2-wallet-row wallet-main">
+                    <div class="wallet-v2-wallet-info">
+                        <span class="wallet-v2-wallet-icon">M</span>
+                        <div>
+                            <strong>Main Wallet</strong>
+                            <small>Deposits and withdrawals</small>
+                        </div>
+                    </div>
+                    <span class="wallet-v2-wallet-balance" id="mainWallet">0.00 USDT</span>
+                </article>
+
+                <article class="wallet-v2-wallet-row wallet-invest">
+                    <div class="wallet-v2-wallet-info">
+                        <span class="wallet-v2-wallet-icon">I</span>
+                        <div>
+                            <strong>Investing Wallet</strong>
+                            <small>Active investment capital</small>
+                        </div>
+                    </div>
+                    <span class="wallet-v2-wallet-balance" id="investWallet">0.00 USDT</span>
+                </article>
+
+                <article class="wallet-v2-wallet-row wallet-profit">
+                    <div class="wallet-v2-wallet-info">
+                        <span class="wallet-v2-wallet-icon">P</span>
+                        <div>
+                            <strong>Profit Wallet</strong>
+                            <small>Daily investment profits</small>
+                        </div>
+                    </div>
+                    <span class="wallet-v2-wallet-balance" id="profitWallet">0.00 USDT</span>
+                </article>
+
+                <article class="wallet-v2-wallet-row wallet-referral">
+                    <div class="wallet-v2-wallet-info">
+                        <span class="wallet-v2-wallet-icon">R</span>
+                        <div>
+                            <strong>Referral Wallet</strong>
+                            <small>Referral commissions</small>
+                        </div>
+                    </div>
+                    <span class="wallet-v2-wallet-balance" id="referralWallet">0.00 USDT</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="panel-card wallet-v2-transfer-panel">
+            <div class="wallet-v2-section-header">
+                <div>
+                    <span class="wallet-v2-eyebrow">Wallet Transfer</span>
+                    <h3>Transfer Between Wallets</h3>
+                </div>
+
+                <button type="button"
+                        class="wallet-v2-rules-btn"
+                        data-open-wallet-modal="transferRulesModal">
+                    View Rules
+                </button>
+            </div>
+
+            <form id="transferForm" class="wallet-v2-transfer-form">
+                <div class="wallet-v2-transfer-grid">
+                    <div class="wallet-v2-field">
+                        <label for="fromWallet">From Wallet</label>
+                        <select class="form-control panel-input" id="fromWallet">
+                            <option value="Main">Main Wallet</option>
+                            <option value="Invest">Investing Wallet</option>
+                            <option value="Profit">Profit Wallet</option>
+                            <option value="Referral">Referral Wallet</option>
+                        </select>
+                    </div>
+
+                    <div class="wallet-v2-field">
+                        <label for="toWallet">To Wallet</label>
+                        <select class="form-control panel-input" id="toWallet"></select>
+                    </div>
+                </div>
+
+                <div class="wallet-v2-route-box">
+                    <div>
+                        <span>Selected Route</span>
+                        <strong id="transferRouteText">Main Wallet → Investing Wallet</strong>
+                    </div>
+                    <div>
+                        <span>Available Balance</span>
+                        <strong id="sourceWalletBalance">0.00 USDT</strong>
+                    </div>
+                </div>
+
+                <div class="transfer-capacity-box wallet-v2-capacity-box"
+                     id="transferCapacityBox"
+                     style="display:none;">
+                    <div class="transfer-capacity-header">
+                        <div>
+                            <span>Investment Capacity</span>
+                            <strong id="capacityMonthText">Current Month</strong>
+                        </div>
+
+                        <button type="button" id="refreshInvestmentCapacityBtn">
+                            Refresh
+                        </button>
+                    </div>
+
+                    <div class="transfer-capacity-remaining-box">
+                        <span>Capacity Remaining</span>
+                        <strong id="capacityRemainingText">0.00 USDT</strong>
+                    </div>
+
+                    <p id="capacityWarningText" class="transfer-capacity-warning"></p>
+
+                    <div id="investmentWaitListBox"
+                         class="investment-waitlist-box"
+                         style="display:none;">
+                        <div class="investment-waitlist-info">
+                            <strong id="investmentWaitListTitle">Join Investment Wait List</strong>
+                            <p id="investmentWaitListText">
+                                Investment capacity is full. You can join the wait list and we will notify you when capacity becomes available.
+                            </p>
+                        </div>
+
+                        <div id="investmentWaitListStatus"
+                             class="investment-waitlist-status"
+                             style="display:none;">
+                        </div>
+
+                        <div class="investment-waitlist-actions">
+                            <button type="button"
+                                    id="joinInvestmentWaitListBtn"
+                                    class="panel-primary-btn investment-waitlist-btn">
+                                Join Wait List
+                            </button>
+
+                            <button type="button"
+                                    id="cancelInvestmentWaitListBtn"
+                                    class="internal-transfer-secondary-btn investment-waitlist-btn"
+                                    style="display:none;">
+                                Cancel Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wallet-v2-field">
+                    <label for="transferAmount">Amount</label>
+                    <div class="transfer-amount-wrapper">
+                        <input type="number"
+                               class="form-control panel-input transfer-amount-input"
+                               id="transferAmount"
+                               min="0"
+                               step="0.00000001"
+                               placeholder="0.00" />
+
+                        <button type="button" id="maxTransferBtn" class="transfer-max-btn">
+                            MAX
+                        </button>
+                    </div>
+                </div>
+
+                <div class="wallet-v2-field">
+                    <label for="transferDescription">Description</label>
+                    <input type="text"
+                           class="form-control panel-input"
+                           id="transferDescription"
+                           maxlength="500"
+                           placeholder="Optional" />
+                </div>
+
+                <button type="submit"
+                        class="wallet-v2-submit-btn"
+                        id="confirmTransferBtn">
+                    Review Transfer
+                </button>
+            </form>
+        </section>
     </div>
 
-    <div class="wallet-grid wallet-page-grid">
-
-        <div class="panel-card wallet-card wallet-main">
-            <span>Main Wallet</span>
-            <strong id="mainWallet">0.00 USDT</strong>
-            <p>Deposit and withdrawal wallet</p>
-        </div>
-
-        <div class="panel-card wallet-card wallet-invest">
-            <span>Invest Wallet</span>
-            <strong id="investWallet">0.00 USDT</strong>
-            <p>Active investment balance</p>
-        </div>
-
-        <div class="panel-card wallet-card wallet-profit">
-            <span>Profit Wallet</span>
-            <strong id="profitWallet">0.00 USDT</strong>
-            <p>Daily investment profit</p>
-        </div>
-
-        <div class="panel-card wallet-card wallet-referral">
-            <span>Referral Wallet</span>
-            <strong id="referralWallet">0.00 USDT</strong>
-            <p>Referral income and bonuses</p>
-        </div>
-
-    </div>
-
-    <div class="panel-card mt-4">
-        <h4>Transfer Rules</h4>
-
-        <div class="rules-grid">
-            <div>Main → Invest</div>
-            <div>Requires active contract</div>
-
-            <div>Invest → Main</div>
-            <div>Only after contract completion</div>
-
-            <div>Profit → Main / Invest</div>
-            <div>Allowed</div>
-
-            <div>Referral → Main / Invest</div>
-            <div>Allowed</div>
-        </div>
-    </div>
-    <div class="panel-card mt-4 internal-transfer-card">
+    <section class="panel-card wallet-v2-internal-card internal-transfer-card">
         <div class="internal-transfer-header">
             <div>
                 <h4>Internal Transfer</h4>
@@ -101,27 +269,20 @@
         <div id="internalReceiverPreview"
              class="internal-receiver-preview"
              style="display:none;">
-
-            <div class="internal-receiver-preview-icon">
-                ✓
-            </div>
+            <div class="internal-receiver-preview-icon">✓</div>
 
             <div class="internal-receiver-preview-content">
-                <div class="internal-receiver-preview-title">
-                    Receiver Found
-                </div>
+                <div class="internal-receiver-preview-title">Receiver Found</div>
 
                 <div class="internal-receiver-grid">
                     <div>
                         <span>Full Name</span>
                         <strong id="internalReceiverFullName">-</strong>
                     </div>
-
                     <div>
                         <span>UID</span>
                         <strong id="internalReceiverUid">-</strong>
                     </div>
-
                     <div>
                         <span>Email</span>
                         <strong id="internalReceiverEmail">-</strong>
@@ -133,14 +294,13 @@
                 </p>
             </div>
         </div>
+
         <div id="internalTransferDetails"
              class="internal-transfer-details"
              style="display:none;">
-
             <div class="internal-transfer-details-grid">
                 <div class="internal-transfer-field">
                     <label for="internalTransferAmount">Amount</label>
-
                     <input id="internalTransferAmount"
                            type="number"
                            min="0"
@@ -151,7 +311,6 @@
 
                 <div class="internal-transfer-field">
                     <label for="internalTransferDescription">Description</label>
-
                     <input id="internalTransferDescription"
                            type="text"
                            maxlength="500"
@@ -175,7 +334,6 @@
         <div id="internalTransferVerificationBox"
              class="internal-transfer-verification-box"
              style="display:none;">
-
             <div class="internal-transfer-verification-header">
                 <div>
                     <h5>Email Verification</h5>
@@ -191,7 +349,6 @@
                     <span>Receiver</span>
                     <strong id="internalTransferVerifyReceiver">-</strong>
                 </div>
-
                 <div>
                     <span>Amount</span>
                     <strong id="internalTransferVerifyAmount">0.00 USDT</strong>
@@ -200,7 +357,6 @@
 
             <div class="internal-transfer-field">
                 <label for="internalTransferCode">Verification Code</label>
-
                 <input id="internalTransferCode"
                        type="text"
                        maxlength="6"
@@ -224,155 +380,145 @@
                 </button>
             </div>
         </div>
-    </div>
+    </section>
 </div>
 
-<div class="transfer-modal-backdrop" id="transferModal" style="display:none;">
-    <div class="transfer-modal-shell">
-
-        <div class="transfer-modal-header">
+<div class="wallet-v2-modal-backdrop"
+     id="walletGuideModal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="walletGuideTitle"
+     aria-hidden="true">
+    <div class="wallet-v2-modal-shell">
+        <div class="wallet-v2-modal-header">
             <div>
-                <h4>Transfer Between Wallets</h4>
-                <p>Move funds only between allowed wallet paths.</p>
+                <span class="wallet-v2-eyebrow">Asset Type Explanation</span>
+                <h3 id="walletGuideTitle">Wallet Guide</h3>
             </div>
 
-            <button type="button" class="transfer-modal-close" onclick="closeTransferModal()">
+            <button type="button"
+                    class="wallet-v2-modal-close"
+                    data-close-wallet-modal
+                    aria-label="Close wallet guide">
                 ×
             </button>
         </div>
 
-        <form id="transferForm" class="transfer-modal-form">
+        <div class="wallet-v2-modal-body">
+            <p class="wallet-v2-modal-intro">
+                Your assets are managed through four separate wallets, each designed for a specific purpose.
+                This structure ensures transparent fund management while giving you full control over your
+                investments, profits, and referral earnings.
+            </p>
 
-            <div class="transfer-modal-body">
+            <article class="wallet-v2-guide-item">
+                <h4>Main Wallet</h4>
+                <p>The Main Wallet serves as the central hub for managing your funds.</p>
+                <ul>
+                    <li>All deposits are credited to your Main Wallet first.</li>
+                    <li>All withdrawals can only be made from the Main Wallet.</li>
+                    <li>You can transfer funds from your Main Wallet to your Investing Wallet to start earning daily profits.</li>
+                    <li>You can also receive investment profits and referral commissions from their respective wallets into your Main Wallet and withdraw them at any time.</li>
+                </ul>
+            </article>
 
-                <div class="transfer-field">
-                    <label for="fromWallet">From Wallet</label>
+            <article class="wallet-v2-guide-item">
+                <h4>Investing Wallet</h4>
+                <p>The Investing Wallet holds the capital actively used for investment and daily profit generation.</p>
+                <ul>
+                    <li>Funds are transferred here from your Main Wallet.</li>
+                    <li>Daily investment profits are calculated based on your current rank and credited to your Profit Wallet.</li>
+                    <li>You may reinvest your earnings by transferring them back into the Investing Wallet, allowing your investment capital to grow through compounding.</li>
+                </ul>
+            </article>
 
-                    <select class="form-control panel-input" id="fromWallet">
-                        <option value="Main">Main Wallet</option>
-                        <option value="Invest">Invest Wallet</option>
-                        <option value="Profit">Profit Wallet</option>
-                        <option value="Referral">Referral Wallet</option>
-                    </select>
-                </div>
+            <article class="wallet-v2-guide-item">
+                <h4>Profit Wallet</h4>
+                <p>The Profit Wallet stores all daily profits generated from your investments.</p>
+                <ul>
+                    <li>Transfer your profits to your Main Wallet for withdrawal.</li>
+                    <li>Transfer your profits to your Investing Wallet to increase your investment capital and benefit from compound growth.</li>
+                </ul>
+            </article>
 
-                <div class="transfer-field">
-                    <label for="toWallet">To Wallet</label>
+            <article class="wallet-v2-guide-item">
+                <h4>Referral Wallet</h4>
+                <p>The Referral Wallet stores all commissions earned through the referral program.</p>
+                <ul>
+                    <li>Transfer your referral commissions to your Main Wallet and withdraw them at any time.</li>
+                    <li>Transfer them to your Investing Wallet to increase your investment capital and maximize future returns.</li>
+                </ul>
+            </article>
 
-                    <select class="form-control panel-input" id="toWallet">
-                        <option value="Main">Main Wallet</option>
-                        <option value="Invest">Invest Wallet</option>
-                        <option value="Profit">Profit Wallet</option>
-                        <option value="Referral">Referral Wallet</option>
-                    </select>
-                </div>
+            <article class="wallet-v2-guide-item flow">
+                <h4>How Funds Flow Through the Platform</h4>
+                <ol>
+                    <li>Deposit funds into your Main Wallet.</li>
+                    <li>Transfer the desired amount from your Main Wallet to your Investing Wallet.</li>
+                    <li>Daily investment profits are credited to your Profit Wallet.</li>
+                    <li>Referral commissions are credited to your Referral Wallet.</li>
+                    <li>Funds in both the Profit Wallet and Referral Wallet can be transferred to the Main Wallet or the Investing Wallet.</li>
+                </ol>
+            </article>
+        </div>
 
-                <div class="transfer-capacity-box" id="transferCapacityBox" style="display:none;">
-                    <div class="transfer-capacity-header">
-                        <div>
-                            <span>Investment Capacity</span>
-                            <strong id="capacityMonthText">Current Month</strong>
-                        </div>
+        <div class="wallet-v2-modal-footer">
+            <button type="button" class="wallet-v2-modal-primary" data-close-wallet-modal>
+                Got It
+            </button>
+        </div>
+    </div>
+</div>
 
-                        <button type="button" onclick="loadCurrentInvestmentCapacity()">
-                            Refresh
-                        </button>
-                    </div>
-
-                    <div class="transfer-capacity-remaining-box">
-                        <span>Capacity Remaining</span>
-                        <strong id="capacityRemainingText">0.00 USDT</strong>
-                    </div>
-
-                    <p id="capacityWarningText" class="transfer-capacity-warning"></p>
-                    <div id="investmentWaitListBox"
-                         class="investment-waitlist-box"
-                         style="display:none;">
-
-                        <div class="investment-waitlist-info">
-                            <strong id="investmentWaitListTitle">
-                                Join Investment Wait List
-                            </strong>
-
-                            <p id="investmentWaitListText">
-                                Investment capacity is full. You can join the wait list and we will notify you when capacity becomes available.
-                            </p>
-                        </div>
-
-                        <div id="investmentWaitListStatus"
-                             class="investment-waitlist-status"
-                             style="display:none;">
-                        </div>
-
-                        <div class="investment-waitlist-actions">
-                            <button type="button"
-                                    id="joinInvestmentWaitListBtn"
-                                    class="panel-primary-btn investment-waitlist-btn">
-                                Join Wait List
-                            </button>
-
-                            <button type="button"
-                                    id="cancelInvestmentWaitListBtn"
-                                    class="internal-transfer-secondary-btn investment-waitlist-btn"
-                                    style="display:none;">
-                                Cancel Request
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="transfer-field">
-                    <label for="transferAmount">Amount</label>
-
-                    <div class="transfer-amount-wrapper">
-                        <input type="number"
-                               class="form-control panel-input transfer-amount-input"
-                               id="transferAmount"
-                               min="0"
-                               step="0.00000001"
-                               placeholder="0.00" />
-
-                        <button type="button"
-                                id="maxTransferBtn"
-                                class="transfer-max-btn">
-                            MAX
-                        </button>
-                    </div>
-                </div>
-
-                <div class="transfer-field">
-                    <label for="transferDescription">Description</label>
-
-                    <input type="text"
-                           class="form-control panel-input"
-                           id="transferDescription"
-                           placeholder="Optional" />
-                </div>
-
+<div class="wallet-v2-modal-backdrop"
+     id="transferRulesModal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="transferRulesTitle"
+     aria-hidden="true">
+    <div class="wallet-v2-modal-shell rules">
+        <div class="wallet-v2-modal-header">
+            <div>
+                <span class="wallet-v2-eyebrow">Allowed Wallet Paths</span>
+                <h3 id="transferRulesTitle">Wallet Transfer Rules</h3>
             </div>
 
-            <div class="transfer-modal-footer">
-                <button type="button"
-                        class="transfer-cancel-btn"
-                        onclick="closeTransferModal()">
-                    Cancel
-                </button>
+            <button type="button"
+                    class="wallet-v2-modal-close"
+                    data-close-wallet-modal
+                    aria-label="Close transfer rules">
+                ×
+            </button>
+        </div>
 
-                <button type="submit"
-                        class="transfer-submit-btn"
-                        id="confirmTransferBtn">
-                    Confirm Transfer
-                </button>
+        <div class="wallet-v2-modal-body">
+            <div class="wallet-v2-rule-list">
+                <div class="wallet-v2-rule-item"><span>01</span><p>Funds can be transferred from the Main Wallet to the Investing Wallet to start an investment.</p></div>
+                <div class="wallet-v2-rule-item"><span>02</span><p>The balances of the Profit Wallet and Referral Wallet are updated automatically by the system based on your investment profits and referral commissions. Users cannot deposit funds directly into these wallets. Funds can only be transferred out of these wallets to either the Main Wallet or the Investing Wallet.</p></div>
+                <div class="wallet-v2-rule-item"><span>03</span><p>Funds in the Profit Wallet and Referral Wallet can be transferred to the Main Wallet for withdrawal or to the Investing Wallet to increase your investment capital.</p></div>
+                <div class="wallet-v2-rule-item"><span>04</span><p>Direct transfers between the Profit Wallet and Referral Wallet are not permitted.</p></div>
+                <div class="wallet-v2-rule-item"><span>05</span><p>Deposits are credited to the Main Wallet, and all withdrawals can only be made from the Main Wallet.</p></div>
+                <div class="wallet-v2-rule-item"><span>06</span><p>After each transfer, wallet balances are updated automatically in real time.</p></div>
             </div>
 
-        </form>
+            <div class="wallet-v2-route-table">
+                <div><strong>Main Wallet</strong><span>Investing Wallet</span></div>
+                <div><strong>Investing Wallet</strong><span>Main Wallet, after the investment term has ended</span></div>
+                <div><strong>Profit Wallet</strong><span>Main Wallet / Investing Wallet</span></div>
+                <div><strong>Referral Wallet</strong><span>Main Wallet / Investing Wallet</span></div>
+            </div>
+        </div>
 
+        <div class="wallet-v2-modal-footer">
+            <button type="button" class="wallet-v2-modal-primary" data-close-wallet-modal>
+                Close
+            </button>
+        </div>
     </div>
 </div>
 
 <div class="transfer-confirm-backdrop" id="transferConfirmModal" style="display:none;">
     <div class="transfer-confirm-shell">
-
         <div class="transfer-confirm-header">
             <div>
                 <h4>Confirm Transfer</h4>
@@ -385,25 +531,10 @@
         </div>
 
         <div class="transfer-confirm-body">
-            <div class="transfer-confirm-row">
-                <span>From Wallet</span>
-                <strong id="confirmFromWallet">-</strong>
-            </div>
-
-            <div class="transfer-confirm-row">
-                <span>To Wallet</span>
-                <strong id="confirmToWallet">-</strong>
-            </div>
-
-            <div class="transfer-confirm-row highlight">
-                <span>Amount</span>
-                <strong id="confirmAmount">0.00 USDT</strong>
-            </div>
-
-            <div class="transfer-confirm-row">
-                <span>Fee</span>
-                <strong id="confirmFee">0.00 USDT</strong>
-            </div>
+            <div class="transfer-confirm-row"><span>From Wallet</span><strong id="confirmFromWallet">-</strong></div>
+            <div class="transfer-confirm-row"><span>To Wallet</span><strong id="confirmToWallet">-</strong></div>
+            <div class="transfer-confirm-row highlight"><span>Amount</span><strong id="confirmAmount">0.00 USDT</strong></div>
+            <div class="transfer-confirm-row"><span>Fee</span><strong id="confirmFee">0.00 USDT</strong></div>
 
             <div class="transfer-confirm-note" id="confirmDescriptionBox" style="display:none;">
                 <span>Description</span>
@@ -412,9 +543,7 @@
         </div>
 
         <div class="transfer-confirm-footer">
-            <button type="button"
-                    class="transfer-cancel-btn"
-                    onclick="closeTransferConfirmModal()">
+            <button type="button" class="transfer-cancel-btn" onclick="closeTransferConfirmModal()">
                 Back
             </button>
 
@@ -425,20 +554,12 @@
                 Confirm & Transfer
             </button>
         </div>
-
     </div>
 </div>
 
 @section Scripts {
     <script>
         let currentInvestmentWaitList = null;
-
-        const investmentWaitListBox = document.getElementById("investmentWaitListBox");
-        const investmentWaitListTitle = document.getElementById("investmentWaitListTitle");
-        const investmentWaitListText = document.getElementById("investmentWaitListText");
-        const investmentWaitListStatus = document.getElementById("investmentWaitListStatus");
-        const joinInvestmentWaitListBtn = document.getElementById("joinInvestmentWaitListBtn");
-        const cancelInvestmentWaitListBtn = document.getElementById("cancelInvestmentWaitListBtn");
         let walletsMap = {};
         let currentInvestmentCapacity = null;
         let isTransferSubmitting = false;
@@ -448,6 +569,7 @@
         let selectedInternalTransferVerificationId = null;
         let internalTransferLocked = false;
         let internalTransferVerifiedAmount = 0;
+
         const allowedTransfers = {
             Main: ["Invest"],
             Invest: ["Main"],
@@ -455,84 +577,91 @@
             Referral: ["Main", "Invest"]
         };
 
+        const investmentWaitListBox = document.getElementById("investmentWaitListBox");
+        const investmentWaitListTitle = document.getElementById("investmentWaitListTitle");
+        const investmentWaitListText = document.getElementById("investmentWaitListText");
+        const investmentWaitListStatus = document.getElementById("investmentWaitListStatus");
+        const joinInvestmentWaitListBtn = document.getElementById("joinInvestmentWaitListBtn");
+        const cancelInvestmentWaitListBtn = document.getElementById("cancelInvestmentWaitListBtn");
+
         document.addEventListener("DOMContentLoaded", async function () {
             checkAuth();
 
-            document.getElementById("fromWallet")
-                .addEventListener("change", updateToWalletOptions);
+            const fromWalletSelect = document.getElementById("fromWallet");
+            const toWalletSelect = document.getElementById("toWallet");
+            const transferAmountInput = document.getElementById("transferAmount");
+            const maxTransferBtn = document.getElementById("maxTransferBtn");
+            const transferForm = document.getElementById("transferForm");
+            const refreshCapacityBtn = document.getElementById("refreshInvestmentCapacityBtn");
 
-            document.getElementById("toWallet")
-                .addEventListener("change", updateTransferCapacityBox);
+            fromWalletSelect?.addEventListener("change", updateToWalletOptions);
+            toWalletSelect?.addEventListener("change", updateTransferRouteSummary);
+            transferAmountInput?.addEventListener("input", updateTransferCapacityBox);
+            maxTransferBtn?.addEventListener("click", setMaxTransferAmount);
+            transferForm?.addEventListener("submit", submitTransfer);
+            refreshCapacityBtn?.addEventListener("click", loadCurrentInvestmentCapacity);
 
-            document.getElementById("transferAmount")
-                .addEventListener("input", updateTransferCapacityBox);
+            document.querySelectorAll("[data-open-wallet-modal]").forEach(button => {
+                button.addEventListener("click", function () {
+                    openWalletInfoModal(button.dataset.openWalletModal);
+                });
+            });
 
-            document.getElementById("maxTransferBtn")
-                .addEventListener("click", setMaxTransferAmount);
+            document.querySelectorAll("[data-close-wallet-modal]").forEach(button => {
+                button.addEventListener("click", function () {
+                    closeWalletInfoModal(button.closest(".wallet-v2-modal-backdrop"));
+                });
+            });
 
-            document.getElementById("transferForm")
-                .addEventListener("submit", submitTransfer);
-
-            document.getElementById("transferModal")
-                .addEventListener("click", function (e) {
-                    if (e.target.id === "transferModal") {
-                        closeTransferModal();
+            document.querySelectorAll(".wallet-v2-modal-backdrop").forEach(modal => {
+                modal.addEventListener("click", function (event) {
+                    if (event.target === modal) {
+                        closeWalletInfoModal(modal);
                     }
                 });
+            });
 
-            document.getElementById("transferConfirmModal")
-                .addEventListener("click", function (e) {
-                    if (e.target.id === "transferConfirmModal") {
-                        closeTransferConfirmModal();
-                    }
-                });
+            document.getElementById("transferConfirmModal")?.addEventListener("click", function (event) {
+                if (event.target.id === "transferConfirmModal") {
+                    closeTransferConfirmModal();
+                }
+            });
 
-            document.addEventListener("keydown", function (e) {
-                if (e.key !== "Escape") {
+            document.addEventListener("keydown", function (event) {
+                if (event.key !== "Escape") {
                     return;
                 }
 
-                if (document.getElementById("transferConfirmModal").style.display === "flex") {
+                if (document.getElementById("transferConfirmModal")?.style.display === "flex") {
                     closeTransferConfirmModal();
                     return;
                 }
 
-                closeTransferModal();
+                closeAllWalletInfoModals();
             });
-        const internalReceiverInput = document.getElementById("internalReceiverQuery");
-        const checkInternalReceiverBtn = document.getElementById("checkInternalReceiverBtn");
 
-        if (internalReceiverInput && checkInternalReceiverBtn) {
-            internalReceiverInput.addEventListener("input", handleInternalReceiverInput);
-            checkInternalReceiverBtn.addEventListener("click", lookupInternalReceiver);
-        }
-                const sendInternalTransferCodeBtn = document.getElementById("sendInternalTransferCodeBtn");
-        const confirmInternalTransferBtn = document.getElementById("confirmInternalTransferBtn");
-        const resetInternalTransferBtn = document.getElementById("resetInternalTransferBtn");
-        const internalTransferCodeInput = document.getElementById("internalTransferCode");
+            const internalReceiverInput = document.getElementById("internalReceiverQuery");
+            const checkInternalReceiverBtn = document.getElementById("checkInternalReceiverBtn");
+            const sendInternalTransferCodeBtn = document.getElementById("sendInternalTransferCodeBtn");
+            const confirmInternalTransferBtn = document.getElementById("confirmInternalTransferBtn");
+            const resetInternalTransferBtn = document.getElementById("resetInternalTransferBtn");
+            const internalTransferCodeInput = document.getElementById("internalTransferCode");
 
-        if (sendInternalTransferCodeBtn) {
-            sendInternalTransferCodeBtn.addEventListener("click", sendInternalTransferVerificationCode);
-        }
+            internalReceiverInput?.addEventListener("input", handleInternalReceiverInput);
+            checkInternalReceiverBtn?.addEventListener("click", lookupInternalReceiver);
+            sendInternalTransferCodeBtn?.addEventListener("click", sendInternalTransferVerificationCode);
+            confirmInternalTransferBtn?.addEventListener("click", confirmInternalTransfer);
+            resetInternalTransferBtn?.addEventListener("click", resetInternalTransferVerification);
 
-        if (confirmInternalTransferBtn) {
-            confirmInternalTransferBtn.addEventListener("click", confirmInternalTransfer);
-        }
-
-        if (resetInternalTransferBtn) {
-            resetInternalTransferBtn.addEventListener("click", resetInternalTransferVerification);
-        }
-
-        if (internalTransferCodeInput) {
-            internalTransferCodeInput.addEventListener("keydown", function (e) {
-                if (e.key === "Enter") {
+            internalTransferCodeInput?.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
                     confirmInternalTransfer();
                 }
             });
-        }
-        joinInvestmentWaitListBtn.addEventListener("click", joinInvestmentWaitList);
 
-        cancelInvestmentWaitListBtn.addEventListener("click", cancelInvestmentWaitList);
+            joinInvestmentWaitListBtn?.addEventListener("click", joinInvestmentWaitList);
+            cancelInvestmentWaitListBtn?.addEventListener("click", cancelInvestmentWaitList);
+
             updateToWalletOptions();
 
             await loadWallets();
@@ -542,9 +671,7 @@
 
         async function loadWallets() {
             try {
-                const result = await api("/api/dashboard", {
-                    method: "GET"
-                });
+                const result = await api("/api/dashboard", { method: "GET" });
 
                 if (!result || !result.success) {
                     showNotification(result?.message || "Unable to load wallets", "error");
@@ -553,12 +680,13 @@
 
                 walletsMap = {};
 
-                const wallets = result.data?.wallets || [];
+                const data = result.data || {};
+                const wallets = data.wallets || [];
 
-                wallets.forEach(w => {
-                    walletsMap[w.walletType] = {
-                        walletId: w.walletId,
-                        balance: Number(w.balance || 0)
+                wallets.forEach(wallet => {
+                    walletsMap[wallet.walletType] = {
+                        walletId: wallet.walletId,
+                        balance: Number(wallet.balance || 0)
                     };
                 });
 
@@ -567,6 +695,12 @@
                 setWalletValue("Profit", "profitWallet");
                 setWalletValue("Referral", "referralWallet");
 
+                const totalAssetsElement = document.getElementById("walletTotalAssets");
+                if (totalAssetsElement) {
+                    totalAssetsElement.innerText = formatMoney(data.totalAssets) + " USDT";
+                }
+
+                updateTransferRouteSummary();
             } catch (error) {
                 showNotification(error.message || "Unable to load wallets", "error");
             }
@@ -574,9 +708,7 @@
 
         async function loadCurrentInvestmentCapacity() {
             try {
-                const result = await api("/api/wallet/investment-capacity/current", {
-                    method: "GET"
-                });
+                const result = await api("/api/wallet/investment-capacity/current", { method: "GET" });
 
                 if (!result || !result.success) {
                     currentInvestmentCapacity = null;
@@ -586,7 +718,6 @@
 
                 currentInvestmentCapacity = result.data;
                 updateTransferCapacityBox();
-
             } catch {
                 currentInvestmentCapacity = null;
                 updateTransferCapacityBox();
@@ -595,41 +726,46 @@
 
         function setWalletValue(type, elementId) {
             const wallet = walletsMap[type];
+            const element = document.getElementById(elementId);
 
-            document.getElementById(elementId).innerText =
-                wallet
-                    ? formatMoney(wallet.balance) + " USDT"
-                    : "0.00 USDT";
+            if (!element) {
+                return;
+            }
+
+            element.innerText = wallet
+                ? formatMoney(wallet.balance) + " USDT"
+                : "0.00 USDT";
         }
 
-        function openTransferModal() {
-            const modal = document.getElementById("transferModal");
+        function openWalletInfoModal(modalId) {
+            const modal = document.getElementById(modalId);
 
-            modal.style.display = "flex";
+            if (!modal) {
+                return;
+            }
 
-            document.getElementById("transferDescription").value = "";
-            document.getElementById("transferAmount").value = "";
-
-            updateToWalletOptions();
-            updateTransferCapacityBox();
-
-            setTimeout(() => {
-                document.getElementById("fromWallet").focus();
-            }, 80);
+            modal.classList.add("show");
+            modal.setAttribute("aria-hidden", "false");
+            document.body.classList.add("wallet-v2-modal-open");
         }
 
-        function closeTransferModal() {
-            const modal = document.getElementById("transferModal");
+        function closeWalletInfoModal(modal) {
+            if (!modal) {
+                return;
+            }
 
-            modal.style.display = "none";
-            closeTransferConfirmModal();
+            modal.classList.remove("show");
+            modal.setAttribute("aria-hidden", "true");
 
-            document.getElementById("transferForm").reset();
-            document.getElementById("transferAmount").value = "";
-            document.getElementById("transferDescription").value = "";
-            pendingTransferRequest = null;
+            if (!document.querySelector(".wallet-v2-modal-backdrop.show")) {
+                document.body.classList.remove("wallet-v2-modal-open");
+            }
+        }
 
-            updateToWalletOptions();
+        function closeAllWalletInfoModals() {
+            document.querySelectorAll(".wallet-v2-modal-backdrop.show").forEach(modal => {
+                closeWalletInfoModal(modal);
+            });
         }
 
         function closeTransferConfirmModal() {
@@ -640,36 +776,75 @@
             }
         }
 
-        function updateToWalletOptions() {
-            const fromType = document.getElementById("fromWallet").value;
-            const toSelect = document.getElementById("toWallet");
+        function resetWalletTransferForm() {
+            document.getElementById("transferForm")?.reset();
 
-            const allowedTargets = allowedTransfers[fromType] || [];
-
-            Array.from(toSelect.options).forEach(option => {
-                option.disabled = !allowedTargets.includes(option.value);
-            });
-
-            if (!allowedTargets.includes(toSelect.value)) {
-                toSelect.value = allowedTargets[0] || "";
+            const fromSelect = document.getElementById("fromWallet");
+            if (fromSelect) {
+                fromSelect.value = "Main";
             }
 
-            document.getElementById("transferAmount").value = "";
+            pendingTransferRequest = null;
+            updateToWalletOptions();
+        }
+
+        function updateToWalletOptions() {
+            const fromSelect = document.getElementById("fromWallet");
+            const toSelect = document.getElementById("toWallet");
+
+            if (!fromSelect || !toSelect) {
+                return;
+            }
+
+            const fromType = fromSelect.value;
+            const previousTarget = toSelect.value;
+            const allowedTargets = allowedTransfers[fromType] || [];
+
+            toSelect.innerHTML = "";
+
+            allowedTargets.forEach(targetType => {
+                const option = document.createElement("option");
+                option.value = targetType;
+                option.textContent = getWalletDisplayName(targetType);
+                toSelect.appendChild(option);
+            });
+
+            if (allowedTargets.includes(previousTarget)) {
+                toSelect.value = previousTarget;
+            }
+
+            const amountInput = document.getElementById("transferAmount");
+            if (amountInput) {
+                amountInput.value = "";
+            }
+
+            updateTransferRouteSummary();
+        }
+
+        function updateTransferRouteSummary() {
+            const fromType = document.getElementById("fromWallet")?.value || "";
+            const toType = document.getElementById("toWallet")?.value || "";
+            const routeText = document.getElementById("transferRouteText");
+            const sourceBalance = document.getElementById("sourceWalletBalance");
+
+            if (routeText) {
+                routeText.innerText = `${getWalletDisplayName(fromType)} → ${getWalletDisplayName(toType)}`;
+            }
+
+            if (sourceBalance) {
+                sourceBalance.innerText = formatMoney(walletsMap[fromType]?.balance || 0) + " USDT";
+            }
 
             updateTransferCapacityBox();
         }
 
-        function isMainToInvestTransfer() {
-            const fromType = document.getElementById("fromWallet").value;
-            const toType = document.getElementById("toWallet").value;
-
-            return fromType === "Main" && toType === "Invest";
+        function isTransferToInvest() {
+            return document.getElementById("toWallet")?.value === "Invest";
         }
-                async function loadMyInvestmentWaitListStatus() {
+
+        async function loadMyInvestmentWaitListStatus() {
             try {
-                const result = await api("/api/wallet/investment-wait-list/my-status", {
-                    method: "GET"
-                });
+                const result = await api("/api/wallet/investment-wait-list/my-status", { method: "GET" });
 
                 if (!result || !result.success) {
                     currentInvestmentWaitList = null;
@@ -678,19 +853,18 @@
                 }
 
                 currentInvestmentWaitList = result.data || null;
-
                 updateInvestmentWaitListBox();
-
             } catch {
                 currentInvestmentWaitList = null;
                 updateInvestmentWaitListBox();
             }
         }
-           async function joinInvestmentWaitList() {
-            const amount = Number(document.getElementById("transferAmount").value || 0);
+
+        async function joinInvestmentWaitList() {
+            const amount = Number(document.getElementById("transferAmount")?.value || 0);
 
             if (!isTransferToInvest()) {
-                showNotification("Wait list is only available for Main to Invest transfer.", "warning");
+                showNotification("Wait list is only available for transfers to the Investing Wallet.", "warning");
                 return;
             }
 
@@ -714,9 +888,7 @@
             try {
                 const result = await api("/api/wallet/investment-wait-list/join", {
                     method: "POST",
-                    body: JSON.stringify({
-                        requestedAmount: amount
-                    })
+                    body: JSON.stringify({ requestedAmount: amount })
                 });
 
                 if (!result || !result.success) {
@@ -725,14 +897,8 @@
                 }
 
                 currentInvestmentWaitList = result.data || null;
-
-                showNotification(
-                    result.message || "You have been added to the investment wait list.",
-                    "success"
-                );
-
+                showNotification(result.message || "You have been added to the investment wait list.", "success");
                 updateInvestmentWaitListBox();
-
             } catch (error) {
                 showNotification(error.message || "Could not join wait list.", "error");
             } finally {
@@ -740,7 +906,8 @@
                 joinInvestmentWaitListBtn.innerText = "Join Wait List";
             }
         }
-                async function cancelInvestmentWaitList() {
+
+        async function cancelInvestmentWaitList() {
             const confirmed = await showConfirm(
                 "Are you sure you want to cancel your wait list request?",
                 "Cancel Wait List"
@@ -754,22 +921,15 @@
             cancelInvestmentWaitListBtn.innerText = "Cancelling...";
 
             try {
-                const result = await api("/api/wallet/investment-wait-list/cancel", {
-                    method: "POST"
-                });
+                const result = await api("/api/wallet/investment-wait-list/cancel", { method: "POST" });
 
                 if (!result || !result.success) {
                     showNotification(result?.message || "Could not cancel wait list request.", "error");
                     return;
                 }
 
-                showNotification(
-                    result.message || "Wait list request cancelled.",
-                    "success"
-                );
-
+                showNotification(result.message || "Wait list request cancelled.", "success");
                 await loadMyInvestmentWaitListStatus();
-
             } catch (error) {
                 showNotification(error.message || "Could not cancel wait list request.", "error");
             } finally {
@@ -777,7 +937,8 @@
                 cancelInvestmentWaitListBtn.innerText = "Cancel Request";
             }
         }
-                function updateInvestmentWaitListBox() {
+
+        function updateInvestmentWaitListBox() {
             if (!investmentWaitListBox) {
                 return;
             }
@@ -787,7 +948,7 @@
                 return;
             }
 
-            const amount = Number(document.getElementById("transferAmount").value || 0);
+            const amount = Number(document.getElementById("transferAmount")?.value || 0);
             const remaining = Number(currentInvestmentCapacity?.remainingCapacity || 0);
 
             const capacityIsUnavailable =
@@ -797,13 +958,11 @@
                 remaining <= 0 ||
                 (amount > 0 && amount > remaining);
 
-            const activeWaitList =
-            currentInvestmentWaitList &&
-            (
-                currentInvestmentWaitList.status === "Pending" ||
-                currentInvestmentWaitList.status === "Notified" ||
-                currentInvestmentWaitList.status === "CapacityAvailable"
-            );
+            const activeWaitList = currentInvestmentWaitList && [
+                "Pending",
+                "Notified",
+                "CapacityAvailable"
+            ].includes(currentInvestmentWaitList.status);
 
             if (!capacityIsUnavailable && !activeWaitList) {
                 investmentWaitListBox.style.display = "none";
@@ -814,16 +973,13 @@
 
             if (activeWaitList) {
                 investmentWaitListTitle.innerText = "Your Wait List Request";
-
                 investmentWaitListText.innerText =
                     `Requested Amount: ${formatMoney(currentInvestmentWaitList.requestedAmount)} USDT`;
 
                 investmentWaitListStatus.style.display = "block";
                 investmentWaitListStatus.className =
                     `investment-waitlist-status ${String(currentInvestmentWaitList.status || "").toLowerCase()}`;
-
-                investmentWaitListStatus.innerText =
-                    `Status: ${currentInvestmentWaitList.status}`;
+                investmentWaitListStatus.innerText = `Status: ${currentInvestmentWaitList.status}`;
 
                 joinInvestmentWaitListBtn.style.display = "none";
                 cancelInvestmentWaitListBtn.style.display = "inline-flex";
@@ -835,7 +991,7 @@
 
                 if (currentInvestmentWaitList.status === "CapacityAvailable") {
                     investmentWaitListText.innerText =
-                        `Investment capacity is now available for your request of ${formatMoney(currentInvestmentWaitList.requestedAmount)} USDT. You can try transferring Main → Invest now.`;
+                        `Investment capacity is now available for your request of ${formatMoney(currentInvestmentWaitList.requestedAmount)} USDT. You can try transferring funds to the Investing Wallet now.`;
                 }
 
                 return;
@@ -862,13 +1018,17 @@
 
             investmentWaitListStatus.style.display = "none";
             investmentWaitListStatus.innerText = "";
-
             joinInvestmentWaitListBtn.style.display = "inline-flex";
             cancelInvestmentWaitListBtn.style.display = "none";
         }
+
         function updateTransferCapacityBox() {
             const box = document.getElementById("transferCapacityBox");
             const warning = document.getElementById("capacityWarningText");
+
+            if (!box || !warning) {
+                return;
+            }
 
             if (!isTransferToInvest()) {
                 box.style.display = "none";
@@ -883,7 +1043,6 @@
             if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
                 document.getElementById("capacityMonthText").innerText = "Not configured";
                 document.getElementById("capacityRemainingText").innerText = "0.00 USDT";
-
                 warning.innerText = "Investment capacity for current month is not configured by admin.";
                 warning.classList.add("danger");
                 updateInvestmentWaitListBox();
@@ -891,11 +1050,10 @@
             }
 
             const remaining = Number(currentInvestmentCapacity.remainingCapacity || 0);
-            const amount = Number(document.getElementById("transferAmount").value || 0);
+            const amount = Number(document.getElementById("transferAmount")?.value || 0);
 
             document.getElementById("capacityMonthText").innerText =
                 currentInvestmentCapacity.monthLabel || "Current Month";
-
             document.getElementById("capacityRemainingText").innerText =
                 formatMoney(remaining) + " USDT";
 
@@ -916,18 +1074,18 @@
             if (amount > 0 && amount > remaining) {
                 warning.innerText =
                     `Amount exceeds remaining investment capacity. Remaining: ${formatMoney(remaining)} USDT`;
-
                 warning.classList.add("danger");
                 updateInvestmentWaitListBox();
                 return;
             }
 
             warning.innerText =
-                `You can transfer up to ${formatMoney(remaining)} USDT from Main to Invest this month.`;
+                `You can transfer up to ${formatMoney(remaining)} USDT to the Investing Wallet this month.`;
+            updateInvestmentWaitListBox();
         }
 
         function setMaxTransferAmount() {
-            const fromType = document.getElementById("fromWallet").value;
+            const fromType = document.getElementById("fromWallet")?.value;
             const wallet = walletsMap[fromType];
 
             if (!wallet) {
@@ -958,26 +1116,22 @@
                 maxAmount = Math.min(maxAmount, remaining);
             }
 
-            document.getElementById("transferAmount").value = maxAmount;
+            const amountInput = document.getElementById("transferAmount");
+            if (amountInput) {
+                amountInput.value = maxAmount;
+            }
 
             updateTransferCapacityBox();
-
             showNotification("Maximum transferable amount selected.", "success");
         }
 
         function buildTransferRequest() {
-            const fromType = document.getElementById("fromWallet").value;
-            const toType = document.getElementById("toWallet").value;
-            const amount = Number(document.getElementById("transferAmount").value);
-            const description = document.getElementById("transferDescription").value.trim();
+            const fromType = document.getElementById("fromWallet")?.value;
+            const toType = document.getElementById("toWallet")?.value;
+            const amount = Number(document.getElementById("transferAmount")?.value);
+            const description = document.getElementById("transferDescription")?.value.trim() || "";
 
-            if (fromType === toType) {
-                showNotification("Source and destination wallets cannot be the same", "error");
-                return null;
-            }
-
-            if (!allowedTransfers[fromType] ||
-                !allowedTransfers[fromType].includes(toType)) {
+            if (!allowedTransfers[fromType] || !allowedTransfers[fromType].includes(toType)) {
                 showNotification("This wallet transfer is not allowed", "error");
                 return null;
             }
@@ -997,7 +1151,7 @@
                 return null;
             }
 
-            if (isMainToInvestTransfer()) {
+            if (isTransferToInvest()) {
                 if (!currentInvestmentCapacity || !currentInvestmentCapacity.isConfigured) {
                     showNotification("Investment capacity is not configured.", "error");
                     return null;
@@ -1039,8 +1193,8 @@
             };
         }
 
-        function submitTransfer(e) {
-            e.preventDefault();
+        function submitTransfer(event) {
+            event.preventDefault();
 
             if (isTransferSubmitting) {
                 return;
@@ -1105,13 +1259,13 @@
                     return;
                 }
 
-                showNotification("Transfer completed", "success");
-
-                closeTransferModal();
+                showNotification(result.message || "Transfer completed", "success");
+                closeTransferConfirmModal();
+                resetWalletTransferForm();
 
                 await loadWallets();
                 await loadCurrentInvestmentCapacity();
-
+                await loadMyInvestmentWaitListStatus();
             } catch (error) {
                 showNotification(error.message || "Transfer failed", "error");
             } finally {
@@ -1125,7 +1279,7 @@
         function getWalletDisplayName(walletType) {
             const names = {
                 Main: "Main Wallet",
-                Invest: "Invest Wallet",
+                Invest: "Investing Wallet",
                 Profit: "Profit Wallet",
                 Referral: "Referral Wallet"
             };
@@ -1483,10 +1637,7 @@
             hideInternalTransferVerificationBox();
             showInternalReceiverMessage("", "");
         }
-            function isTransferToInvest() {
-            const toType = document.getElementById("toWallet").value;
-            return toType === "Invest";
-        }
+
         function formatMoney(value) {
             return Number(value || 0).toLocaleString("en-US", {
                 minimumFractionDigits: 2,

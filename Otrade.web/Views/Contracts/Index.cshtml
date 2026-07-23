@@ -2,174 +2,1510 @@
     ViewData["Title"] = "Contracts";
 }
 
-<div class="panel-card">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+<div class="contract-v2-page">
+
+    <section class="panel-card contract-v2-header">
         <div>
-            <h3 class="mb-1">Contracts</h3>
-            <p class="text-muted mb-0">
-                Manage your investment contract status.
+            <span class="contract-v2-eyebrow">Investment Agreement</span>
+
+            <h2>Contracts</h2>
+
+            <p>
+                Review your investment agreement, membership plans,
+                and current contract status.
             </p>
         </div>
-    </div>
 
-    <div id="loadingBox" class="contract-message">
+        <div class="contract-v2-header-actions">
+
+            <button type="button"
+                    class="contract-v2-outline-btn"
+                    data-open-contract-modal="termsModal">
+                Terms &amp; Conditions
+            </button>
+
+            <button type="button"
+                    class="contract-v2-outline-btn"
+                    data-open-contract-modal="rankPlansModal">
+                Rank Plans
+            </button>
+
+        </div>
+    </section>
+
+    <section id="contractLoadingBox"
+             class="panel-card contract-v2-loading">
         Loading contract information...
-    </div>
+    </section>
 
-    <div id="contractContent" style="display:none;">
+    <div id="contractContent"
+         class="contract-v2-content"
+         style="display:none;">
 
-        <div id="activeContractBox" style="display:none;">
-            <div class="contract-status active">
-                Contract Active
+        <!-- ==========================================
+             No Agreement
+             ========================================== -->
+
+        <section id="noContractBox"
+                 class="panel-card contract-v2-state-card"
+                 style="display:none;">
+
+            <div class="contract-v2-state-header">
+
+                <div>
+                    <span class="contract-v2-status inactive">
+                        No Investment Agreement
+                    </span>
+
+                    <h3>Investment Agreement</h3>
+
+                    <p>
+                        Read and accept the investment agreement before
+                        transferring funds to the Investing Wallet.
+                    </p>
+                </div>
+
+                <span class="contract-v2-state-icon">
+                    §
+                </span>
+
             </div>
 
-            <p class="contract-description">
-                You can transfer funds from Main Wallet to Invest Wallet.
-            </p>
+            <div class="contract-v2-agreement">
 
-            <div class="contract-grid">
-                <div class="contract-info-item">
-                    <span>Start Date</span>
-                    <strong id="startDate">-</strong>
-                </div>
-
-                <div class="contract-info-item">
-                    <span>End Date</span>
-                    <strong id="endDate">-</strong>
-                </div>
-
-                <div class="contract-info-item">
-                    <span>Status</span>
-                    <strong id="status">-</strong>
-                </div>
-
-                <div class="contract-info-item">
-                    <span>Remaining Days</span>
-                    <strong id="remainingDays">-</strong>
-                </div>
-            </div>
-        </div>
-
-        <div id="noContractBox" style="display:none;">
-            <div class="contract-status inactive">
-                No Active Contract
-            </div>
-
-            <p class="contract-description">
-                You must create a contract before transferring funds from Main Wallet to Invest Wallet.
-            </p>
-
-            <div class="contract-agreement-box">
-                <p>
-                    This contract is valid for 6 months. During this period, you will not be able to withdraw funds from your Invest Wallet until the contract expires.
+                <p class="contract-v2-agreement-intro">
+                    By proceeding with this investment, I confirm that
+                    I have read, understood, and agree to the following terms:
                 </p>
 
-                <label class="contract-agreement-check">
-                    <input type="checkbox" id="agreementCheckbox" />
-                    <span>I have read and agree to the contract terms.</span>
-                </label>
+                <ol class="contract-v2-agreement-list">
+
+                    <li>
+                        The investment term is six months from the date
+                        funds are first transferred to the Investing Wallet.
+                        During this period, the principal amount cannot be
+                        withdrawn. The principal becomes eligible for
+                        withdrawal only after the six-month term has ended.
+                    </li>
+
+                    <li>
+                        Investment profits and referral rewards are calculated
+                        on a daily basis and credited to the relevant wallet.
+                        These earnings may be transferred to the Main Wallet
+                        and withdrawn at any time, subject to the platform's
+                        policies and withdrawal procedures.
+                    </li>
+
+                    <li>
+                        By accepting this agreement, I acknowledge that
+                        I fully understand and agree to these terms and
+                        the platform's rules and conditions.
+                    </li>
+
+                </ol>
+
+                <div class="contract-v2-info-note">
+                    <span>!</span>
+
+                    <p>
+                        Signing the agreement does not immediately start
+                        the six-month investment period. The period begins
+                        only after your first successful transfer to the
+                        Investing Wallet.
+                    </p>
+                </div>
+
+                <div class="contract-v2-document-actions">
+
+                    <button type="button"
+                            class="contract-v2-document-btn"
+                            data-open-contract-modal="termsModal">
+                        Read Terms &amp; Conditions
+                    </button>
+
+                    <button type="button"
+                            class="contract-v2-document-btn"
+                            data-open-contract-modal="rankPlansModal">
+                        View Rank Plans
+                    </button>
+
+                </div>
+
+                <div class="contract-v2-acceptance-box">
+
+                    <label class="contract-v2-check-row">
+                        <input type="checkbox"
+                               id="agreementCheckbox" />
+
+                        <span>
+                            I have read and agree to the Investment Agreement.
+                        </span>
+                    </label>
+
+                    <label class="contract-v2-check-row">
+                        <input type="checkbox"
+                               id="termsCheckbox" />
+
+                        <span>
+                            I have read and agree to the Terms &amp; Conditions.
+                        </span>
+                    </label>
+
+                </div>
+
+                <button type="button"
+                        id="createContractBtn"
+                        class="contract-v2-sign-btn"
+                        disabled>
+                    Sign Agreement
+                </button>
+
             </div>
 
-            <button id="createContractBtn" class="panel-primary-btn mt-3" disabled>
-                Create Contract
+        </section>
+
+        <!-- ==========================================
+             Pending Activation
+             ========================================== -->
+
+        <section id="pendingContractBox"
+                 class="panel-card contract-v2-state-card pending"
+                 style="display:none;">
+
+            <div class="contract-v2-state-header">
+
+                <div>
+                    <span class="contract-v2-status pending">
+                        Agreement Signed
+                    </span>
+
+                    <h3>Waiting for First Investment</h3>
+
+                    <p>
+                        Your agreement has been accepted. The six-month
+                        investment period will begin after your first
+                        successful transfer to the Investing Wallet.
+                    </p>
+                </div>
+
+                <span class="contract-v2-state-icon pending">
+                    ⏳
+                </span>
+
+            </div>
+
+            <div class="contract-v2-summary-grid pending-grid">
+
+                <div class="contract-v2-summary-item">
+                    <span>Agreement Status</span>
+                    <strong>Pending Activation</strong>
+                </div>
+
+                <div class="contract-v2-summary-item">
+                    <span>Accepted At</span>
+                    <strong id="pendingAcceptedAt">-</strong>
+                </div>
+
+                <div class="contract-v2-summary-item">
+                    <span>Start Date</span>
+                    <strong>After First Investment</strong>
+                </div>
+
+                <div class="contract-v2-summary-item">
+                    <span>Investment Period</span>
+                    <strong>Six Months</strong>
+                </div>
+
+            </div>
+
+            <div class="contract-v2-pending-note">
+
+                <div class="contract-v2-pending-note-icon">
+                    !
+                </div>
+
+                <div>
+                    <strong>Your contract has not started yet</strong>
+
+                    <p>
+                        Transfer funds to the Investing Wallet to activate
+                        the contract. Failed or rejected transfers will not
+                        start the investment period.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="contract-v2-bottom-actions">
+
+                <a href="/wallets"
+                   class="contract-v2-primary-link">
+                    Go to Wallets
+                </a>
+
+                <button type="button"
+                        class="contract-v2-secondary-btn"
+                        data-open-contract-modal="termsModal">
+                    View Terms
+                </button>
+
+                <button type="button"
+                        class="contract-v2-secondary-btn"
+                        data-open-contract-modal="rankPlansModal">
+                    View Rank Plans
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- ==========================================
+             Active Contract
+             ========================================== -->
+
+        <section id="activeContractBox"
+                 class="panel-card contract-v2-state-card active"
+                 style="display:none;">
+
+            <div class="contract-v2-state-header">
+
+                <div>
+                    <span class="contract-v2-status active">
+                        Contract Active
+                    </span>
+
+                    <h3>Active Investment Contract</h3>
+
+                    <p>
+                        Your investment agreement is active and the principal
+                        held in the Investing Wallet remains locked until the
+                        contract expires.
+                    </p>
+                </div>
+
+                <span class="contract-v2-state-icon active">
+                    ✓
+                </span>
+
+            </div>
+
+            <div class="contract-v2-summary-grid">
+
+                <div class="contract-v2-summary-item">
+                    <span>Start Date</span>
+                    <strong id="activeStartDate">-</strong>
+                </div>
+
+                <div class="contract-v2-summary-item">
+                    <span>End Date</span>
+                    <strong id="activeEndDate">-</strong>
+                </div>
+
+                <div class="contract-v2-summary-item">
+                    <span>Remaining Days</span>
+                    <strong id="activeRemainingDays">-</strong>
+                </div>
+
+                <div class="contract-v2-summary-item">
+                    <span>Status</span>
+                    <strong id="activeStatus">Active</strong>
+                </div>
+
+            </div>
+
+            <div class="contract-v2-active-detail">
+
+                <div>
+                    <span>Agreement Accepted At</span>
+                    <strong id="activeAcceptedAt">-</strong>
+                </div>
+
+                <div>
+                    <span>Investment Period</span>
+                    <strong>Six Months</strong>
+                </div>
+
+            </div>
+
+            <div class="contract-v2-lock-note">
+
+                <span class="contract-v2-lock-icon">
+                    🔒
+                </span>
+
+                <div>
+                    <strong>Investing Wallet Lock Policy</strong>
+
+                    <p>
+                        The investment principal remains locked throughout
+                        the six-month investment period. During this period,
+                        funds in the Investing Wallet cannot be withdrawn or
+                        transferred to the Main Wallet.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="contract-v2-bottom-actions">
+
+                <a href="/wallets"
+                   class="contract-v2-primary-link">
+                    View Wallets
+                </a>
+
+                <button type="button"
+                        class="contract-v2-secondary-btn"
+                        data-open-contract-modal="termsModal">
+                    Terms &amp; Conditions
+                </button>
+
+                <button type="button"
+                        class="contract-v2-secondary-btn"
+                        data-open-contract-modal="rankPlansModal">
+                    Rank Plans
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+</div>
+
+<!-- ==========================================
+     Terms & Conditions Modal
+     ========================================== -->
+
+<div id="termsModal"
+     class="contract-v2-modal-backdrop"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="termsModalTitle"
+     aria-hidden="true">
+
+    <div class="contract-v2-modal-shell terms">
+
+        <div class="contract-v2-modal-header">
+
+            <div>
+                <span class="contract-v2-eyebrow">
+                    Legal Information
+                </span>
+
+                <h3 id="termsModalTitle">
+                    Terms &amp; Conditions
+                </h3>
+            </div>
+
+            <button type="button"
+                    class="contract-v2-modal-close"
+                    data-close-contract-modal
+                    aria-label="Close Terms and Conditions">
+                ×
             </button>
+
+        </div>
+
+        <div class="contract-v2-modal-body contract-v2-terms-body">
+
+            <article class="contract-v2-term-item">
+                <span>01</span>
+
+                <div>
+                    <h4>Introduction</h4>
+
+                    <p>
+                        An overview of the platform, the purpose of this
+                        agreement, and acceptance of these Terms &amp;
+                        Conditions by registering or making an investment.
+                    </p>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>02</span>
+
+                <div>
+                    <h4>Definitions</h4>
+
+                    <p>
+                        Definitions of key terms used throughout the platform,
+                        including:
+                    </p>
+
+                    <ul>
+                        <li>Main Wallet</li>
+                        <li>Investing Wallet</li>
+                        <li>Profit Wallet</li>
+                        <li>Referral Wallet</li>
+                        <li>Rank</li>
+                        <li>Bonus</li>
+                        <li>Referral Commission</li>
+                        <li>Investment Volume</li>
+                        <li>Investment Period</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>03</span>
+
+                <div>
+                    <h4>Agreement Duration</h4>
+
+                    <ul>
+                        <li>
+                            Each investment agreement has a fixed term
+                            of six (6) months.
+                        </li>
+
+                        <li>
+                            The investment period begins once funds are
+                            transferred to the Investing Wallet.
+                        </li>
+
+                        <li>
+                            The invested principal becomes eligible for
+                            withdrawal only after the investment term
+                            has expired.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>04</span>
+
+                <div>
+                    <h4>Investment Terms</h4>
+
+                    <ul>
+                        <li>Deposit procedures</li>
+
+                        <li>
+                            Transfer of funds from the Main Wallet to
+                            the Investing Wallet
+                        </li>
+
+                        <li>Start of profit calculation</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>05</span>
+
+                <div>
+                    <h4>Investing Wallet Lock Policy</h4>
+
+                    <ul>
+                        <li>
+                            The investment principal remains locked throughout
+                            the six-month investment period.
+                        </li>
+
+                        <li>
+                            During this period, funds in the Investing Wallet
+                            cannot be withdrawn or transferred.
+                        </li>
+
+                        <li>
+                            Once the investment term has ended, the principal
+                            will be unlocked and may be transferred back to
+                            the Main Wallet.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>06</span>
+
+                <div>
+                    <h4>Profit Calculation</h4>
+
+                    <ul>
+                        <li>
+                            Investment profits are calculated on a daily basis.
+                        </li>
+
+                        <li>
+                            Profit rates are determined according to the
+                            user's current Rank.
+                        </li>
+
+                        <li>
+                            Daily profits are credited automatically to
+                            the Profit Wallet.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>07</span>
+
+                <div>
+                    <h4>Profit Withdrawal</h4>
+
+                    <ul>
+                        <li>
+                            Funds in the Profit Wallet may be transferred
+                            to the Main Wallet at any time.
+                        </li>
+
+                        <li>
+                            Once transferred to the Main Wallet, profits
+                            become available for withdrawal.
+                        </li>
+
+                        <li>
+                            Users may also transfer their profits to the
+                            Investing Wallet to increase their investment
+                            capital through compounding.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>08</span>
+
+                <div>
+                    <h4>Principal Withdrawal</h4>
+
+                    <ul>
+                        <li>
+                            The investment principal can only be withdrawn
+                            after the six-month investment period has ended.
+                        </li>
+
+                        <li>
+                            Withdrawal requests must be submitted through
+                            the user's account dashboard.
+                        </li>
+
+                        <li>
+                            Settlement will be processed according to the
+                            platform's withdrawal procedures.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>09</span>
+
+                <div>
+                    <h4>Bonus Policy</h4>
+
+                    <ul>
+                        <li>
+                            Bonuses are granted only under conditions
+                            determined by the platform.
+                        </li>
+
+                        <li>
+                            Bonuses are not transferable or directly
+                            withdrawable unless otherwise specified
+                            by the platform.
+                        </li>
+
+                        <li>
+                            The platform reserves the right to revoke bonuses
+                            in cases of abuse, fraud, or violation of
+                            platform policies.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>10</span>
+
+                <div>
+                    <h4>Rank Policy</h4>
+
+                    <ul>
+                        <li>
+                            Rank advancement is based on the combined
+                            investment volume generated through the user's
+                            personal investments and qualified referral
+                            investments.
+                        </li>
+
+                        <li>
+                            Once a new rank is achieved, the corresponding
+                            profit rates and commission percentages will
+                            be applied.
+                        </li>
+
+                        <li>
+                            The platform reserves the right to review,
+                            adjust, or revoke a user's rank in cases of
+                            policy violations or fraudulent activity.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>11</span>
+
+                <div>
+                    <h4>Referral Policy</h4>
+
+                    <ul>
+                        <li>
+                            Referral commissions are paid only on qualified
+                            investments made by referred users.
+                        </li>
+
+                        <li>
+                            All referral commissions are credited to the
+                            Referral Wallet.
+                        </li>
+
+                        <li>
+                            Funds in the Referral Wallet may only be
+                            transferred to the Main Wallet or the
+                            Investing Wallet.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>12</span>
+
+                <div>
+                    <h4>Wallet Policy</h4>
+
+                    <ul>
+                        <li>Description and purpose of all four wallets.</li>
+                        <li>Wallet transfer rules.</li>
+                        <li>Restrictions on unauthorized wallet transfers.</li>
+                        <li>Automatic balance updates by the system.</li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>13</span>
+
+                <div>
+                    <h4>Termination of Agreement</h4>
+
+                    <ul>
+                        <li>
+                            Users may withdraw their investment principal
+                            after the investment period has ended.
+                        </li>
+
+                        <li>
+                            The platform reserves the right to suspend or
+                            terminate accounts involved in fraud, identity
+                            misuse, money laundering, or violations of
+                            these Terms &amp; Conditions.
+                        </li>
+
+                        <li>
+                            Any settlement following account termination
+                            shall be handled in accordance with the
+                            platform's internal policies.
+                        </li>
+                    </ul>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>14</span>
+
+                <div>
+                    <h4>Force Majeure</h4>
+
+                    <p>
+                        The platform shall not be held responsible for delays
+                        or temporary suspension of services caused by
+                        circumstances beyond its reasonable control,
+                        including but not limited to internet outages,
+                        blockchain network congestion, cyberattacks,
+                        regulatory changes, sanctions, natural disasters,
+                        or other force majeure events.
+                    </p>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>15</span>
+
+                <div>
+                    <h4>Amendments</h4>
+
+                    <p>
+                        The platform reserves the right to modify or update
+                        these Terms &amp; Conditions at any time. Any revised
+                        version becomes effective upon publication on
+                        the platform.
+                    </p>
+                </div>
+            </article>
+
+            <article class="contract-v2-term-item">
+                <span>16</span>
+
+                <div>
+                    <h4>Acceptance of Terms</h4>
+
+                    <p>
+                        By registering an account, making an investment,
+                        or using the platform's services, the user confirms
+                        that they have read, understood, and agreed to all
+                        provisions of these Terms &amp; Conditions.
+                    </p>
+                </div>
+            </article>
+
+        </div>
+
+        <div class="contract-v2-modal-footer">
+
+            <button type="button"
+                    class="contract-v2-modal-primary"
+                    data-close-contract-modal>
+                I Understand
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ==========================================
+     Rank Plans Modal
+     ========================================== -->
+
+<div id="rankPlansModal"
+     class="contract-v2-modal-backdrop"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="rankPlansModalTitle"
+     aria-hidden="true">
+
+    <div class="contract-v2-modal-shell ranks">
+
+        <div class="contract-v2-modal-header">
+
+            <div>
+                <span class="contract-v2-eyebrow">
+                    Membership Levels
+                </span>
+
+                <h3 id="rankPlansModalTitle">
+                    Rank Plans
+                </h3>
+            </div>
+
+            <button type="button"
+                    class="contract-v2-modal-close"
+                    data-close-contract-modal
+                    aria-label="Close Rank Plans">
+                ×
+            </button>
+
+        </div>
+
+        <div class="contract-v2-modal-body">
+
+            <div class="contract-v2-rank-tabs">
+
+                <button type="button"
+                        class="contract-v2-rank-tab active"
+                        data-rank-name="Basic">
+                    Basic
+                </button>
+
+                <button type="button"
+                        class="contract-v2-rank-tab"
+                        data-rank-name="Bronze">
+                    Bronze
+                </button>
+
+                <button type="button"
+                        class="contract-v2-rank-tab"
+                        data-rank-name="Silver">
+                    Silver
+                </button>
+
+                <button type="button"
+                        class="contract-v2-rank-tab"
+                        data-rank-name="Gold">
+                    Gold
+                </button>
+
+                <button type="button"
+                        class="contract-v2-rank-tab"
+                        data-rank-name="Diamond">
+                    Diamond
+                </button>
+
+            </div>
+
+            <div class="contract-v2-rank-detail">
+
+                <div class="contract-v2-rank-detail-header">
+
+                    <div>
+                        <span id="rankPlanLabel">
+                            Membership Plan
+                        </span>
+
+                        <h4 id="rankPlanName">
+                            Basic
+                        </h4>
+                    </div>
+
+                    <span id="rankPlanBadge"
+                          class="contract-v2-rank-badge">
+                        BASIC
+                    </span>
+
+                </div>
+
+                <p id="rankPlanDescription"
+                   class="contract-v2-rank-description">
+                </p>
+
+                <div id="rankPlanFeatures"
+                     class="contract-v2-rank-features">
+                </div>
+
+                <p id="rankPlanFooter"
+                   class="contract-v2-rank-footer">
+                </p>
+
+            </div>
+
+        </div>
+
+        <div class="contract-v2-modal-footer">
+
+            <button type="button"
+                    class="contract-v2-modal-primary"
+                    data-close-contract-modal>
+                Close
+            </button>
+
         </div>
 
     </div>
 </div>
 
 @section Scripts {
+
     <script>
-        const loadingBox = document.getElementById("loadingBox");
-        const contractContent = document.getElementById("contractContent");
-        const activeContractBox = document.getElementById("activeContractBox");
-        const noContractBox = document.getElementById("noContractBox");
+        const rankPlans = {
+            Basic: {
+                requiredVolume: "$0",
+                dailyProfit: "0.27%",
+                monthlyProfit: "6%",
+                referralProfit: "10%",
+                referralCommission: "1%",
+                description:
+                    "Basic is the perfect starting point for every investor. " +
+                    "It gives you access to daily investment profits and " +
+                    "referral rewards, allowing you to begin growing your " +
+                    "capital while unlocking higher ranks over time.",
+                footer:
+                    "As a Basic member, you can start investing immediately " +
+                    "with no minimum volume requirement. Grow your personal " +
+                    "investment or invite others to increase your total " +
+                    "network volume and unlock higher membership levels " +
+                    "with greater rewards."
+            },
 
-        const startDate = document.getElementById("startDate");
-        const endDate = document.getElementById("endDate");
-        const status = document.getElementById("status");
-        const remainingDays = document.getElementById("remainingDays");
+            Bronze: {
+                requiredVolume: "$10,000",
+                dailyProfit: "0.32%",
+                monthlyProfit: "7%",
+                referralProfit: "15%",
+                referralCommission: "1.5%",
+                description:
+                    "Bronze is the first upgraded membership level, offering " +
+                    "increased daily returns and higher referral commissions. " +
+                    "It is designed for investors who want to accelerate " +
+                    "their earnings with a larger investment portfolio.",
+                footer:
+                    "Reach a total network volume of $10,000 through your " +
+                    "own investments and/or those made by your referrals to " +
+                    "unlock the Bronze rank. Once achieved, you will enjoy " +
+                    "higher daily profits, increased monthly returns, and " +
+                    "more rewarding referral commissions."
+            },
 
-        const agreementCheckbox = document.getElementById("agreementCheckbox");
-        const createContractBtn = document.getElementById("createContractBtn");
+            Silver: {
+                requiredVolume: "$30,000",
+                dailyProfit: "0.36%",
+                monthlyProfit: "8%",
+                referralProfit: "20%",
+                referralCommission: "2%",
+                description:
+                    "Silver provides a balanced combination of higher " +
+                    "profitability and stronger referral rewards. As your " +
+                    "investment grows, you gain access to improved returns " +
+                    "and greater earning potential.",
+                footer:
+                    "Achieve a total network volume of $30,000 through your " +
+                    "own investments and your referral network to qualify " +
+                    "for the Silver rank. This level rewards your growth " +
+                    "with increased profit rates and higher referral commissions."
+            },
 
-        agreementCheckbox.addEventListener("change", function () {
-            createContractBtn.disabled = !agreementCheckbox.checked;
+            Gold: {
+                requiredVolume: "$100,000",
+                dailyProfit: "0.45%",
+                monthlyProfit: "10%",
+                referralProfit: "25%",
+                referralCommission: "2.5%",
+                description:
+                    "Gold is designed for committed investors seeking " +
+                    "premium returns and exclusive benefits. This rank " +
+                    "significantly increases both your investment profits " +
+                    "and referral commissions.",
+                footer:
+                    "Build a total network volume of $100,000 through your " +
+                    "personal investments and referral activity to unlock " +
+                    "the Gold rank. At this stage, your investment performance " +
+                    "and referral income become significantly more rewarding."
+            },
+
+            Diamond: {
+                requiredVolume: "$200,000",
+                dailyProfit: "0.54%",
+                monthlyProfit: "12%",
+                referralProfit: "30%",
+                referralCommission: "3%",
+                description:
+                    "Diamond is the highest membership tier, offering the " +
+                    "platform's maximum profit rates and referral rewards. " +
+                    "It is tailored for experienced investors who want to " +
+                    "unlock the full potential of the investment and " +
+                    "referral system.",
+                footer:
+                    "Reach a total network volume of $200,000 through your " +
+                    "own investments and your referral network to achieve " +
+                    "the prestigious Diamond rank. Diamond unlocks the " +
+                    "platform's maximum daily returns, referral rewards, " +
+                    "and commission rates."
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", function () {
+            checkAuth();
+
+            initializeContractModals();
+            initializeRankPlans();
+            initializeAgreement();
+            loadContract();
         });
 
-        async function loadContract() {
-            loadingBox.style.display = "block";
-            contractContent.style.display = "none";
-            activeContractBox.style.display = "none";
-            noContractBox.style.display = "none";
+        function initializeAgreement() {
+            const agreementCheckbox =
+                document.getElementById("agreementCheckbox");
 
-            try {
-                const result = await api("/api/contract/current");
-                const data = result.data;
+            const termsCheckbox =
+                document.getElementById("termsCheckbox");
 
-                loadingBox.style.display = "none";
-                contractContent.style.display = "block";
+            const createContractBtn =
+                document.getElementById("createContractBtn");
 
-                if (data.hasActiveContract) {
-                    const contract = data.contract;
-
-                    startDate.innerText = formatDate(contract.startDate);
-                    endDate.innerText = formatDate(contract.endDate);
-                    status.innerText = contract.status;
-                    remainingDays.innerText = contract.remainingDays;
-
-                    activeContractBox.style.display = "block";
-                    noContractBox.style.display = "none";
-                } else {
-                    agreementCheckbox.checked = false;
-                    createContractBtn.disabled = true;
-
-                    activeContractBox.style.display = "none";
-                    noContractBox.style.display = "block";
-                }
-            } catch (error) {
-                loadingBox.innerText = error.message || "Could not load contract information.";
-            }
-        }
-
-        createContractBtn.addEventListener("click", async function () {
-            if (!agreementCheckbox.checked) {
-                return;
-            }
-
-            createContractBtn.disabled = true;
-            createContractBtn.innerText = "Creating...";
-
-            try {
-                const result = await api("/api/contract/create", {
-                    method: "POST"
-                });
-
-                if (!result.success) {
-                    showNotification(result.message || "Could not create contract.","error");
-                    
+            function updateButtonState() {
+                if (!createContractBtn) {
                     return;
                 }
 
-                await loadContract();
-            } catch (error) {
-                showNotification(error.message || "Could not create contract.","error");
-               
-            } finally {
-                createContractBtn.innerText = "Create Contract";
+                createContractBtn.disabled =
+                    !agreementCheckbox?.checked ||
+                    !termsCheckbox?.checked;
             }
-        });
 
-        function formatDate(value) {
-            if (!value) return "-";
+            agreementCheckbox?.addEventListener(
+                "change",
+                updateButtonState
+            );
 
-            return new Date(value).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "2-digit"
+            termsCheckbox?.addEventListener(
+                "change",
+                updateButtonState
+            );
+
+            createContractBtn?.addEventListener(
+                "click",
+                createContract
+            );
+
+            updateButtonState();
+        }
+
+        async function loadContract() {
+            const loadingBox =
+                document.getElementById("contractLoadingBox");
+
+            const content =
+                document.getElementById("contractContent");
+
+            hideContractStates();
+
+            loadingBox.style.display = "block";
+            loadingBox.innerText =
+                "Loading contract information...";
+
+            content.style.display = "none";
+
+            try {
+                const result = await api(
+                    "/api/contract/current",
+                    {
+                        method: "GET"
+                    }
+                );
+
+                if (!result || !result.success) {
+                    throw new Error(
+                        result?.message ||
+                        "Could not load contract information."
+                    );
+                }
+
+                const data = result.data || {};
+                const contract = data.contract || null;
+
+                loadingBox.style.display = "none";
+                content.style.display = "block";
+
+                if (
+                    data.hasActiveContract ||
+                    contract?.isActive
+                ) {
+                    showActiveContract(contract);
+                    return;
+                }
+
+                if (
+                    data.hasPendingActivation ||
+                    contract?.isPendingActivation
+                ) {
+                    showPendingContract(contract);
+                    return;
+                }
+
+                showNoContract();
+
+            } catch (error) {
+                loadingBox.style.display = "block";
+                loadingBox.innerText =
+                    error.message ||
+                    "Could not load contract information.";
+            }
+        }
+
+        function hideContractStates() {
+            document.getElementById(
+                "noContractBox"
+            ).style.display = "none";
+
+            document.getElementById(
+                "pendingContractBox"
+            ).style.display = "none";
+
+            document.getElementById(
+                "activeContractBox"
+            ).style.display = "none";
+        }
+
+        function showNoContract() {
+            hideContractStates();
+
+            const agreementCheckbox =
+                document.getElementById("agreementCheckbox");
+
+            const termsCheckbox =
+                document.getElementById("termsCheckbox");
+
+            const createContractBtn =
+                document.getElementById("createContractBtn");
+
+            agreementCheckbox.checked = false;
+            termsCheckbox.checked = false;
+            createContractBtn.disabled = true;
+
+            document.getElementById(
+                "noContractBox"
+            ).style.display = "block";
+        }
+
+        function showPendingContract(contract) {
+            hideContractStates();
+
+            document.getElementById(
+                "pendingAcceptedAt"
+            ).innerText = formatDateTime(
+                contract?.acceptedAt
+            );
+
+            document.getElementById(
+                "pendingContractBox"
+            ).style.display = "block";
+        }
+
+        function showActiveContract(contract) {
+            hideContractStates();
+
+            document.getElementById(
+                "activeStartDate"
+            ).innerText = formatDate(
+                contract?.startDate
+            );
+
+            document.getElementById(
+                "activeEndDate"
+            ).innerText = formatDate(
+                contract?.endDate
+            );
+
+            document.getElementById(
+                "activeAcceptedAt"
+            ).innerText = formatDateTime(
+                contract?.acceptedAt
+            );
+
+            document.getElementById(
+                "activeStatus"
+            ).innerText =
+                contract?.status || "Active";
+
+            const days = Math.max(
+                0,
+                Number(contract?.remainingDays || 0)
+            );
+
+            document.getElementById(
+                "activeRemainingDays"
+            ).innerText =
+                days.toLocaleString("en-US") +
+                (days === 1 ? " Day" : " Days");
+
+            document.getElementById(
+                "activeContractBox"
+            ).style.display = "block";
+        }
+
+        async function createContract() {
+            const agreementCheckbox =
+                document.getElementById("agreementCheckbox");
+
+            const termsCheckbox =
+                document.getElementById("termsCheckbox");
+
+            const button =
+                document.getElementById("createContractBtn");
+
+            if (
+                !agreementCheckbox.checked ||
+                !termsCheckbox.checked
+            ) {
+                showNotification(
+                    "Please accept the Investment Agreement and Terms & Conditions.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            button.disabled = true;
+            button.innerText = "Signing Agreement...";
+
+            try {
+                const result = await api(
+                    "/api/contract/create",
+                    {
+                        method: "POST"
+                    }
+                );
+
+                if (!result || !result.success) {
+                    showNotification(
+                        result?.message ||
+                        "Could not sign the agreement.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                showNotification(
+                    result.message ||
+                    "Agreement signed successfully.",
+                    "success"
+                );
+
+                await loadContract();
+
+            } catch (error) {
+                showNotification(
+                    error.message ||
+                    "Could not sign the agreement.",
+                    "error"
+                );
+
+            } finally {
+                button.innerText = "Sign Agreement";
+            }
+        }
+
+        function initializeContractModals() {
+            document
+                .querySelectorAll(
+                    "[data-open-contract-modal]"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+                            openContractModal(
+                                button.dataset
+                                    .openContractModal
+                            );
+                        }
+                    );
+
+                });
+
+            document
+                .querySelectorAll(
+                    "[data-close-contract-modal]"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+                            closeContractModal(
+                                button.closest(
+                                    ".contract-v2-modal-backdrop"
+                                )
+                            );
+                        }
+                    );
+
+                });
+
+            document
+                .querySelectorAll(
+                    ".contract-v2-modal-backdrop"
+                )
+                .forEach(modal => {
+
+                    modal.addEventListener(
+                        "click",
+                        function (event) {
+                            if (event.target === modal) {
+                                closeContractModal(modal);
+                            }
+                        }
+                    );
+
+                });
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+                    if (event.key === "Escape") {
+                        closeAllContractModals();
+                    }
+                }
+            );
+        }
+
+        function openContractModal(modalId) {
+            const modal =
+                document.getElementById(modalId);
+
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add("show");
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+            document.body.classList.add(
+                "contract-v2-modal-open"
+            );
+        }
+
+        function closeContractModal(modal) {
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove("show");
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            if (
+                !document.querySelector(
+                    ".contract-v2-modal-backdrop.show"
+                )
+            ) {
+                document.body.classList.remove(
+                    "contract-v2-modal-open"
+                );
+            }
+        }
+
+        function closeAllContractModals() {
+            document
+                .querySelectorAll(
+                    ".contract-v2-modal-backdrop.show"
+                )
+                .forEach(modal => {
+                    closeContractModal(modal);
+                });
+        }
+
+        function initializeRankPlans() {
+            document
+                .querySelectorAll(
+                    ".contract-v2-rank-tab"
+                )
+                .forEach(button => {
+
+                    button.addEventListener(
+                        "click",
+                        function () {
+                            selectRankPlan(
+                                button.dataset.rankName
+                            );
+                        }
+                    );
+
+                });
+
+            selectRankPlan("Basic");
+        }
+
+        function selectRankPlan(rankName) {
+            const rank = rankPlans[rankName];
+
+            if (!rank) {
+                return;
+            }
+
+            document
+                .querySelectorAll(
+                    ".contract-v2-rank-tab"
+                )
+                .forEach(button => {
+
+                    button.classList.toggle(
+                        "active",
+                        button.dataset.rankName ===
+                        rankName
+                    );
+
+                });
+
+            document.getElementById(
+                "rankPlanName"
+            ).innerText = rankName;
+
+            document.getElementById(
+                "rankPlanBadge"
+            ).innerText = rankName.toUpperCase();
+
+            document.getElementById(
+                "rankPlanDescription"
+            ).innerText = rank.description;
+
+            document.getElementById(
+                "rankPlanFooter"
+            ).innerText = rank.footer;
+
+            const features =
+                document.getElementById(
+                    "rankPlanFeatures"
+                );
+
+            features.innerHTML = "";
+
+            const featureItems = [
+                ["Required Volume", rank.requiredVolume],
+                ["Daily Profit", rank.dailyProfit],
+                ["Monthly Profit", rank.monthlyProfit],
+                ["Referral Profit", rank.referralProfit],
+                [
+                    "Referral Commission",
+                    rank.referralCommission
+                ]
+            ];
+
+            featureItems.forEach(item => {
+                const element =
+                    document.createElement("div");
+
+                const label =
+                    document.createElement("span");
+
+                const value =
+                    document.createElement("strong");
+
+                label.innerText = item[0];
+                value.innerText = item[1];
+
+                element.appendChild(label);
+                element.appendChild(value);
+
+                features.appendChild(element);
             });
         }
 
-        loadContract();
+        function formatDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            return new Date(value).toLocaleDateString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit"
+                }
+            );
+        }
+
+        function formatDateTime(value) {
+            if (!value) {
+                return "-";
+            }
+
+            return new Date(value).toLocaleString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        }
     </script>
 }

@@ -25,11 +25,12 @@ public class ContractExpiryJob
             return;
         using var scope = _scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<OtradeDbContext>();
-
+        var now = DateTime.Now;
         var expiredContracts = await context.Contracts
             .Where(x =>
                 x.Status == ContractStatus.Active &&
-                x.EndDate <=  DateTime.Now)
+                x.EndDate != null &&
+                x.EndDate <= now)
             .ToListAsync();
 
         foreach (var contract in expiredContracts)

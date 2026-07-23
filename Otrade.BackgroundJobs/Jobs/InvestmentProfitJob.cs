@@ -68,7 +68,11 @@ public class InvestmentProfitJob
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.UserId == user.UserId &&
-                    x.Status == ContractStatus.Active);
+                    x.Status == ContractStatus.Active &&
+                    x.StartDate != null &&
+                    x.EndDate != null &&
+                    x.StartDate <= now &&
+                    x.EndDate > now);
 
             if (contract == null)
                 continue;
