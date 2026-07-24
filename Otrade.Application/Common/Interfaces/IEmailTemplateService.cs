@@ -26,4 +26,14 @@ public interface IEmailTemplateService
     string GetInvestWalletTransferEmail(decimal amount,string fromWalletType,decimal investWalletBalance);
     string GetBonusCodeAppliedEmail(string code,decimal bonusCapitalAmount,string? appliedRankName);
     string GetBonusUsageStatusChangedEmail(string code,string status,decimal bonusCapitalAmount,string? appliedRankName,string? adminNote);
+
+    string GetTwoFactorRecoveryCodeEmail(string code,int expiresInMinutes);
+
+    string GetTwoFactorRecoverySubmittedEmail();
+
+    string GetTwoFactorRecoveryAdminNotification(string userEmail,string userUid,string userFullName,string kycStatus,string description);
+
+    string GetTwoFactorRecoveryApprovedEmail(DateTime withdrawalLockedUntil);
+
+    string GetTwoFactorRecoveryRejectedEmail(string reason);
 }

@@ -68,6 +68,7 @@ public class OtradeDbContext : DbContext
     public DbSet<WithdrawalVerification> WithdrawalVerifications => Set<WithdrawalVerification>();
     public DbSet<TwoFactorLoginChallenge> TwoFactorLoginChallenges => Set<TwoFactorLoginChallenge>();
     public DbSet<UserRecoveryCode> UserRecoveryCodes => Set<UserRecoveryCode>();
+    public DbSet<TwoFactorRecoveryRequest> TwoFactorRecoveryRequests => Set<TwoFactorRecoveryRequest>();
     public DbSet<UserWalletAddress> UserWalletAddresses { get; set; }
     public DbSet<WalletBalanceSnapshot> WalletBalanceSnapshots { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -117,6 +118,25 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.TotpEnabledAt);
 
             entity.Property(x => x.LastAcceptedTotpStep);
+            entity.Property(x =>
+                x.PendingTotpSecretEncrypted)
+                .HasMaxLength(1000);
+
+            entity.Property(x =>
+                x.PendingTotpCreatedAt);
+
+            entity.Property(x =>
+                x.TotpRecoveryLockedUntil);
+
+            entity.Property(x =>
+                    x.AuthTokenVersion)
+                .HasDefaultValue(1)
+                .IsRequired();
+
+            entity.Property(x =>
+                    x.MustChangePassword)
+                .HasDefaultValue(false)
+                .IsRequired();
             // Sponsor FK
             entity.HasOne(x => x.Sponsor)
                 .WithMany()
@@ -515,6 +535,80 @@ public class OtradeDbContext : DbContext
                 x.UsedAt
             });
         });
+        modelBuilder.Entity<TwoFactorRecoveryRequest>(
+            entity =>
+            {
+                entity.ToTable(
+                    "TwoFactorRecoveryRequests");
+
+                entity.HasKey(x =>
+                    x.TwoFactorRecoveryRequestId);
+
+                entity.Property(x =>
+                        x.PublicTokenHash)
+                    .IsRequired()
+                    .HasMaxLength(64)
+                    .IsUnicode(false);
+
+                entity.Property(x =>
+                        x.EmailCodeHash)
+                    .IsRequired()
+                    .HasMaxLength(300);
+
+                entity.Property(x =>
+                        x.Attempts)
+                    .HasDefaultValue(0)
+                    .IsRequired();
+
+                entity.Property(x =>
+                        x.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(40)
+                    .IsRequired();
+
+                entity.Property(x =>
+                        x.UserDescription)
+                    .HasMaxLength(1000)
+                    .IsRequired();
+
+                entity.Property(x =>
+                        x.AdminNote)
+                    .HasMaxLength(1000);
+
+                entity.HasOne(x =>
+                        x.User)
+                    .WithMany(x =>
+                        x.TwoFactorRecoveryRequests)
+                    .HasForeignKey(x =>
+                        x.UserId)
+                    .OnDelete(
+                        DeleteBehavior.Restrict);
+
+                entity.HasOne(x =>
+                        x.ReviewedByAdmin)
+                    .WithMany()
+                    .HasForeignKey(x =>
+                        x.ReviewedByAdminId)
+                    .OnDelete(
+                        DeleteBehavior.Restrict);
+
+                entity.HasIndex(x =>
+                        x.PublicTokenHash)
+                    .IsUnique();
+
+                entity.HasIndex(x => new
+                {
+                    x.UserId,
+                    x.Status,
+                    x.CreatedAt
+                });
+
+                entity.HasIndex(x => new
+                {
+                    x.Status,
+                    x.CreatedAt
+                });
+            });
         modelBuilder.Entity<SystemSetting>(entity =>
         {
             entity.ToTable("SystemSettings");

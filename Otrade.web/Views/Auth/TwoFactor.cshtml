@@ -35,7 +35,7 @@
 
     <script src="~/js/common.js"></script>
 
-    
+
 </head>
 
 <body class="auth-body">
@@ -179,6 +179,12 @@
                         Use a recovery code instead
                     </button>
 
+                    <button id="lostAuthenticatorAccessBtn"
+                            type="button"
+                            class="two-factor-switch-btn two-factor-lost-btn">
+                        I lost access to Google Authenticator
+                    </button>
+
                 </form>
 
                 <a id="backToLoginLink"
@@ -251,6 +257,11 @@
         const switchTwoFactorModeBtn =
             document.getElementById(
                 "switchTwoFactorModeBtn"
+            );
+
+        const lostAuthenticatorAccessBtn =
+            document.getElementById(
+                "lostAuthenticatorAccessBtn"
             );
 
         const twoFactorEmail =
@@ -336,6 +347,13 @@
             );
 
             clearChallenge();
+
+            if (data.mustChangePassword) {
+                window.location.href =
+                    "/profile?forcePassword=1";
+
+                return;
+            }
 
             if (
                 String(data.isAdmin)
@@ -557,6 +575,25 @@
             }
         );
 
+        lostAuthenticatorAccessBtn.addEventListener(
+            "click",
+            function () {
+                if (
+                    !challengeToken ||
+                    !challengeExpiresAtValue
+                ) {
+                    returnToLogin(
+                        "Start the login process again."
+                    );
+
+                    return;
+                }
+
+                window.location.href =
+                    "/auth/two-factor-recovery";
+            }
+        );
+
         backToLoginLink.addEventListener(
             "click",
             function () {
@@ -689,3 +726,4 @@
 
 </body>
 </html>
+

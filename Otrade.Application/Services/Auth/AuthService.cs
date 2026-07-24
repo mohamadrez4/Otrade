@@ -451,12 +451,15 @@ public class AuthService
         return ResponseFactory.Success(true, "Password changed successfully");
     }
     private LoginResponse CreateSuccessfulLoginResponse(User user)
-    {           var token =
-                _jwtService.GenerateToken(
-                user.UserId,
-                user.Email,
-                user.IsAdmin,
-                user.IsOwner);
+    {
+        var token =
+    _jwtService.GenerateToken(
+        user.UserId,
+        user.Email,
+        user.IsAdmin,
+        user.IsOwner,
+        user.AuthTokenVersion,
+        user.MustChangePassword); ;
 
         return new LoginResponse
         {
@@ -497,7 +500,9 @@ public class AuthService
                 string.Empty,
 
             ChallengeExpiresAt =
-                null
+                null,
+           MustChangePassword =
+             user.MustChangePassword
         };
     }
     private async Task AddReferralRelationsAsync(long newUserId, long? sponsorId)

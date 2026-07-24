@@ -29,6 +29,13 @@ public class AdminPanelController : Controller
     {
         return View();
     }
+    [AdminPagePermission(
+    AdminPermission.ManageKyc)]
+    [HttpGet("/admin/two-factor-recovery")]
+    public IActionResult TwoFactorRecovery()
+    {
+        return View();
+    }
     [AdminPagePermission(AdminPermission.ManageTickets)]
     [HttpGet("/admin/tickets")]
     public IActionResult Tickets()

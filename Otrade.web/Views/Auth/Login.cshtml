@@ -158,7 +158,12 @@
                 "token",
                 data.token
             );
-
+            if (data.mustChangePassword) {
+            window.location.href =
+                "/profile?forcePassword=1";
+    
+                return;
+            }
             localStorage.setItem(
                 "userId",
                 data.userId

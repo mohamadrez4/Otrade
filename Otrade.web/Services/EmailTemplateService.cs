@@ -801,7 +801,148 @@ public class EmailTemplateService : IEmailTemplateService
                 </tr>
             </table>";
     }
+    public string GetTwoFactorRecoveryCodeEmail(
+    string code,
+    int expiresInMinutes)
+    {
+        var content =
+            VerificationCode(
+                code,
+                "Two-factor recovery verification code") +
+            Notice(
+                $"This code expires in {expiresInMinutes} minutes. " +
+                "If you did not request Google Authenticator recovery, " +
+                "change your password and contact support immediately.",
+                EmailTone.Danger);
 
+        return BuildEmail(
+            title: "Verify Two-Factor Recovery",
+            intro:
+                "Confirm your email before the recovery request is sent to the Otrade support team.",
+            contentHtml: content,
+            tone: EmailTone.Warning,
+            preheader:
+                "Your Otrade two-factor recovery verification code is ready.",
+            buttonText: "Open Otrade",
+            buttonUrl: PanelLink("/auth/two-factor-recovery"));
+    }
+
+    public string GetTwoFactorRecoverySubmittedEmail()
+    {
+        var content =
+            Notice(
+                "Your email was verified successfully. " +
+                "The recovery request is now waiting for manual review. " +
+                "Otrade support will never ask for your password, " +
+                "Google Authenticator secret, or recovery codes.",
+                EmailTone.Info);
+
+        return BuildEmail(
+            title: "Two-Factor Recovery Submitted",
+            intro:
+                "Your request to recover access to Google Authenticator was submitted.",
+            contentHtml: content,
+            tone: EmailTone.Info,
+            preheader:
+                "Your Otrade two-factor recovery request is under review.",
+            buttonText: "Check Recovery Status",
+            buttonUrl: PanelLink("/auth/two-factor-recovery"));
+    }
+
+    public string GetTwoFactorRecoveryAdminNotification(
+        string userEmail,
+        string userUid,
+        string userFullName,
+        string kycStatus,
+        string description)
+    {
+        var content =
+            DetailTable(
+                ("UID", userUid),
+                ("Email", userEmail),
+                ("Full Name", userFullName),
+                ("KYC Status", kycStatus)) +
+            MessagePanel(
+                "User Description",
+                description,
+                EmailTone.Warning) +
+            Notice(
+                "Review the account identity and KYC documents before approving. " +
+                "Approval disables the current authenticator, invalidates recovery codes, " +
+                "revokes active login sessions, requires a password change, " +
+                "and locks withdrawals temporarily.",
+                EmailTone.Danger);
+
+        return BuildEmail(
+            title: "Two-Factor Recovery Review",
+            intro:
+                "A verified user request is waiting for manual security review.",
+            contentHtml: content,
+            tone: EmailTone.Warning,
+            preheader:
+                $"Two-factor recovery request for {userEmail}.",
+            buttonText: "Review Recovery Request",
+            buttonUrl: PanelLink("/admin/two-factor-recovery"));
+    }
+
+    public string GetTwoFactorRecoveryApprovedEmail(
+        DateTime withdrawalLockedUntil)
+    {
+        var lockTime =
+            withdrawalLockedUntil
+                .ToUniversalTime()
+                .ToString(
+                    "yyyy-MM-dd HH:mm 'UTC'",
+                    CultureInfo.InvariantCulture);
+
+        var content =
+            DetailTable(
+                ("Google Authenticator", "Reset"),
+                ("Existing Sessions", "Revoked"),
+                ("Password Change", "Required"),
+                ("Withdrawal Locked Until", lockTime)) +
+            Notice(
+                "Login again using your email and password. " +
+                "You must change your password before continuing. " +
+                "After that, enable a new Google Authenticator and save the new recovery codes.",
+                EmailTone.Danger);
+
+        return BuildEmail(
+            title: "Two-Factor Recovery Approved",
+            intro:
+                "Your Google Authenticator recovery request was approved.",
+            contentHtml: content,
+            tone: EmailTone.Success,
+            preheader:
+                "Your Otrade two-factor recovery request was approved.",
+            buttonText: "Login to Otrade",
+            buttonUrl: PanelLink("/auth/login"));
+    }
+
+    public string GetTwoFactorRecoveryRejectedEmail(
+        string reason)
+    {
+        var content =
+            MessagePanel(
+                "Review Note",
+                reason,
+                EmailTone.Danger) +
+            Notice(
+                "Your Google Authenticator settings were not changed. " +
+                "Contact Otrade support if you believe this decision is incorrect.",
+                EmailTone.Warning);
+
+        return BuildEmail(
+            title: "Two-Factor Recovery Rejected",
+            intro:
+                "Your Google Authenticator recovery request was not approved.",
+            contentHtml: content,
+            tone: EmailTone.Danger,
+            preheader:
+                "Your Otrade two-factor recovery request was rejected.",
+            buttonText: "Contact Support",
+            buttonUrl: PanelLink("/tickets"));
+    }
     private string PanelLink(string path)
     {
         return $"{_panelUrl}/{path.TrimStart('/')}";

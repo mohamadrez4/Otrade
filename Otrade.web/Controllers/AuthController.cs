@@ -207,6 +207,14 @@ public class AuthController : Controller
     {
         return View();
     }
+    [HttpGet("/auth/two-factor-recovery")]
+    [ResponseCache(
+    NoStore = true,
+    Location = ResponseCacheLocation.None)]
+    public IActionResult TwoFactorRecovery()
+    {
+        return View();
+    }
     [HttpPost]
     [Route("api/auth/forgot-password")]
     public async Task<IActionResult> ForgetPassword([FromBody] ResendVerificationRequest request)

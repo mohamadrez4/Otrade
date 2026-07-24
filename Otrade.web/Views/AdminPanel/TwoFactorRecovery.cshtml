@@ -1,0 +1,784 @@
+﻿@{
+    ViewData["Title"] = "Two-Factor Recovery";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+
+<div class="tfr-admin-page">
+
+    <div class="tfr-admin-summary">
+
+        <div class="tfr-summary-card warning">
+            <span>Pending Reviews</span>
+            <strong id="pendingRecoveryCount">0</strong>
+        </div>
+
+        <div class="tfr-summary-card">
+            <span>Review Permission</span>
+            <strong style="font-size:13px;">
+                Manage KYC
+            </strong>
+        </div>
+
+        <div class="tfr-summary-card security">
+            <span>Approval Protection</span>
+            <strong>
+                Session Revocation + 24h Withdrawal Lock
+            </strong>
+        </div>
+
+    </div>
+
+    <div class="tfr-admin-header">
+
+        <div>
+            <h3>Google Authenticator Recovery Requests</h3>
+
+            <p>
+                Approve only after comparing the account information
+                with the verified KYC documents. Approval resets the
+                existing authenticator, revokes active sessions,
+                requires a password change, and temporarily blocks
+                withdrawals.
+            </p>
+        </div>
+
+        <button id="refreshRecoveryRequestsBtn"
+                type="button"
+                class="tfr-refresh-btn">
+            Refresh Requests
+        </button>
+
+    </div>
+
+    <div id="recoveryRequestsLoading"
+         class="tfr-loading">
+        Loading recovery requests...
+    </div>
+
+    <div id="recoveryRequestsEmpty"
+         class="tfr-empty"
+         hidden>
+        No verified two-factor recovery request is waiting for review.
+    </div>
+
+    <div id="recoveryRequestsList"
+         class="tfr-list">
+    </div>
+
+</div>
+
+<div id="recoveryReviewModal"
+     class="tfr-modal"
+     hidden>
+
+    <div class="tfr-modal-backdrop"
+         data-close-recovery-review>
+    </div>
+
+    <div class="tfr-modal-dialog"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="recoveryReviewTitle">
+
+        <div class="tfr-modal-header">
+
+            <div>
+                <span>Manual Security Review</span>
+
+                <h4 id="recoveryReviewTitle">
+                    Review Request
+                </h4>
+            </div>
+
+            <button type="button"
+                    class="tfr-modal-close"
+                    data-close-recovery-review
+                    aria-label="Close">
+                ×
+            </button>
+
+        </div>
+
+        <div id="recoveryReviewWarning"
+             class="tfr-modal-warning">
+        </div>
+
+        <div class="tfr-modal-user">
+
+            <div>
+                <span>User</span>
+                <strong id="reviewUserName">-</strong>
+            </div>
+
+            <div>
+                <span>UID</span>
+                <strong id="reviewUserUid">-</strong>
+            </div>
+
+            <div>
+                <span>Email</span>
+                <strong id="reviewUserEmail">-</strong>
+            </div>
+
+            <div>
+                <span>KYC Status</span>
+                <strong id="reviewUserKyc">-</strong>
+            </div>
+
+        </div>
+
+        <label for="recoveryReviewNote">
+            Admin review note
+        </label>
+
+        <textarea id="recoveryReviewNote"
+                  class="form-control panel-input tfr-review-note"
+                  maxlength="1000"
+                  placeholder="Record the identity checks performed and the reason for this decision."></textarea>
+
+        <div class="tfr-modal-actions">
+
+            <button type="button"
+                    class="tfr-secondary-btn"
+                    data-close-recovery-review>
+                Cancel
+            </button>
+
+            <button id="submitRecoveryReviewBtn"
+                    type="button"
+                    class="tfr-action-btn approve">
+                Approve Recovery
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        const pendingRecoveryCount =
+            document.getElementById(
+                "pendingRecoveryCount"
+            );
+
+        const refreshRecoveryRequestsBtn =
+            document.getElementById(
+                "refreshRecoveryRequestsBtn"
+            );
+
+        const recoveryRequestsLoading =
+            document.getElementById(
+                "recoveryRequestsLoading"
+            );
+
+        const recoveryRequestsEmpty =
+            document.getElementById(
+                "recoveryRequestsEmpty"
+            );
+
+        const recoveryRequestsList =
+            document.getElementById(
+                "recoveryRequestsList"
+            );
+
+        const recoveryReviewModal =
+            document.getElementById(
+                "recoveryReviewModal"
+            );
+
+        const recoveryReviewTitle =
+            document.getElementById(
+                "recoveryReviewTitle"
+            );
+
+        const recoveryReviewWarning =
+            document.getElementById(
+                "recoveryReviewWarning"
+            );
+
+        const reviewUserName =
+            document.getElementById(
+                "reviewUserName"
+            );
+
+        const reviewUserUid =
+            document.getElementById(
+                "reviewUserUid"
+            );
+
+        const reviewUserEmail =
+            document.getElementById(
+                "reviewUserEmail"
+            );
+
+        const reviewUserKyc =
+            document.getElementById(
+                "reviewUserKyc"
+            );
+
+        const recoveryReviewNote =
+            document.getElementById(
+                "recoveryReviewNote"
+            );
+
+        const submitRecoveryReviewBtn =
+            document.getElementById(
+                "submitRecoveryReviewBtn"
+            );
+
+        let pendingRequests =
+            [];
+
+        let selectedRequest =
+            null;
+
+        let selectedReviewAction =
+            null;
+
+        function formatDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            const date =
+                new Date(value);
+
+            if (Number.isNaN(
+                    date.getTime()))
+            {
+                return "-";
+            }
+
+            return date.toLocaleString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        }
+
+        function createElement(
+            tagName,
+            className,
+            text)
+        {
+            const element =
+                document.createElement(
+                    tagName
+                );
+
+            if (className) {
+                element.className =
+                    className;
+            }
+
+            if (
+                text !== undefined &&
+                text !== null
+            ) {
+                element.textContent =
+                    String(text);
+            }
+
+            return element;
+        }
+
+        function createMetaItem(
+            label,
+            value,
+            valueClass)
+        {
+            const wrapper =
+                createElement("div");
+
+            const labelElement =
+                createElement(
+                    "span",
+                    null,
+                    label
+                );
+
+            const valueElement =
+                createElement(
+                    "strong",
+                    valueClass,
+                    value || "-"
+                );
+
+            wrapper.append(
+                labelElement,
+                valueElement
+            );
+
+            return wrapper;
+        }
+
+        function renderRequests(items) {
+            pendingRequests =
+                Array.isArray(items)
+                    ? items
+                    : [];
+
+            pendingRecoveryCount.textContent =
+                pendingRequests.length
+                    .toLocaleString("en-US");
+
+            recoveryRequestsList.innerHTML =
+                "";
+
+            recoveryRequestsLoading.hidden =
+                true;
+
+            recoveryRequestsEmpty.hidden =
+                pendingRequests.length > 0;
+
+            pendingRequests.forEach(
+                item => {
+                    const card =
+                        createElement(
+                            "article",
+                            "tfr-request-card"
+                        );
+
+                    const main =
+                        createElement(
+                            "div",
+                            "tfr-request-main"
+                        );
+
+                    const top =
+                        createElement(
+                            "div",
+                            "tfr-request-top"
+                        );
+
+                    const user =
+                        createElement(
+                            "div",
+                            "tfr-request-user"
+                        );
+
+                    user.append(
+                        createElement(
+                            "h4",
+                            null,
+                            item.fullName ||
+                            "Unknown User"
+                        ),
+                        createElement(
+                            "p",
+                            null,
+                            item.email || "-"
+                        )
+                    );
+
+                    top.append(
+                        user,
+                        createElement(
+                            "span",
+                            "tfr-status-badge",
+                            "Pending Admin Review"
+                        )
+                    );
+
+                    const metadata =
+                        createElement(
+                            "div",
+                            "tfr-request-meta"
+                        );
+
+                    const kycValue =
+                        String(
+                            item.kycStatus || "-"
+                        );
+
+                    metadata.append(
+                        createMetaItem(
+                            "UID",
+                            item.uid
+                        ),
+                        createMetaItem(
+                            "KYC",
+                            kycValue,
+                            kycValue
+                                .toLowerCase() ===
+                                "approved"
+                                ? "tfr-kyc-approved"
+                                : "tfr-kyc-warning"
+                        ),
+                        createMetaItem(
+                            "Created",
+                            formatDate(
+                                item.createdAt
+                            )
+                        ),
+                        createMetaItem(
+                            "Email Verified",
+                            formatDate(
+                                item.emailVerifiedAt
+                            )
+                        )
+                    );
+
+                    const description =
+                        createElement(
+                            "div",
+                            "tfr-description",
+                            item.description ||
+                            "No description provided."
+                        );
+
+                    main.append(
+                        top,
+                        metadata,
+                        description
+                    );
+
+                    const actions =
+                        createElement(
+                            "div",
+                            "tfr-card-actions"
+                        );
+
+                    const approveBtn =
+                        createElement(
+                            "button",
+                            "tfr-action-btn approve",
+                            "Approve"
+                        );
+
+                    approveBtn.type =
+                        "button";
+
+                    approveBtn.addEventListener(
+                        "click",
+                        function () {
+                            openReviewModal(
+                                item,
+                                "approve"
+                            );
+                        }
+                    );
+
+                    const rejectBtn =
+                        createElement(
+                            "button",
+                            "tfr-action-btn reject",
+                            "Reject"
+                        );
+
+                    rejectBtn.type =
+                        "button";
+
+                    rejectBtn.addEventListener(
+                        "click",
+                        function () {
+                            openReviewModal(
+                                item,
+                                "reject"
+                            );
+                        }
+                    );
+
+                    actions.append(
+                        approveBtn,
+                        rejectBtn
+                    );
+
+                    card.append(
+                        main,
+                        actions
+                    );
+
+                    recoveryRequestsList.appendChild(
+                        card
+                    );
+                }
+            );
+        }
+
+        async function loadRequests() {
+            refreshRecoveryRequestsBtn.disabled =
+                true;
+
+            recoveryRequestsLoading.hidden =
+                false;
+
+            recoveryRequestsEmpty.hidden =
+                true;
+
+            try {
+                const result = await api(
+                    "/api/admin/two-factor-recovery/pending",
+                    {
+                        method: "GET"
+                    }
+                );
+
+                if (
+                    !result ||
+                    !result.success
+                ) {
+                    throw new Error(
+                        result?.message ||
+                        "Could not load recovery requests."
+                    );
+                }
+
+                renderRequests(
+                    result.data || []
+                );
+
+            } catch (error) {
+                recoveryRequestsLoading.hidden =
+                    true;
+
+                showNotification(
+                    error.message ||
+                    "Could not load recovery requests.",
+                    "error"
+                );
+
+            } finally {
+                refreshRecoveryRequestsBtn.disabled =
+                    false;
+            }
+        }
+
+        function openReviewModal(
+            item,
+            action)
+        {
+            selectedRequest =
+                item;
+
+            selectedReviewAction =
+                action;
+
+            recoveryReviewNote.value =
+                "";
+
+            reviewUserName.textContent =
+                item.fullName || "-";
+
+            reviewUserUid.textContent =
+                item.uid || "-";
+
+            reviewUserEmail.textContent =
+                item.email || "-";
+
+            reviewUserKyc.textContent =
+                item.kycStatus || "-";
+
+            if (action === "approve") {
+                recoveryReviewTitle.textContent =
+                    "Approve Two-Factor Recovery";
+
+                recoveryReviewWarning.textContent =
+                    "Approve only after verifying the account identity and KYC documents. This action disables the old authenticator, invalidates recovery codes, revokes sessions, requires a password change, and locks withdrawals for 24 hours.";
+
+                submitRecoveryReviewBtn.textContent =
+                    "Approve Recovery";
+
+                submitRecoveryReviewBtn.className =
+                    "tfr-action-btn approve";
+            } else {
+                recoveryReviewTitle.textContent =
+                    "Reject Two-Factor Recovery";
+
+                recoveryReviewWarning.textContent =
+                    "Record a clear reason. The existing Google Authenticator and security settings will remain unchanged.";
+
+                submitRecoveryReviewBtn.textContent =
+                    "Reject Recovery";
+
+                submitRecoveryReviewBtn.className =
+                    "tfr-action-btn reject";
+            }
+
+            recoveryReviewModal.hidden =
+                false;
+
+            document.body.style.overflow =
+                "hidden";
+
+            window.setTimeout(
+                function () {
+                    recoveryReviewNote.focus();
+                },
+                50
+            );
+        }
+
+        function closeReviewModal() {
+            recoveryReviewModal.hidden =
+                true;
+
+            document.body.style.overflow =
+                "";
+
+            selectedRequest =
+                null;
+
+            selectedReviewAction =
+                null;
+
+            recoveryReviewNote.value =
+                "";
+        }
+
+        async function submitReview() {
+            if (
+                !selectedRequest ||
+                !selectedReviewAction
+            ) {
+                return;
+            }
+
+            const note =
+                recoveryReviewNote.value
+                    .trim();
+
+            if (
+                note.length < 10 ||
+                note.length > 1000
+            ) {
+                showNotification(
+                    "Enter an admin review note using 10 to 1000 characters.",
+                    "warning"
+                );
+
+                recoveryReviewNote.focus();
+                return;
+            }
+
+            const isApproval =
+                selectedReviewAction ===
+                "approve";
+
+            const confirmed =
+                await showConfirm(
+                    isApproval
+                        ? "This will reset Google Authenticator, revoke sessions, require a password change, and lock withdrawals temporarily."
+                        : "This will reject the request without changing the user's authenticator.",
+                    isApproval
+                        ? "Approve Security Recovery"
+                        : "Reject Security Recovery"
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+            const requestId =
+                selectedRequest.requestId;
+
+            const action =
+                selectedReviewAction;
+
+            const originalText =
+                submitRecoveryReviewBtn
+                    .textContent;
+
+            submitRecoveryReviewBtn.disabled =
+                true;
+
+            submitRecoveryReviewBtn.textContent =
+                "Processing...";
+
+            try {
+                const result = await api(
+                    `/api/admin/two-factor-recovery/${requestId}/${action}`,
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            note: note
+                        })
+                    }
+                );
+
+                if (
+                    !result ||
+                    !result.success
+                ) {
+                    throw new Error(
+                        result?.message ||
+                        "The recovery request could not be reviewed."
+                    );
+                }
+
+                closeReviewModal();
+
+                showNotification(
+                    result.message ||
+                    (
+                        isApproval
+                            ? "Recovery request approved."
+                            : "Recovery request rejected."
+                    ),
+                    "success"
+                );
+
+                await loadRequests();
+
+            } catch (error) {
+                showNotification(
+                    error.message ||
+                    "The recovery request could not be reviewed.",
+                    "error"
+                );
+
+            } finally {
+                submitRecoveryReviewBtn.disabled =
+                    false;
+
+                submitRecoveryReviewBtn.textContent =
+                    originalText;
+            }
+        }
+
+        refreshRecoveryRequestsBtn.addEventListener(
+            "click",
+            loadRequests
+        );
+
+        submitRecoveryReviewBtn.addEventListener(
+            "click",
+            submitReview
+        );
+
+        document
+            .querySelectorAll(
+                "[data-close-recovery-review]"
+            )
+            .forEach(
+                element => {
+                    element.addEventListener(
+                        "click",
+                        closeReviewModal
+                    );
+                }
+            );
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+                if (
+                    event.key === "Escape" &&
+                    !recoveryReviewModal.hidden
+                ) {
+                    closeReviewModal();
+                }
+            }
+        );
+
+        loadRequests();
+    </script>
+}

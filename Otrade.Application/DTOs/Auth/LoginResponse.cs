@@ -27,4 +27,6 @@ public class LoginResponse
         = string.Empty;
 
     public DateTime? ChallengeExpiresAt { get; set; }
+
+    public bool MustChangePassword { get; set; }
 }

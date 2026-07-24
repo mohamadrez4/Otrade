@@ -10,37 +10,117 @@ public class JwtService
 {
     private readonly IConfiguration _config;
 
-    public JwtService(IConfiguration config)
+    public JwtService(
+        IConfiguration config)
     {
-        _config = config;
+        _config =
+            config;
     }
 
-    public string GenerateToken(long userId, string email, bool isAdmin, bool isOwner)
+    /*
+     * Compatibility overload for flows that create a brand-new user.
+     * Existing login flows should use the overload that receives
+     * AuthTokenVersion and MustChangePassword.
+     */
+    public string GenerateToken(
+        long userId,
+        string email,
+        bool isAdmin,
+        bool isOwner)
     {
-        var jwtSettings = _config.GetSection("JwtSettings");
+        return GenerateToken(
+            userId,
+            email,
+            isAdmin,
+            isOwner,
+            tokenVersion: 1,
+            mustChangePassword: false);
+    }
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
+    public string GenerateToken(
+        long userId,
+        string email,
+        bool isAdmin,
+        bool isOwner,
+        int tokenVersion,
+        bool mustChangePassword)
+    {
+        var jwtSettings =
+            _config.GetSection(
+                "JwtSettings");
 
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var key =
+            new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    jwtSettings["Key"]!));
 
-        var claims = new List<Claim>
-        {
-            new Claim("userId", userId.ToString()),
-            new Claim(ClaimTypes.Email, email),
-            new Claim("isAdmin", isAdmin.ToString()),
-            new Claim("isOwner", isOwner.ToString())
-        };
+        var credentials =
+            new SigningCredentials(
+                key,
+                SecurityAlgorithms.HmacSha256);
 
-        var token = new JwtSecurityToken(
-            issuer: jwtSettings["Issuer"],
-            audience: jwtSettings["Audience"],
-            claims: claims,
-            expires:  DateTime.Now.AddMinutes(
-                int.Parse(jwtSettings["ExpireMinutes"]!)),
-            signingCredentials: creds
-        );
+        var claims =
+            new List<Claim>
+            {
+                new(
+                    "userId",
+                    userId.ToString()),
 
-        return new JwtSecurityTokenHandler().WriteToken(token);
+                new(
+                    ClaimTypes.Email,
+                    email),
+
+                new(
+                    "isAdmin",
+                    isAdmin.ToString()),
+
+                new(
+                    "isOwner",
+                    isOwner.ToString()),
+
+                new(
+                    "tokenVersion",
+                    Math.Max(
+                        1,
+                        tokenVersion)
+                    .ToString()),
+
+                new(
+                    "mustChangePassword",
+                    mustChangePassword
+                        .ToString())
+            };
+
+        var expiresInMinutes =
+            int.Parse(
+                jwtSettings[
+                    "ExpireMinutes"
+                ]!);
+
+        var token =
+            new JwtSecurityToken(
+                issuer:
+                    jwtSettings["Issuer"],
+
+                audience:
+                    jwtSettings["Audience"],
+
+                claims:
+                    claims,
+
+                notBefore:
+                    DateTime.UtcNow,
+
+                expires:
+                    DateTime.UtcNow
+                        .AddMinutes(
+                            expiresInMinutes),
+
+                signingCredentials:
+                    credentials);
+
+        return new JwtSecurityTokenHandler()
+            .WriteToken(
+                token);
     }
 }

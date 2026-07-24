@@ -51,6 +51,32 @@ public class User
      * در همان بازه زمانی ۳۰ ثانیه‌ای.
      */
     public long? LastAcceptedTotpStep { get; set; }
+
+    /*
+ * Secret جدید هنگام Replace Authenticator ابتدا
+ * اینجا ذخیره می‌شود و تا زمان تأیید فعال نمی‌شود.
+ */
+    public string? PendingTotpSecretEncrypted { get; set; }
+
+    public DateTime? PendingTotpCreatedAt { get; set; }
+
+    /*
+     * پس از Recovery ادمینی، برداشت تا این زمان
+     * مسدود خواهد ماند.
+     */
+    public DateTime? TotpRecoveryLockedUntil { get; set; }
+
+    /*
+     * با افزایش این مقدار، JWTهای قبلی کاربر
+     * باطل خواهند شد.
+     */
+    public int AuthTokenVersion { get; set; } = 1;
+
+    /*
+     * پس از Recovery ادمینی، کاربر باید قبل از
+     * استفاده از حساب رمز عبور خود را تغییر دهد.
+     */
+    public bool MustChangePassword { get; set; }
     public KycStatus KycStatus { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -63,4 +89,8 @@ public class User
 
     public ICollection<TwoFactorLoginChallenge> TwoFactorLoginChallenges { get; set; }
         = new List<TwoFactorLoginChallenge>();
+    public ICollection<TwoFactorRecoveryRequest>
+        TwoFactorRecoveryRequests
+    { get; set; }
+            = new List<TwoFactorRecoveryRequest>();
 }

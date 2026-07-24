@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Otrade.Application.DTOs.Security;
 using Otrade.Application.Services.Security;
 
-namespace Otrade.Web.Controllers.Api;
+namespace Otrade.web.Controllers.Api;
 
 [Authorize]
 [ApiController]
@@ -16,11 +16,18 @@ public class TwoFactorController : ControllerBase
     private readonly TwoFactorAuthenticationService
         _twoFactorService;
 
+    private readonly TwoFactorRecoveryService
+        _twoFactorRecoveryService;
+
     public TwoFactorController(
-        TwoFactorAuthenticationService twoFactorService)
+        TwoFactorAuthenticationService twoFactorService,
+        TwoFactorRecoveryService twoFactorRecoveryService)
     {
         _twoFactorService =
             twoFactorService;
+
+        _twoFactorRecoveryService =
+            twoFactorRecoveryService;
     }
 
     [HttpGet("status")]
@@ -103,6 +110,44 @@ public class TwoFactorController : ControllerBase
         var result =
             await _twoFactorService
                 .RegenerateRecoveryCodesAsync(
+                    currentUser.UserId,
+                    request);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("replace/start")]
+    public async Task<IActionResult> StartReplacement(
+        [FromBody] StartTwoFactorReplacementRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        var result =
+            await _twoFactorRecoveryService
+                .StartReplacementAsync(
+                    currentUser.UserId,
+                    request);
+
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("replace/confirm")]
+    public async Task<IActionResult> ConfirmReplacement(
+        [FromBody] ConfirmTwoFactorReplacementRequest request,
+        [FromServices] CurrentUserService currentUser)
+    {
+        var result =
+            await _twoFactorRecoveryService
+                .ConfirmReplacementAsync(
                     currentUser.UserId,
                     request);
 

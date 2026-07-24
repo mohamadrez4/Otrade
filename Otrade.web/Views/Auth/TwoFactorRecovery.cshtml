@@ -1,0 +1,1225 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+
+    <title>Recover Google Authenticator | Otrade</title>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+
+    <link rel="icon"
+          type="image/x-icon"
+          href="~/favicon.ico?v=1" />
+
+    <link rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="~/favicon-32x32.png?v=1" />
+
+    <link rel="apple-touch-icon"
+          href="~/apple-touch-icon.png?v=1" />
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <link href="~/css/auth.css"
+          rel="stylesheet" />
+
+    <link href="~/css/common.css"
+          rel="stylesheet" />
+
+    <script src="~/js/common.js"></script>
+
+
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+
+        <div class="auth-left">
+
+            <div class="brand-glow"></div>
+
+            <img class="hero-logo"
+                 src="~/images/Logo4.png"
+                 alt="Otrade Logo" />
+
+            <div class="hero-content">
+
+                <h1>
+                    Secure Recovery.<br />
+                    Manual Review.
+                </h1>
+
+                <p>
+                    Recover access safely when your authenticator and
+                    recovery codes are no longer available.
+                </p>
+
+                <div class="stat-card">
+                    <span>Step 1</span>
+                    <strong>Email Verification</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Step 2</span>
+                    <strong>Identity Review</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>After Approval</span>
+                    <strong>Password Change Required</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="auth-right">
+
+            <div class="login-card recovery-card">
+
+                <div class="logo-box">
+
+                    <img src="~/images/logo.png"
+                         alt="Otrade Logo" />
+
+                    <span>Online Trading Room</span>
+
+                </div>
+
+                <h2>Recover Google Authenticator</h2>
+
+                <p class="subtitle">
+                    Use this process only when neither the authenticator
+                    nor a recovery code is available.
+                </p>
+
+                <div class="recovery-progress">
+
+                    <div id="progressRequest"
+                         class="recovery-progress-item active">
+                        Request
+                    </div>
+
+                    <div id="progressEmail"
+                         class="recovery-progress-item">
+                        Verify Email
+                    </div>
+
+                    <div id="progressReview"
+                         class="recovery-progress-item">
+                        Admin Review
+                    </div>
+
+                </div>
+
+                <div class="recovery-security-box">
+
+                    <span>!</span>
+
+                    <div>
+                        <strong>
+                            High-risk security recovery
+                        </strong>
+
+                        <small>
+                            Approval resets the old authenticator,
+                            revokes active sessions, requires a password
+                            change, and temporarily locks withdrawals.
+                        </small>
+                    </div>
+
+                </div>
+
+                <!-- Start Request -->
+                <section id="requestStage"
+                         class="recovery-stage">
+
+                    <h3>Describe the access problem</h3>
+
+                    <p>
+                        Explain what happened to the authenticator device
+                        and confirm that you no longer have an unused
+                        recovery code.
+                    </p>
+
+                    <div>
+
+                        <label for="recoveryDescription">
+                            Recovery description
+                        </label>
+
+                        <textarea id="recoveryDescription"
+                                  class="form-control auth-input recovery-description"
+                                  maxlength="1000"
+                                  placeholder="Example: I replaced my phone and no longer have access to Google Authenticator or the recovery codes."></textarea>
+
+                        <span id="descriptionCounter"
+                              class="recovery-counter">
+                            0 / 1000
+                        </span>
+
+                    </div>
+
+                    <button id="startRecoveryBtn"
+                            type="button"
+                            class="btn login-btn w-100">
+                        Send Email Verification Code
+                    </button>
+
+                </section>
+
+                <!-- Verify Email -->
+                <section id="emailStage"
+                         class="recovery-stage"
+                         hidden>
+
+                    <h3>Verify your email</h3>
+
+                    <p>
+                        Enter the 6-digit code sent to the registered
+                        email address.
+                    </p>
+
+                    <div class="recovery-email-box">
+
+                        <span>Verification sent to</span>
+
+                        <strong id="maskedRecoveryEmail">
+                            Your registered email
+                        </strong>
+
+                    </div>
+
+                    <div>
+
+                        <label for="recoveryEmailCode">
+                            Email verification code
+                        </label>
+
+                        <input id="recoveryEmailCode"
+                               type="text"
+                               class="form-control auth-input recovery-code-input"
+                               maxlength="6"
+                               inputmode="numeric"
+                               autocomplete="one-time-code"
+                               placeholder="000000" />
+
+                    </div>
+
+                    <div class="recovery-expiry">
+
+                        <span>Email code expires in</span>
+
+                        <strong id="recoveryEmailCountdown">
+                            15:00
+                        </strong>
+
+                    </div>
+
+                    <button id="verifyRecoveryEmailBtn"
+                            type="button"
+                            class="btn login-btn w-100">
+                        Verify Email and Submit
+                    </button>
+
+                </section>
+
+                <!-- Status -->
+                <section id="statusStage"
+                         class="recovery-stage"
+                         hidden>
+
+                    <div class="recovery-status-card">
+
+                        <div id="recoveryStatusIcon"
+                             class="recovery-status-icon">
+                            …
+                        </div>
+
+                        <span id="recoveryStatusBadge"
+                              class="recovery-status-badge">
+                            Pending
+                        </span>
+
+                        <h3 id="recoveryStatusTitle">
+                            Request under review
+                        </h3>
+
+                        <p id="recoveryStatusMessage">
+                            The support team is reviewing your request.
+                        </p>
+
+                        <div class="recovery-status-details">
+
+                            <div>
+                                <span>Created</span>
+
+                                <strong id="recoveryCreatedAt">
+                                    -
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Request Expires</span>
+
+                                <strong id="recoveryExpiresAt">
+                                    -
+                                </strong>
+                            </div>
+
+                            <div id="recoveryReviewedGroup"
+                                 hidden>
+                                <span>Reviewed</span>
+
+                                <strong id="recoveryReviewedAt">
+                                    -
+                                </strong>
+                            </div>
+
+                            <div id="withdrawalLockGroup"
+                                 hidden>
+                                <span>Withdrawal Lock</span>
+
+                                <strong id="withdrawalLockUntil">
+                                    -
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <div class="recovery-actions">
+
+                            <button id="refreshRecoveryStatusBtn"
+                                    type="button"
+                                    class="recovery-secondary-btn">
+                                Refresh Status
+                            </button>
+
+                            <a id="recoveryLoginLink"
+                               href="/auth/login"
+                               class="btn login-btn w-100"
+                               hidden>
+                                Return to Login
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <a id="cancelRecoveryLink"
+                   href="/auth/login"
+                   class="recovery-back">
+                    Cancel and Return to Login
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const CHALLENGE_KEY =
+            "otrade_2fa_challenge";
+
+        const CHALLENGE_EXPIRES_KEY =
+            "otrade_2fa_expires_at";
+
+        const CHALLENGE_EMAIL_KEY =
+            "otrade_2fa_email";
+
+        const RECOVERY_TOKEN_KEY =
+            "otrade_2fa_recovery_token";
+
+        const RECOVERY_EMAIL_KEY =
+            "otrade_2fa_recovery_email";
+
+        const RECOVERY_EMAIL_EXPIRES_KEY =
+            "otrade_2fa_recovery_email_expires";
+
+        const requestStage =
+            document.getElementById(
+                "requestStage"
+            );
+
+        const emailStage =
+            document.getElementById(
+                "emailStage"
+            );
+
+        const statusStage =
+            document.getElementById(
+                "statusStage"
+            );
+
+        const progressRequest =
+            document.getElementById(
+                "progressRequest"
+            );
+
+        const progressEmail =
+            document.getElementById(
+                "progressEmail"
+            );
+
+        const progressReview =
+            document.getElementById(
+                "progressReview"
+            );
+
+        const recoveryDescription =
+            document.getElementById(
+                "recoveryDescription"
+            );
+
+        const descriptionCounter =
+            document.getElementById(
+                "descriptionCounter"
+            );
+
+        const startRecoveryBtn =
+            document.getElementById(
+                "startRecoveryBtn"
+            );
+
+        const maskedRecoveryEmail =
+            document.getElementById(
+                "maskedRecoveryEmail"
+            );
+
+        const recoveryEmailCode =
+            document.getElementById(
+                "recoveryEmailCode"
+            );
+
+        const recoveryEmailCountdown =
+            document.getElementById(
+                "recoveryEmailCountdown"
+            );
+
+        const verifyRecoveryEmailBtn =
+            document.getElementById(
+                "verifyRecoveryEmailBtn"
+            );
+
+        const recoveryStatusIcon =
+            document.getElementById(
+                "recoveryStatusIcon"
+            );
+
+        const recoveryStatusBadge =
+            document.getElementById(
+                "recoveryStatusBadge"
+            );
+
+        const recoveryStatusTitle =
+            document.getElementById(
+                "recoveryStatusTitle"
+            );
+
+        const recoveryStatusMessage =
+            document.getElementById(
+                "recoveryStatusMessage"
+            );
+
+        const recoveryCreatedAt =
+            document.getElementById(
+                "recoveryCreatedAt"
+            );
+
+        const recoveryExpiresAt =
+            document.getElementById(
+                "recoveryExpiresAt"
+            );
+
+        const recoveryReviewedGroup =
+            document.getElementById(
+                "recoveryReviewedGroup"
+            );
+
+        const recoveryReviewedAt =
+            document.getElementById(
+                "recoveryReviewedAt"
+            );
+
+        const withdrawalLockGroup =
+            document.getElementById(
+                "withdrawalLockGroup"
+            );
+
+        const withdrawalLockUntil =
+            document.getElementById(
+                "withdrawalLockUntil"
+            );
+
+        const refreshRecoveryStatusBtn =
+            document.getElementById(
+                "refreshRecoveryStatusBtn"
+            );
+
+        const recoveryLoginLink =
+            document.getElementById(
+                "recoveryLoginLink"
+            );
+
+        const cancelRecoveryLink =
+            document.getElementById(
+                "cancelRecoveryLink"
+            );
+
+        let emailCountdownTimer =
+            null;
+
+        let statusPollTimer =
+            null;
+
+        function setStage(stage) {
+            requestStage.hidden =
+                stage !== "request";
+
+            emailStage.hidden =
+                stage !== "email";
+
+            statusStage.hidden =
+                stage !== "status";
+
+            progressRequest.className =
+                "recovery-progress-item";
+
+            progressEmail.className =
+                "recovery-progress-item";
+
+            progressReview.className =
+                "recovery-progress-item";
+
+            if (stage === "request") {
+                progressRequest.classList.add(
+                    "active"
+                );
+            }
+
+            if (stage === "email") {
+                progressRequest.classList.add(
+                    "complete"
+                );
+
+                progressEmail.classList.add(
+                    "active"
+                );
+            }
+
+            if (stage === "status") {
+                progressRequest.classList.add(
+                    "complete"
+                );
+
+                progressEmail.classList.add(
+                    "complete"
+                );
+
+                progressReview.classList.add(
+                    "active"
+                );
+            }
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            const date =
+                new Date(value);
+
+            if (Number.isNaN(
+                    date.getTime()))
+            {
+                return "-";
+            }
+
+            return date.toLocaleString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        }
+
+        function clearLoginChallenge() {
+            sessionStorage.removeItem(
+                CHALLENGE_KEY
+            );
+
+            sessionStorage.removeItem(
+                CHALLENGE_EXPIRES_KEY
+            );
+
+            sessionStorage.removeItem(
+                CHALLENGE_EMAIL_KEY
+            );
+        }
+
+        function clearRecoveryStorage() {
+            sessionStorage.removeItem(
+                RECOVERY_TOKEN_KEY
+            );
+
+            sessionStorage.removeItem(
+                RECOVERY_EMAIL_KEY
+            );
+
+            sessionStorage.removeItem(
+                RECOVERY_EMAIL_EXPIRES_KEY
+            );
+        }
+
+        function getRecoveryToken() {
+            return sessionStorage.getItem(
+                RECOVERY_TOKEN_KEY
+            );
+        }
+
+        function setEmailCountdown(
+            expiresAtValue)
+        {
+            window.clearInterval(
+                emailCountdownTimer
+            );
+
+            const expiresAt =
+                new Date(
+                    expiresAtValue
+                );
+
+            function update() {
+                const remaining =
+                    expiresAt.getTime() -
+                    Date.now();
+
+                if (
+                    Number.isNaN(
+                        expiresAt.getTime()
+                    ) ||
+                    remaining <= 0
+                ) {
+                    window.clearInterval(
+                        emailCountdownTimer
+                    );
+
+                    recoveryEmailCountdown.innerText =
+                        "Expired";
+
+                    recoveryEmailCode.disabled =
+                        true;
+
+                    verifyRecoveryEmailBtn.disabled =
+                        true;
+
+                    return;
+                }
+
+                const totalSeconds =
+                    Math.floor(
+                        remaining / 1000
+                    );
+
+                const minutes =
+                    Math.floor(
+                        totalSeconds / 60
+                    );
+
+                const seconds =
+                    totalSeconds % 60;
+
+                recoveryEmailCountdown.innerText =
+                    `${String(minutes).padStart(2, "0")}:` +
+                    `${String(seconds).padStart(2, "0")}`;
+            }
+
+            update();
+
+            emailCountdownTimer =
+                window.setInterval(
+                    update,
+                    1000
+                );
+        }
+
+        async function readJsonResponse(
+            response)
+        {
+            let result;
+
+            try {
+                result =
+                    await response.json();
+            } catch {
+                result =
+                    null;
+            }
+
+            if (
+                !response.ok ||
+                !result ||
+                !result.success
+            ) {
+                throw new Error(
+                    result?.message ||
+                    "The recovery operation could not be completed."
+                );
+            }
+
+            return result;
+        }
+
+        async function startRecovery() {
+            const challengeToken =
+                sessionStorage.getItem(
+                    CHALLENGE_KEY
+                );
+
+            const challengeExpiresAt =
+                new Date(
+                    sessionStorage.getItem(
+                        CHALLENGE_EXPIRES_KEY
+                    )
+                );
+
+            if (
+                !challengeToken ||
+                Number.isNaN(
+                    challengeExpiresAt.getTime()
+                ) ||
+                challengeExpiresAt.getTime() <=
+                Date.now()
+            ) {
+                showNotification(
+                    "The login verification request expired. Login again first.",
+                    "warning"
+                );
+
+                window.setTimeout(
+                    function () {
+                        window.location.href =
+                            "/auth/login";
+                    },
+                    1200
+                );
+
+                return;
+            }
+
+            const description =
+                recoveryDescription.value
+                    .trim();
+
+            if (
+                description.length < 10 ||
+                description.length > 1000
+            ) {
+                showNotification(
+                    "Describe the access problem using 10 to 1000 characters.",
+                    "warning"
+                );
+
+                recoveryDescription.focus();
+                return;
+            }
+
+            const originalText =
+                startRecoveryBtn.innerText;
+
+            startRecoveryBtn.disabled =
+                true;
+
+            startRecoveryBtn.innerText =
+                "Sending Code...";
+
+            try {
+                const response =
+                    await fetch(
+                        "/api/auth/two-factor/recovery/request",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body: JSON.stringify({
+                                challengeToken:
+                                    challengeToken,
+                                description:
+                                    description
+                            })
+                        }
+                    );
+
+                const result =
+                    await readJsonResponse(
+                        response);
+
+                const data =
+                    result.data || {};
+
+                sessionStorage.setItem(
+                    RECOVERY_TOKEN_KEY,
+                    data.recoveryToken
+                );
+
+                sessionStorage.setItem(
+                    RECOVERY_EMAIL_KEY,
+                    data.maskedEmail || ""
+                );
+
+                sessionStorage.setItem(
+                    RECOVERY_EMAIL_EXPIRES_KEY,
+                    data.emailCodeExpiresAt
+                );
+
+                clearLoginChallenge();
+
+                maskedRecoveryEmail.innerText =
+                    data.maskedEmail ||
+                    "Your registered email";
+
+                recoveryEmailCode.value =
+                    "";
+
+                recoveryEmailCode.disabled =
+                    false;
+
+                verifyRecoveryEmailBtn.disabled =
+                    false;
+
+                setEmailCountdown(
+                    data.emailCodeExpiresAt
+                );
+
+                setStage("email");
+
+                recoveryEmailCode.focus();
+
+                showNotification(
+                    result.message ||
+                    "A verification code was sent to your email.",
+                    "success"
+                );
+
+            } catch (error) {
+                showNotification(
+                    error.message,
+                    "error"
+                );
+
+            } finally {
+                startRecoveryBtn.disabled =
+                    false;
+
+                startRecoveryBtn.innerText =
+                    originalText;
+            }
+        }
+
+        async function verifyRecoveryEmail() {
+            const recoveryToken =
+                getRecoveryToken();
+
+            const code =
+                recoveryEmailCode.value
+                    .replace(/\D/g, "")
+                    .slice(0, 6);
+
+            recoveryEmailCode.value =
+                code;
+
+            if (!recoveryToken) {
+                showNotification(
+                    "The recovery request is missing. Start again.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            if (!/^\d{6}$/.test(code)) {
+                showNotification(
+                    "Enter the 6-digit code sent to your email.",
+                    "warning"
+                );
+
+                recoveryEmailCode.focus();
+                return;
+            }
+
+            const originalText =
+                verifyRecoveryEmailBtn
+                    .innerText;
+
+            verifyRecoveryEmailBtn.disabled =
+                true;
+
+            verifyRecoveryEmailBtn.innerText =
+                "Verifying...";
+
+            try {
+                const response =
+                    await fetch(
+                        "/api/auth/two-factor/recovery/verify-email",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body: JSON.stringify({
+                                recoveryToken:
+                                    recoveryToken,
+                                code:
+                                    code
+                            })
+                        }
+                    );
+
+                const result =
+                    await readJsonResponse(
+                        response);
+
+                window.clearInterval(
+                    emailCountdownTimer
+                );
+
+                renderRecoveryStatus(
+                    result.data
+                );
+
+                showNotification(
+                    result.message ||
+                    "Recovery request submitted.",
+                    "success"
+                );
+
+            } catch (error) {
+                showNotification(
+                    error.message,
+                    "error"
+                );
+
+            } finally {
+                verifyRecoveryEmailBtn.disabled =
+                    false;
+
+                verifyRecoveryEmailBtn.innerText =
+                    originalText;
+            }
+        }
+
+        function renderRecoveryStatus(
+            data)
+        {
+            if (!data) {
+                return;
+            }
+
+            setStage("status");
+
+            const normalizedStatus =
+                String(
+                    data.status || ""
+                ).toLowerCase();
+
+            recoveryStatusIcon.className =
+                "recovery-status-icon";
+
+            recoveryStatusBadge.innerText =
+                data.status || "Pending";
+
+            recoveryStatusMessage.innerText =
+                data.message ||
+                "The recovery request is being processed.";
+
+            recoveryCreatedAt.innerText =
+                formatDate(
+                    data.createdAt
+                );
+
+            recoveryExpiresAt.innerText =
+                formatDate(
+                    data.expiresAt
+                );
+
+            recoveryReviewedGroup.hidden =
+                !data.reviewedAt;
+
+            recoveryReviewedAt.innerText =
+                formatDate(
+                    data.reviewedAt
+                );
+
+            withdrawalLockGroup.hidden =
+                !data.withdrawalLockedUntil;
+
+            withdrawalLockUntil.innerText =
+                formatDate(
+                    data.withdrawalLockedUntil
+                );
+
+            recoveryLoginLink.hidden =
+                true;
+
+            refreshRecoveryStatusBtn.hidden =
+                false;
+
+            window.clearInterval(
+                statusPollTimer
+            );
+
+            if (
+                normalizedStatus ===
+                "pendingadminreview"
+            ) {
+                recoveryStatusIcon.innerText =
+                    "…";
+
+                recoveryStatusTitle.innerText =
+                    "Request under review";
+
+                statusPollTimer =
+                    window.setInterval(
+                        loadRecoveryStatus,
+                        30000
+                    );
+
+                return;
+            }
+
+            if (
+                normalizedStatus ===
+                "pendingemailverification"
+            ) {
+                const maskedEmail =
+                    sessionStorage.getItem(
+                        RECOVERY_EMAIL_KEY
+                    );
+
+                maskedRecoveryEmail.innerText =
+                    maskedEmail ||
+                    "Your registered email";
+
+                const expiresAt =
+                    sessionStorage.getItem(
+                        RECOVERY_EMAIL_EXPIRES_KEY
+                    );
+
+                if (expiresAt) {
+                    setEmailCountdown(
+                        expiresAt
+                    );
+                }
+
+                setStage("email");
+                return;
+            }
+
+            refreshRecoveryStatusBtn.hidden =
+                true;
+
+            recoveryLoginLink.hidden =
+                false;
+
+            if (normalizedStatus === "approved") {
+                recoveryStatusIcon.classList.add(
+                    "approved"
+                );
+
+                recoveryStatusIcon.innerText =
+                    "✓";
+
+                recoveryStatusTitle.innerText =
+                    "Recovery approved";
+
+                clearLoginChallenge();
+
+                return;
+            }
+
+            recoveryStatusIcon.classList.add(
+                normalizedStatus ||
+                "rejected"
+            );
+
+            recoveryStatusIcon.innerText =
+                "×";
+
+            recoveryStatusTitle.innerText =
+                normalizedStatus === "rejected"
+                    ? "Recovery rejected"
+                    : "Recovery request closed";
+        }
+
+        async function loadRecoveryStatus() {
+            const recoveryToken =
+                getRecoveryToken();
+
+            if (!recoveryToken) {
+                return;
+            }
+
+            refreshRecoveryStatusBtn.disabled =
+                true;
+
+            try {
+                const response =
+                    await fetch(
+                        "/api/auth/two-factor/recovery/status",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+                            body: JSON.stringify({
+                                recoveryToken:
+                                    recoveryToken
+                            })
+                        }
+                    );
+
+                const result =
+                    await readJsonResponse(
+                        response);
+
+                renderRecoveryStatus(
+                    result.data
+                );
+
+            } catch (error) {
+                showNotification(
+                    error.message,
+                    "error"
+                );
+
+            } finally {
+                refreshRecoveryStatusBtn.disabled =
+                    false;
+            }
+        }
+
+        recoveryDescription.addEventListener(
+            "input",
+            function () {
+                descriptionCounter.innerText =
+                    `${recoveryDescription.value.length} / 1000`;
+            }
+        );
+
+        recoveryEmailCode.addEventListener(
+            "input",
+            function () {
+                recoveryEmailCode.value =
+                    recoveryEmailCode.value
+                        .replace(/\D/g, "")
+                        .slice(0, 6);
+            }
+        );
+
+        recoveryEmailCode.addEventListener(
+            "keydown",
+            function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+
+                    verifyRecoveryEmail();
+                }
+            }
+        );
+
+        startRecoveryBtn.addEventListener(
+            "click",
+            startRecovery
+        );
+
+        verifyRecoveryEmailBtn.addEventListener(
+            "click",
+            verifyRecoveryEmail
+        );
+
+        refreshRecoveryStatusBtn.addEventListener(
+            "click",
+            loadRecoveryStatus
+        );
+
+        recoveryLoginLink.addEventListener(
+            "click",
+            function () {
+                clearRecoveryStorage();
+                clearLoginChallenge();
+            }
+        );
+
+        cancelRecoveryLink.addEventListener(
+            "click",
+            function () {
+                clearRecoveryStorage();
+                clearLoginChallenge();
+            }
+        );
+
+        const existingRecoveryToken =
+            getRecoveryToken();
+
+        if (existingRecoveryToken) {
+            loadRecoveryStatus();
+        } else {
+            const challengeToken =
+                sessionStorage.getItem(
+                    CHALLENGE_KEY
+                );
+
+            const challengeExpiresAt =
+                new Date(
+                    sessionStorage.getItem(
+                        CHALLENGE_EXPIRES_KEY
+                    )
+                );
+
+            if (
+                !challengeToken ||
+                Number.isNaN(
+                    challengeExpiresAt.getTime()
+                ) ||
+                challengeExpiresAt.getTime() <=
+                Date.now()
+            ) {
+                showNotification(
+                    "Start the login process again before requesting recovery.",
+                    "warning"
+                );
+
+                startRecoveryBtn.disabled =
+                    true;
+            }
+
+            setStage("request");
+        }
+    </script>
+
+    <div id="notificationContainer"
+         class="notification-container">
+    </div>
+
+</body>
+</html>

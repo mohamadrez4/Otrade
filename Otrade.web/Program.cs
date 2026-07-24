@@ -50,7 +50,94 @@ builder.Services
                 }
 
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var userIdValue =
+                    context.Principal?
+                        .FindFirst("userId")?
+                        .Value;
+
+                var tokenVersionValue =
+                    context.Principal?
+                        .FindFirst("tokenVersion")?
+                        .Value;
+
+                if (
+                    !long.TryParse(
+                        userIdValue,
+                        out var userId) ||
+                    !int.TryParse(
+                        tokenVersionValue,
+                        out var tokenVersion)
+                )
+                {
+                    context.Fail(
+                        "Invalid token claims.");
+
+                    return;
+                }
+
+                var dbContext =
+                    context.HttpContext
+                        .RequestServices
+                        .GetRequiredService<
+                            OtradeDbContext>();
+
+                var userSecurity =
+                    await dbContext.Users
+                        .AsNoTracking()
+                        .Where(x =>
+                            x.UserId == userId)
+                        .Select(x => new
+                        {
+                            x.AuthTokenVersion,
+                            x.MustChangePassword
+                        })
+                        .FirstOrDefaultAsync();
+
+                if (
+                    userSecurity == null ||
+                    userSecurity.AuthTokenVersion !=
+                    tokenVersion
+                )
+                {
+                    context.Fail(
+                        "Token has been revoked.");
+
+                    return;
+                }
+
+                /*
+                 * Refresh the password-change requirement from the database.
+                 * This lets the same valid recovery session continue immediately
+                 * after the required password change is completed.
+                 */
+                if (
+                    context.Principal?.Identity
+                    is System.Security.Claims.ClaimsIdentity
+                        identity
+                )
+                {
+                    var oldClaim =
+                        identity.FindFirst(
+                            "mustChangePassword");
+
+                    if (oldClaim != null)
+                    {
+                        identity.RemoveClaim(
+                            oldClaim);
+                    }
+
+                    identity.AddClaim(
+                        new System.Security.Claims.Claim(
+                            "mustChangePassword",
+                            userSecurity
+                                .MustChangePassword
+                                .ToString()));
+                }
             }
+
         };
     });
 
@@ -95,6 +182,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<EncryptionService>();
 builder.Services.AddSingleton<TotpSecretProtector>();
 builder.Services.AddScoped<TwoFactorAuthenticationService>();
+builder.Services.AddScoped<TwoFactorRecoveryService>();
 builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
 builder.Services.AddHostedService<NotificationBackgroundWorker>();
 builder.Services.AddScoped<AdminPermissionService>();
@@ -118,6 +206,81 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+app.Use(
+    async (
+        context,
+        next) =>
+    {
+        var isAuthenticated =
+            context.User.Identity?
+                .IsAuthenticated ==
+            true;
+
+        var mustChangePassword =
+            bool.TryParse(
+                context.User
+                    .FindFirst(
+                        "mustChangePassword")?
+                    .Value,
+                out var required) &&
+            required;
+
+        if (
+            isAuthenticated &&
+            mustChangePassword
+        )
+        {
+            var path =
+                context.Request.Path;
+
+            var allowed =
+                path.StartsWithSegments(
+                    "/profile") ||
+                path.StartsWithSegments(
+                    "/api/profile") ||
+                path.StartsWithSegments(
+                    "/error");
+
+            if (!allowed)
+            {
+                if (
+                    path.StartsWithSegments(
+                        "/api")
+                )
+                {
+                    context.Response.StatusCode =
+                        StatusCodes
+                            .Status428PreconditionRequired;
+
+                    context.Response.ContentType =
+                        "application/json";
+
+                    await context.Response
+                        .WriteAsJsonAsync(
+                            new
+                            {
+                                success =
+                                    false,
+
+                                message =
+                                    "You must change your password before continuing.",
+
+                                code =
+                                    "PASSWORD_CHANGE_REQUIRED"
+                            });
+
+                    return;
+                }
+
+                context.Response.Redirect(
+                    "/profile?forcePassword=1");
+
+                return;
+            }
+        }
+
+        await next();
+    });
 app.UseAuthorization();
 
 app.UseHangfireDashboard("/hangfire", new DashboardOptions

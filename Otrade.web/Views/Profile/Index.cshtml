@@ -1,7 +1,19 @@
-﻿@{
-    ViewData["Title"] = "Profile";
-}
+﻿
 <div class="profile-page">
+
+    <div id="forcedPasswordBanner"
+         class="profile-2fa-recovery-warning"
+         hidden>
+
+        <span>!</span>
+
+        <p>
+            For security, you must change your password before using
+            the rest of your account. After changing it successfully,
+            normal access will be restored.
+        </p>
+
+    </div>
 
     <!-- Profile Info -->
     <div class="panel-card">
@@ -162,7 +174,7 @@
                         Step 1
                     </span>
 
-                    <h4>Scan the QR code</h4>
+                    <h4 id="twoFactorSetupScanTitle">Scan the QR code</h4>
 
                     <div class="profile-2fa-qr-box">
 
@@ -171,7 +183,7 @@
 
                     </div>
 
-                    <p>
+                    <p id="twoFactorSetupScanHelp">
                         Open Google Authenticator, select
                         <strong>Add a code</strong>, and scan this QR code.
                     </p>
@@ -184,7 +196,7 @@
                         Step 2
                     </span>
 
-                    <h4>Confirm the setup</h4>
+                    <h4 id="twoFactorSetupConfirmTitle">Confirm the setup</h4>
 
                     <div class="profile-2fa-account-info">
 
@@ -247,7 +259,7 @@
                                autocomplete="one-time-code"
                                placeholder="000000" />
 
-                        <small>
+                        <small id="twoFactorSetupCodeHelp">
                             Enter the current code shown in Google
                             Authenticator.
                         </small>
@@ -355,6 +367,12 @@
                         type="button"
                         class="profile-2fa-secondary-btn">
                     Generate New Recovery Codes
+                </button>
+
+                <button id="replaceTwoFactorBtn"
+                        type="button"
+                        class="profile-2fa-secondary-btn">
+                    Replace Google Authenticator
                 </button>
 
                 <button id="disableTwoFactorBtn"
@@ -561,7 +579,8 @@
     </div>
 
     <!-- Change Password -->
-    <div class="panel-card">
+    <div id="changePasswordCard"
+         class="panel-card">
         <div class="profile-header">
             <div>
                 <h3>Change Password</h3>
@@ -851,6 +870,12 @@
         const profileMessage = document.getElementById("profileMessage");
         const profileContent = document.getElementById("profileContent");
 
+        const forcedPasswordBanner =
+            document.getElementById("forcedPasswordBanner");
+
+        const changePasswordCard =
+            document.getElementById("changePasswordCard");
+
         const firstName = document.getElementById("firstName");
         const lastName = document.getElementById("lastName");
         const email = document.getElementById("email");
@@ -921,6 +946,18 @@
         const twoFactorAccountName =
             document.getElementById("twoFactorAccountName");
 
+        const twoFactorSetupScanTitle =
+            document.getElementById("twoFactorSetupScanTitle");
+
+        const twoFactorSetupScanHelp =
+            document.getElementById("twoFactorSetupScanHelp");
+
+        const twoFactorSetupConfirmTitle =
+            document.getElementById("twoFactorSetupConfirmTitle");
+
+        const twoFactorSetupCodeHelp =
+            document.getElementById("twoFactorSetupCodeHelp");
+
         const twoFactorManualKey =
             document.getElementById("twoFactorManualKey");
 
@@ -953,6 +990,9 @@
 
         const regenerateRecoveryCodesBtn =
             document.getElementById("regenerateRecoveryCodesBtn");
+
+        const replaceTwoFactorBtn =
+            document.getElementById("replaceTwoFactorBtn");
 
         const disableTwoFactorBtn =
             document.getElementById("disableTwoFactorBtn");
@@ -1008,7 +1048,9 @@
         let twoFactorSetupExpiresAt = null;
         let twoFactorSetupTimer = null;
         let twoFactorActionMode = null;
+        let twoFactorSetupMode = "enable";
         let currentRecoveryCodes = [];
+        let logoutAfterRecoveryCodes = false;
 
         // ---------------------
         // Helpers
@@ -1342,6 +1384,93 @@
             );
         }
 
+        function renderTwoFactorSetup(
+            data,
+            mode
+        ) {
+            twoFactorSetupMode =
+                mode === "replace"
+                    ? "replace"
+                    : "enable";
+
+            hideTwoFactorStates();
+
+            setTwoFactorHeaderStatus(
+                "pending",
+                twoFactorSetupMode === "replace"
+                    ? "Replacement Pending"
+                    : "Setup Pending"
+            );
+
+            twoFactorSetupState.hidden =
+                false;
+
+            twoFactorQrImage.src =
+                data.qrCodeDataUrl;
+
+            twoFactorIssuer.innerText =
+                data.issuer || "Otrade";
+
+            twoFactorAccountName.innerText =
+                data.accountName || "-";
+
+            twoFactorManualKey.innerText =
+                data.manualEntryKey || "-";
+
+            twoFactorSetupCode.value =
+                "";
+
+            if (
+                twoFactorSetupMode ===
+                "replace"
+            ) {
+                twoFactorSetupScanTitle.innerText =
+                    "Scan the new QR code";
+
+                twoFactorSetupScanHelp.innerHTML =
+                    "Add this as a <strong>new code</strong> in Google Authenticator. " +
+                    "Your current authenticator remains active until the replacement is confirmed.";
+
+                twoFactorSetupConfirmTitle.innerText =
+                    "Confirm the new authenticator";
+
+                twoFactorSetupCodeHelp.innerText =
+                    "Enter the current code generated by the new Google Authenticator entry.";
+
+                confirmTwoFactorBtn.innerText =
+                    "Verify and Replace";
+
+                restartTwoFactorSetupBtn.hidden =
+                    true;
+            } else {
+                twoFactorSetupScanTitle.innerText =
+                    "Scan the QR code";
+
+                twoFactorSetupScanHelp.innerHTML =
+                    "Open Google Authenticator, select <strong>Add a code</strong>, and scan this QR code.";
+
+                twoFactorSetupConfirmTitle.innerText =
+                    "Confirm the setup";
+
+                twoFactorSetupCodeHelp.innerText =
+                    "Enter the current code shown in Google Authenticator.";
+
+                confirmTwoFactorBtn.innerText =
+                    twoFactorSetupMode === "replace"
+                        ? "Verify and Replace"
+                        : "Verify and Enable";
+
+                restartTwoFactorSetupBtn.hidden =
+                    false;
+            }
+
+            startTwoFactorSetupCountdown(
+                data.expiresAt
+            );
+
+            twoFactorSetupCode.focus();
+        }
+
         function clearTwoFactorSetupTimer() {
             if (twoFactorSetupTimer) {
                 window.clearInterval(
@@ -1567,6 +1696,28 @@
                 twoFactorActionSubmitBtn.classList.add(
                     "danger"
                 );
+            } else if (mode === "replace") {
+                twoFactorActionTitle.innerText =
+                    "Replace Google Authenticator";
+
+                twoFactorActionDescription.innerText =
+                    "Enter your current password and either the current authenticator code or an unused recovery code. Your existing authenticator remains active until the new one is confirmed.";
+
+                twoFactorActionPasswordGroup.hidden =
+                    false;
+
+                twoFactorActionCodeLabel.innerText =
+                    "Current Authentication or Recovery Code";
+
+                twoFactorActionCodeHelp.innerText =
+                    "Use a recovery code when the old authenticator is no longer available.";
+
+                twoFactorActionSubmitBtn.innerText =
+                    "Create New Setup";
+
+                twoFactorActionSubmitBtn.classList.remove(
+                    "danger"
+                );
             } else {
                 twoFactorActionTitle.innerText =
                     "Generate New Recovery Codes";
@@ -1699,6 +1850,22 @@
                 true;
 
             syncTwoFactorModalBodyState();
+
+            if (logoutAfterRecoveryCodes) {
+                logoutAfterRecoveryCodes =
+                    false;
+
+                localStorage.removeItem(
+                    "token"
+                );
+
+                localStorage.removeItem(
+                    "userId"
+                );
+
+                window.location.href =
+                    "/auth/login";
+            }
         }
 
         function downloadRecoveryCodes() {
@@ -1917,36 +2084,10 @@
                     return;
                 }
 
-                hideTwoFactorStates();
-
-                setTwoFactorHeaderStatus(
-                    "pending",
-                    "Setup Pending"
+                renderTwoFactorSetup(
+                    data,
+                    "enable"
                 );
-
-                twoFactorSetupState.hidden =
-                    false;
-
-                twoFactorQrImage.src =
-                    data.qrCodeDataUrl;
-
-                twoFactorIssuer.innerText =
-                    data.issuer || "Otrade";
-
-                twoFactorAccountName.innerText =
-                    data.accountName || "-";
-
-                twoFactorManualKey.innerText =
-                    data.manualEntryKey || "-";
-
-                twoFactorSetupCode.value =
-                    "";
-
-                startTwoFactorSetupCountdown(
-                    data.expiresAt
-                );
-
-                twoFactorSetupCode.focus();
 
                 showNotification(
                     result.message ||
@@ -1993,8 +2134,13 @@
                 "Verifying...";
 
             try {
+                const endpoint =
+                    twoFactorSetupMode === "replace"
+                        ? "/api/security/two-factor/replace/confirm"
+                        : "/api/security/two-factor/enable";
+
                 const result = await api(
-                    "/api/security/two-factor/enable",
+                    endpoint,
                     {
                         method: "POST",
                         body: JSON.stringify({
@@ -2015,17 +2161,49 @@
 
                 clearTwoFactorSetupTimer();
 
+                const replacementCompleted =
+                    twoFactorSetupMode ===
+                    "replace";
+
                 showNotification(
                     result.message ||
-                    "Google Authenticator enabled successfully.",
+                    (
+                        replacementCompleted
+                            ? "Google Authenticator replaced successfully."
+                            : "Google Authenticator enabled successfully."
+                    ),
                     "success"
                 );
-
-                await loadTwoFactorStatus();
 
                 const codes =
                     result.data?.recoveryCodes ||
                     [];
+
+                if (replacementCompleted) {
+                    logoutAfterRecoveryCodes =
+                        true;
+
+                    if (codes.length) {
+                        renderRecoveryCodes(
+                            codes
+                        );
+                    } else {
+                        localStorage.removeItem(
+                            "token"
+                        );
+
+                        localStorage.removeItem(
+                            "userId"
+                        );
+
+                        window.location.href =
+                            "/auth/login";
+                    }
+
+                    return;
+                }
+
+                await loadTwoFactorStatus();
 
                 if (codes.length) {
                     renderRecoveryCodes(codes);
@@ -2092,6 +2270,79 @@
                 "Processing...";
 
             try {
+                if (
+                    twoFactorActionMode ===
+                    "replace"
+                ) {
+                    const password =
+                        twoFactorActionPassword.value;
+
+                    if (!password) {
+                        showNotification(
+                            "Current password is required.",
+                            "warning"
+                        );
+
+                        twoFactorActionPassword.focus();
+                        return;
+                    }
+
+                    const result = await api(
+                        "/api/security/two-factor/replace/start",
+                        {
+                            method: "POST",
+                            body: JSON.stringify({
+                                password: password,
+                                code: code
+                            })
+                        }
+                    );
+
+                    if (
+                        !result ||
+                        !result.success
+                    ) {
+                        showNotification(
+                            result?.message ||
+                            "Could not start Google Authenticator replacement.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    const data =
+                        result.data || {};
+
+                    if (
+                        !isSafeQrCodeDataUrl(
+                            data.qrCodeDataUrl
+                        )
+                    ) {
+                        showNotification(
+                            "The QR code returned by the server is invalid.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    closeTwoFactorActionModal();
+
+                    renderTwoFactorSetup(
+                        data,
+                        "replace"
+                    );
+
+                    showNotification(
+                        result.message ||
+                        "New Google Authenticator setup created.",
+                        "success"
+                    );
+
+                    return;
+                }
+
                 if (
                     twoFactorActionMode ===
                     "disable"
@@ -2261,6 +2512,61 @@
 
                 const data = result.data || {};
 
+                const forcePasswordFromQuery =
+                    new URLSearchParams(
+                        window.location.search
+                    ).get("forcePassword") === "1";
+
+                const mustChangePassword =
+                    data.mustChangePassword === true ||
+                    forcePasswordFromQuery;
+
+                forcedPasswordBanner.hidden =
+                    !mustChangePassword;
+
+                if (mustChangePassword) {
+                    window.setTimeout(
+                        function () {
+                            changePasswordCard
+                                .scrollIntoView({
+                                    behavior:
+                                        "smooth",
+                                    block:
+                                        "center"
+                                });
+
+                            currentPassword.focus();
+                        },
+                        250
+                    );
+                }
+
+                if (
+                    data.totpRecoveryLockedUntil
+                ) {
+                    const lockedUntil =
+                        new Date(
+                            data.totpRecoveryLockedUntil
+                        );
+
+                    if (
+                        !Number.isNaN(
+                            lockedUntil.getTime()
+                        ) &&
+                        lockedUntil.getTime() >
+                        Date.now()
+                    ) {
+                        showNotification(
+                            "Withdrawals are temporarily locked until " +
+                            lockedUntil.toLocaleString("en-US") +
+                            " after the approved security recovery.",
+                            "warning",
+                            "Security Lock",
+                            8000
+                        );
+                    }
+                }
+
                 firstName.innerText = data.firstName || "-";
                 lastName.innerText = data.lastName || "-";
                 email.innerText = data.email || "-";
@@ -2364,6 +2670,9 @@
                 twoFactorSetupCode.value =
                     "";
 
+                twoFactorSetupMode =
+                    "enable";
+
                 await loadTwoFactorStatus();
             }
         );
@@ -2413,6 +2722,25 @@
 
                 openTwoFactorActionModal(
                     "regenerate"
+                );
+            }
+        );
+
+        replaceTwoFactorBtn.addEventListener(
+            "click",
+            async function () {
+                const confirmed =
+                    await showConfirm(
+                        "A new authenticator will be prepared. The current authenticator stays active until you confirm the new QR code.",
+                        "Replace Google Authenticator"
+                    );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                openTwoFactorActionModal(
+                    "replace"
                 );
             }
         );
@@ -2713,6 +3041,26 @@
 
                 currentPassword.value = "";
                 newPassword.value = "";
+
+                forcedPasswordBanner.hidden =
+                    true;
+
+                if (
+                    new URLSearchParams(
+                        window.location.search
+                    ).get("forcePassword") === "1"
+                ) {
+                    window.history.replaceState(
+                        {},
+                        "",
+                        "/profile"
+                    );
+                }
+
+                showNotification(
+                    "Your password was changed. Normal account access has been restored.",
+                    "success"
+                );
 
             } catch (error) {
                 showAlert(passwordMessage, error.message || "Could not change password.", false);

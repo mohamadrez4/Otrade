@@ -4725,4 +4725,449 @@ span.flatpickr-weekday {
     .admin-tickets-v2-close-btn {
         width: 100%;
     }
+} 
+.tfr-admin-page {
+    display: grid;
+    gap: 16px;
 }
+
+.tfr-admin-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.tfr-summary-card {
+    min-width: 0;
+    padding: 16px;
+    background: #121821;
+    border: 1px solid #1c2532;
+    border-radius: 16px;
+}
+
+    .tfr-summary-card span,
+    .tfr-summary-card strong {
+        display: block;
+    }
+
+    .tfr-summary-card span {
+        color: #94a3b8;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .tfr-summary-card strong {
+        margin-top: 7px;
+        color: #ffffff;
+        font-size: 22px;
+        font-weight: 950;
+    }
+
+    .tfr-summary-card.warning strong {
+        color: #f6c96f;
+    }
+
+    .tfr-summary-card.security strong {
+        color: #11e9a1;
+        font-size: 13px;
+    }
+
+.tfr-admin-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 18px;
+    background: #121821;
+    border: 1px solid #1c2532;
+    border-radius: 17px;
+}
+
+    .tfr-admin-header h3 {
+        margin: 0;
+        color: #ffffff;
+        font-size: 17px;
+        font-weight: 900;
+    }
+
+    .tfr-admin-header p {
+        max-width: 760px;
+        margin: 7px 0 0;
+        color: #94a3b8;
+        font-size: 11px;
+        line-height: 1.65;
+    }
+
+.tfr-refresh-btn,
+.tfr-action-btn {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    border-radius: 11px;
+    font-size: 10px;
+    font-weight: 900;
+    transition: 0.2s ease;
+}
+
+.tfr-refresh-btn {
+    color: #11e9a1;
+    background: rgba(17, 233, 161, 0.07);
+    border: 1px solid rgba(17, 233, 161, 0.22);
+}
+
+    .tfr-refresh-btn:hover:not(:disabled) {
+        background: rgba(17, 233, 161, 0.13);
+        border-color: #11e9a1;
+    }
+
+    .tfr-refresh-btn:disabled,
+    .tfr-action-btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+
+.tfr-list {
+    display: grid;
+    gap: 12px;
+}
+
+.tfr-request-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    padding: 18px;
+    background: #121821;
+    border: 1px solid #1c2532;
+    border-radius: 17px;
+}
+
+.tfr-request-main {
+    min-width: 0;
+}
+
+.tfr-request-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tfr-request-user h4 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.tfr-request-user p {
+    margin: 5px 0 0;
+    color: #94a3b8;
+    font-size: 10px;
+    overflow-wrap: anywhere;
+}
+
+.tfr-status-badge {
+    flex: 0 0 auto;
+    padding: 5px 9px;
+    color: #f6c96f;
+    background: rgba(246, 201, 111, 0.07);
+    border: 1px solid rgba(246, 201, 111, 0.22);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.tfr-request-meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 9px;
+    margin-top: 14px;
+}
+
+    .tfr-request-meta > div {
+        min-width: 0;
+        padding: 11px;
+        background: #0d131b;
+        border: 1px solid #1c2532;
+        border-radius: 12px;
+    }
+
+    .tfr-request-meta span,
+    .tfr-request-meta strong {
+        display: block;
+    }
+
+    .tfr-request-meta span {
+        color: #64748b;
+        font-size: 9px;
+        text-transform: uppercase;
+    }
+
+    .tfr-request-meta strong {
+        margin-top: 5px;
+        color: #dce5ed;
+        font-size: 10px;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+    }
+
+.tfr-kyc-approved {
+    color: #11e9a1 !important;
+}
+
+.tfr-kyc-warning {
+    color: #f6c96f !important;
+}
+
+.tfr-description {
+    margin-top: 12px;
+    padding: 13px;
+    color: #cbd5e1;
+    background: #0b0f14;
+    border: 1px solid #1c2532;
+    border-radius: 12px;
+    font-size: 11px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.tfr-card-actions {
+    min-width: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 9px;
+}
+
+.tfr-action-btn.approve {
+    color: #07130f;
+    background: #11e9a1;
+    border: 1px solid #11e9a1;
+}
+
+    .tfr-action-btn.approve:hover {
+        background: #18f5ac;
+        border-color: #18f5ac;
+    }
+
+.tfr-action-btn.reject {
+    color: #ff7b7b;
+    background: rgba(255, 107, 107, 0.07);
+    border: 1px solid rgba(255, 107, 107, 0.22);
+}
+
+    .tfr-action-btn.reject:hover {
+        background: rgba(255, 107, 107, 0.13);
+        border-color: #ff7b7b;
+    }
+
+.tfr-empty,
+.tfr-loading {
+    padding: 35px 18px;
+    color: #94a3b8;
+    background: #121821;
+    border: 1px dashed #1c2532;
+    border-radius: 17px;
+    text-align: center;
+    font-size: 11px;
+}
+
+.tfr-modal[hidden] {
+    display: none !important;
+}
+
+.tfr-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+.tfr-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 5, 8, 0.82);
+    backdrop-filter: blur(5px);
+}
+
+.tfr-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 560px);
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+    padding: 21px;
+    background: #121821;
+    border: 1px solid #1c2532;
+    border-radius: 19px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.tfr-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+    .tfr-modal-header span {
+        display: block;
+        color: #11e9a1;
+        font-size: 9px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+    }
+
+    .tfr-modal-header h4 {
+        margin: 5px 0 0;
+        color: #ffffff;
+        font-size: 18px;
+        font-weight: 900;
+    }
+
+.tfr-modal-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    background: #0b0f14;
+    border: 1px solid #1c2532;
+    border-radius: 10px;
+    font-size: 21px;
+}
+
+.tfr-modal-warning {
+    margin: 15px 0;
+    padding: 13px;
+    color: #ddc995;
+    background: rgba(246, 201, 111, 0.055);
+    border: 1px solid rgba(246, 201, 111, 0.2);
+    border-radius: 13px;
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.tfr-modal-user {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    margin-bottom: 14px;
+}
+
+    .tfr-modal-user > div {
+        min-width: 0;
+        padding: 11px;
+        background: #0d131b;
+        border: 1px solid #1c2532;
+        border-radius: 11px;
+    }
+
+    .tfr-modal-user span,
+    .tfr-modal-user strong {
+        display: block;
+    }
+
+    .tfr-modal-user span {
+        color: #64748b;
+        font-size: 9px;
+    }
+
+    .tfr-modal-user strong {
+        margin-top: 5px;
+        color: #ffffff;
+        font-size: 10px;
+        overflow-wrap: anywhere;
+    }
+
+.tfr-modal label {
+    display: block;
+    margin-bottom: 7px;
+    color: #dce5ed;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.tfr-review-note {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.tfr-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    margin-top: 15px;
+}
+
+.tfr-secondary-btn {
+    min-height: 42px;
+    padding: 0 15px;
+    color: #94a3b8;
+    background: #0b0f14;
+    border: 1px solid #1c2532;
+    border-radius: 11px;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+@media (max-width: 900px) {
+    .tfr-admin-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .tfr-request-card {
+        grid-template-columns: 1fr;
+    }
+
+    .tfr-card-actions {
+        min-width: 0;
+        flex-direction: row;
+    }
+
+        .tfr-card-actions > * {
+            flex: 1;
+        }
+
+    .tfr-request-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .tfr-admin-header, .tfr-request-top {
+        flex-direction: column;
+    }
+
+    .tfr-refresh-btn {
+        width: 100%;
+    }
+
+    .tfr-request-meta,
+    .tfr-modal-user {
+        grid-template-columns: 1fr;
+    }
+
+    .tfr-card-actions,
+    .tfr-modal-actions {
+        flex-direction: column;
+    }
+
+        .tfr-card-actions > *,
+        .tfr-modal-actions > * {
+            width: 100%;
+        }
+}
+
