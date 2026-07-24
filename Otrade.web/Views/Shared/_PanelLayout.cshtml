@@ -1,221 +1,773 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
-    <title>@ViewData["Title"] | Otrade</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="~/css/panel.css" rel="stylesheet" />
-    <link href="~/css/common.css" rel="stylesheet" />
-    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
-    <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
-    <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
+    <title>
+        @ViewData["Title"] | Otrade
+    </title>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <link href="~/css/panel.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
+    <link href="~/css/common.css"
+          rel="stylesheet"
+          asp-append-version="true" />
+
+    <link rel="icon"
+          type="image/x-icon"
+          href="~/favicon.ico?v=1" />
+
+    <link rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="~/favicon-32x32.png?v=1" />
+
+    <link rel="apple-touch-icon"
+          href="~/apple-touch-icon.png?v=1" />
+
+    <!--
+        این Style بعد از panel.css و common.css بارگذاری می‌شود.
+        بنابراین قوانین نهایی Sidebar فقط از همین‌جا اعمال می‌شوند.
+    -->
+    <style>
+        :root {
+            --panel-sidebar-width: 260px;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+            body.panel-body {
+                margin: 0;
+                overflow-x: hidden;
+            }
+
+                body.panel-body .panel-layout {
+                    display: block !important;
+                    width: 100% !important;
+                    min-height: 100vh !important;
+                }
+
+                body.panel-body .sidebar {
+                    box-sizing: border-box !important;
+                }
+
+                body.panel-body .sidebar-nav {
+                    flex: 1 1 auto !important;
+                    min-height: 0 !important;
+                    overflow-x: hidden !important;
+                    overflow-y: auto !important;
+                }
+
+                body.panel-body .logout-btn {
+                    flex: 0 0 auto !important;
+                }
+
+                body.panel-body .sidebar-mobile-overlay {
+                    display: none;
+                }
+
+        /* =====================================================
+                   Desktop
+                   Sidebar همیشه باز و ثابت
+                   ===================================================== */
+
+        @@media (min-width: 993px) {
+
+            body.panel-body .sidebar {
+                display: flex !important;
+                flex-direction: column !important;
+                position: fixed !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: auto !important;
+                width: var(--panel-sidebar-width) !important;
+                min-width: var(--panel-sidebar-width) !important;
+                max-width: var(--panel-sidebar-width) !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+                padding: 24px !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+                transform: none !important;
+                translate: none !important;
+                overflow-x: hidden !important;
+                overflow-y: hidden !important;
+                z-index: 2000 !important;
+                background: linear-gradient( 125deg, #1C2532, #0B0F14 ) !important;
+                border-right: 1px solid #1C2532 !important;
+                box-shadow: 14px 0 38px rgba(0, 0, 0, 0.20) !important;
+            }
+
+            body.panel-body .sidebar-logo {
+                flex: 0 0 auto !important;
+            }
+
+            body.panel-body .sidebar-uid-chip {
+                flex: 0 0 auto !important;
+            }
+
+            body.panel-body .sidebar-nav {
+                padding-right: 3px !important;
+            }
+
+            body.panel-body .panel-main {
+                display: block !important;
+                width: calc( 100% - var(--panel-sidebar-width) ) !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                min-height: 100vh !important;
+                margin-left: var(--panel-sidebar-width) !important;
+                margin-right: 0 !important;
+                transform: none !important;
+            }
+
+            body.panel-body .topbar {
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 900 !important;
+            }
+
+            body.panel-body .mobile-menu-btn {
+                display: none !important;
+            }
+
+            body.panel-body .sidebar-mobile-overlay {
+                display: none !important;
+            }
+            /*
+                     * خنثی‌کردن کامل کلاس‌های قدیمی
+                     */
+            body.panel-body.sidebar-open {
+                overflow: auto !important;
+            }
+
+                body.panel-body.sidebar-open .sidebar,
+                body.panel-body.sidebar-collapsed .sidebar {
+                    display: flex !important;
+                    width: var(--panel-sidebar-width) !important;
+                    min-width: var(--panel-sidebar-width) !important;
+                    max-width: var(--panel-sidebar-width) !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    transform: none !important;
+                    translate: none !important;
+                }
+
+                body.panel-body.sidebar-open .panel-main,
+                body.panel-body.sidebar-collapsed .panel-main {
+                    width: calc( 100% - var(--panel-sidebar-width) ) !important;
+                    margin-left: var(--panel-sidebar-width) !important;
+                }
+        }
+
+        /* =====================================================
+                   Tablet و Mobile
+                   Sidebar مخفی و Off-Canvas
+                   ===================================================== */
+
+        @@media (max-width: 992px) {
+
+            body.panel-body .panel-main {
+                display: block !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                max-width: 100% !important;
+                min-height: 100vh !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                transform: none !important;
+            }
+
+            body.panel-body .sidebar {
+                display: flex !important;
+                flex-direction: column !important;
+                position: fixed !important;
+                top: 0 !important;
+                bottom: auto !important;
+                left: 0 !important;
+                right: auto !important;
+                width: min( 286px, 86vw ) !important;
+                min-width: 0 !important;
+                max-width: min( 286px, 86vw ) !important;
+                height: 100vh !important;
+                height: 100dvh !important;
+                max-height: 100dvh !important;
+                padding: 18px !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+                transform: translate3d( -110%, 0, 0 ) !important;
+                translate: none !important;
+                transition: transform 0.24s ease !important;
+                overflow-x: hidden !important;
+                overflow-y: hidden !important;
+                z-index: 5001 !important;
+                background: radial-gradient( circle at top left, rgba(17, 233, 161, 0.12), transparent 36% ), #0B0F14 !important;
+                border-right: 1px solid rgba(17, 233, 161, 0.18) !important;
+                box-shadow: 28px 0 70px rgba(0, 0, 0, 0.55) !important;
+            }
+
+            body.panel-body.sidebar-open {
+                overflow: hidden !important;
+            }
+
+                body.panel-body.sidebar-open .sidebar {
+                    transform: translate3d( 0, 0, 0 ) !important;
+                }
+
+            body.panel-body .sidebar-mobile-overlay {
+                display: none !important;
+                position: fixed !important;
+                inset: 0 !important;
+                z-index: 5000 !important;
+                background: rgba( 0, 0, 0, 0.58 ) !important;
+                backdrop-filter: blur(3px);
+            }
+
+            body.panel-body.sidebar-open
+            .sidebar-mobile-overlay {
+                display: block !important;
+            }
+
+            body.panel-body .topbar {
+                position: sticky !important;
+                top: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 12px !important;
+                height: 64px !important;
+                padding: 0 16px !important;
+                z-index: 3000 !important;
+                background: rgba( 11, 15, 20, 0.96 ) !important;
+                backdrop-filter: blur(14px);
+            }
+
+            body.panel-body .mobile-menu-btn {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 42px !important;
+                height: 42px !important;
+                min-width: 42px !important;
+                flex: 0 0 42px !important;
+                position: relative !important;
+                padding: 0 !important;
+                color: #11E9A1 !important;
+                background: rgba( 17, 233, 161, 0.08 ) !important;
+                border: 1px solid rgba( 17, 233, 161, 0.24 ) !important;
+                border-radius: 14px !important;
+                font-size: 22px !important;
+                font-weight: 900 !important;
+                line-height: 1 !important;
+                cursor: pointer !important;
+                pointer-events: auto !important;
+                z-index: 3001 !important;
+            }
+
+                body.panel-body .mobile-menu-btn:hover {
+                    color: #18F5AC !important;
+                    background: rgba( 17, 233, 161, 0.14 ) !important;
+                    border-color: rgba( 17, 233, 161, 0.48 ) !important;
+                }
+
+            body.panel-body .content {
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            /*
+                     * کلاس collapsed قدیمی در موبایل اثری نداشته باشد.
+                     */
+            body.panel-body.sidebar-collapsed .sidebar {
+                transform: translate3d( -110%, 0, 0 ) !important;
+            }
+
+            body.panel-body.sidebar-collapsed.sidebar-open
+            .sidebar {
+                transform: translate3d( 0, 0, 0 ) !important;
+            }
+        }
+    </style>
 </head>
+
 <body class="panel-body">
 
     <div class="panel-layout">
+
         <div id="notificationContainer"
              class="notification-container">
         </div>
-        <aside class="sidebar">
+
+        <aside class="sidebar"
+               id="panelSidebar"
+               aria-label="User panel navigation">
+
             <div class="sidebar-logo">
-                <img src="~/images/logo.png" />
+
+                <img src="~/images/logo.png"
+                     alt="Otrade Logo" />
+
             </div>
-            <div class="sidebar-uid-chip" id="sidebarUidCard" style="display:none;">
+
+            <div class="sidebar-uid-chip"
+                 id="sidebarUidCard"
+                 style="display:none;">
+
                 <span>UID</span>
-                <strong id="sidebarUserUid">-</strong>
+
+                <strong id="sidebarUserUid">
+                    -
+                </strong>
+
             </div>
+
             <nav class="sidebar-nav">
 
-                <a href="/dashboard" class="nav-item">
+                <a href="/dashboard"
+                   class="nav-item">
                     <span>Dashboard</span>
                 </a>
 
-                <a href="/wallets" class="nav-item">
+                <a href="/wallets"
+                   class="nav-item">
                     <span>Wallets</span>
                 </a>
-                <a href="/bonus-codes" class="nav-item">
+
+                <a href="/bonus-codes"
+                   class="nav-item">
                     <span>Bonus Codes</span>
                 </a>
-                <a href="/contracts" class="nav-item">
+
+                <a href="/contracts"
+                   class="nav-item">
                     <span>Contracts</span>
                 </a>
-                <a href="/deposit" class="nav-item">
+
+                <a href="/deposit"
+                   class="nav-item">
                     <span>Deposit</span>
                 </a>
 
-                <a href="/withdrawal" class="nav-item">
+                <a href="/withdrawal"
+                   class="nav-item">
                     <span>Withdrawal</span>
                 </a>
 
-                <a href="/profits" class="nav-item">
+                <a href="/profits"
+                   class="nav-item">
                     <span>Profits</span>
                 </a>
 
-                <a href="/referral" class="nav-item">
+                <a href="/referral"
+                   class="nav-item">
                     <span>Referral</span>
                 </a>
 
-                <a href="/rank" class="nav-item">
+                <a href="/rank"
+                   class="nav-item">
                     <span>Rank</span>
                 </a>
 
-                <a href="/reports" class="nav-item">
+                <a href="/reports"
+                   class="nav-item">
                     <span>Reports</span>
                 </a>
 
-                <a href="/tickets" class="nav-item">
+                <a href="/tickets"
+                   class="nav-item">
                     <span>Tickets</span>
                 </a>
 
-                <a href="/profile" class="nav-item">
+                <a href="/profile"
+                   class="nav-item">
                     <span>Profile</span>
                 </a>
 
             </nav>
 
-            <button class="logout-btn" onclick="logout()">Logout</button>
+            <button type="button"
+                    class="logout-btn"
+                    onclick="logout()">
+                Logout
+            </button>
+
         </aside>
-        <div class="sidebar-mobile-overlay" id="sidebarMobileOverlay"></div>
+
+        <div id="sidebarMobileOverlay"
+             class="sidebar-mobile-overlay"
+             aria-hidden="true">
+        </div>
 
         <main class="panel-main">
+
             <header class="topbar">
+
                 <button type="button"
                         class="mobile-menu-btn"
                         id="mobileMenuBtn"
-                        aria-label="Open menu">
+                        aria-label="Open menu"
+                        aria-controls="panelSidebar"
+                        aria-expanded="false">
                     ☰
                 </button>
 
                 <div>
-                    <h4>@ViewData["Title"]</h4>
+                    <h4>
+                        @ViewData["Title"]
+                    </h4>
                 </div>
+
             </header>
 
             <section class="content">
                 @RenderBody()
             </section>
+
         </main>
 
     </div>
 
-    <script src="~/js/common.js"></script>
-    <script src="~/js/auth.js"></script>
+    <script src="~/js/common.js"
+            asp-append-version="true">
+    </script>
+
+    <script src="~/js/auth.js"
+            asp-append-version="true">
+    </script>
+
     <script>
         checkAuth();
     </script>
-    <script src="~/js/api.js"></script>
+
+    <script src="~/js/api.js"
+            asp-append-version="true">
+    </script>
+
     <script src="~/js/rank-assets.js"
-            asp-append-version="true"></script>
-    <script>
-        const currentPath = window.location.pathname.toLowerCase();
-
-        document.querySelectorAll(".sidebar-nav a").forEach(link => {
-            const href = link.getAttribute("href").toLowerCase();
-
-            if (currentPath === href || currentPath.startsWith(href + "/")) {
-                link.classList.add("active");
-            }
-        });
-                async function loadPanelUserUid() {
-            try {
-                const result = await api("/api/profile");
-
-                if (!result || !result.success || !result.data?.referralCode) {
-                    return;
-                }
-
-                document.getElementById("sidebarUserUid").innerText = result.data.referralCode;
-                document.getElementById("sidebarUidCard").style.display = "block";
-            } catch {
-                // silent
-            }
-        }
-
-        loadPanelUserUid();
-
+            asp-append-version="true">
     </script>
 
     <script>
         (function () {
-            if (window.__otradeSidebarInitialized) {
+            const currentPath =
+                window.location.pathname
+                    .toLowerCase();
+
+            document
+                .querySelectorAll(
+                    ".sidebar-nav a"
+                )
+                .forEach(
+                    function (link) {
+                        const href =
+                            String(
+                                link.getAttribute(
+                                    "href"
+                                ) || ""
+                            )
+                            .toLowerCase();
+
+                        if (
+                            currentPath === href ||
+                            currentPath.startsWith(
+                                href + "/"
+                            )
+                        ) {
+                            link.classList.add(
+                                "active"
+                            );
+                        }
+                    }
+                );
+        })();
+
+        async function loadPanelUserUid() {
+            try {
+                const result =
+                    await api(
+                        "/api/profile"
+                    );
+
+                if (
+                    !result ||
+                    !result.success ||
+                    !result.data?.referralCode
+                ) {
+                    return;
+                }
+
+                const uidElement =
+                    document.getElementById(
+                        "sidebarUserUid"
+                    );
+
+                const uidCard =
+                    document.getElementById(
+                        "sidebarUidCard"
+                    );
+
+                if (
+                    uidElement &&
+                    uidCard
+                ) {
+                    uidElement.innerText =
+                        result.data
+                            .referralCode;
+
+                    uidCard.style.display =
+                        "inline-flex";
+                }
+
+            } catch {
+                /*
+                 * UID loading failure should not
+                 * prevent the panel from loading.
+                 */
+            }
+        }
+
+        loadPanelUserUid();
+    </script>
+
+    <script>
+        (function () {
+            if (
+                window
+                    .__otradePanelSidebarReady
+            ) {
                 return;
             }
 
-            window.__otradeSidebarInitialized = true;
+            window.__otradePanelSidebarReady =
+                true;
 
-            const desktopMedia = window.matchMedia("(min-width: 993px)");
+            const body =
+                document.body;
 
-            function isDesktop() {
-                return desktopMedia.matches;
+            const sidebar =
+                document.getElementById(
+                    "panelSidebar"
+                );
+
+            const menuButton =
+                document.getElementById(
+                    "mobileMenuBtn"
+                );
+
+            const overlay =
+                document.getElementById(
+                    "sidebarMobileOverlay"
+                );
+
+            const mobileMedia =
+                window.matchMedia(
+                    "(max-width: 992px)"
+                );
+
+            function isMobileOrTablet() {
+                return mobileMedia.matches;
             }
 
-            function syncSidebarForViewport() {
-                document.body.classList.remove("sidebar-open");
+            function updateAccessibilityState(
+                isOpen
+            ) {
+                if (menuButton) {
+                    menuButton.setAttribute(
+                        "aria-expanded",
+                        String(isOpen)
+                    );
 
-                if (isDesktop()) {
-                    document.body.classList.add("sidebar-collapsed");
-                } else {
-                    document.body.classList.remove("sidebar-collapsed");
+                    menuButton.setAttribute(
+                        "aria-label",
+                        isOpen
+                            ? "Close menu"
+                            : "Open menu"
+                    );
+                }
+
+                if (overlay) {
+                    overlay.setAttribute(
+                        "aria-hidden",
+                        String(!isOpen)
+                    );
+                }
+
+                if (sidebar) {
+                    sidebar.setAttribute(
+                        "aria-hidden",
+                        String(
+                            isMobileOrTablet() &&
+                            !isOpen
+                        )
+                    );
                 }
             }
 
-            function toggleSidebar() {
-                if (isDesktop()) {
-                    document.body.classList.toggle("sidebar-collapsed");
-                    document.body.classList.remove("sidebar-open");
+            function openSidebar() {
+                if (!isMobileOrTablet()) {
                     return;
                 }
 
-                document.body.classList.add("sidebar-open");
+                body.classList.add(
+                    "sidebar-open"
+                );
+
+                updateAccessibilityState(
+                    true
+                );
             }
 
             function closeSidebar() {
-                document.body.classList.remove("sidebar-open");
+                body.classList.remove(
+                    "sidebar-open"
+                );
+
+                updateAccessibilityState(
+                    false
+                );
             }
 
-            syncSidebarForViewport();
-
-            document.addEventListener("pointerdown", function (e) {
-                const menuBtn = e.target.closest("#mobileMenuBtn");
-
-                if (menuBtn) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleSidebar();
+            function toggleSidebar() {
+                if (!isMobileOrTablet()) {
                     return;
                 }
 
-                const overlay = e.target.closest("#sidebarMobileOverlay");
+                const isOpen =
+                    body.classList.contains(
+                        "sidebar-open"
+                    );
 
-                if (overlay) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                if (isOpen) {
                     closeSidebar();
+                } else {
+                    openSidebar();
                 }
-            }, true);
+            }
 
-            document.addEventListener("click", function (e) {
-                const sidebarLink = e.target.closest(".sidebar-nav a");
+            function synchronizeViewport() {
+                /*
+                 * کلاس قدیمی دیگر استفاده نمی‌شود.
+                 */
+                body.classList.remove(
+                    "sidebar-collapsed"
+                );
 
-                if (sidebarLink && !isDesktop()) {
+                if (
+                    isMobileOrTablet()
+                ) {
                     closeSidebar();
+                    return;
                 }
-            }, true);
 
-            document.addEventListener("keydown", function (e) {
-                if (e.key === "Escape") {
-                    closeSidebar();
+                /*
+                 * در Desktop Sidebar همیشه باز است.
+                 */
+                body.classList.remove(
+                    "sidebar-open"
+                );
+
+                updateAccessibilityState(
+                    true
+                );
+            }
+
+            if (menuButton) {
+                menuButton.addEventListener(
+                    "click",
+                    function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        toggleSidebar();
+                    }
+                );
+            }
+
+            if (overlay) {
+                overlay.addEventListener(
+                    "click",
+                    function (event) {
+                        event.preventDefault();
+
+                        closeSidebar();
+                    }
+                );
+            }
+
+            if (sidebar) {
+                sidebar
+                    .querySelectorAll(
+                        "a"
+                    )
+                    .forEach(
+                        function (link) {
+                            link.addEventListener(
+                                "click",
+                                function () {
+                                    if (
+                                        isMobileOrTablet()
+                                    ) {
+                                        closeSidebar();
+                                    }
+                                }
+                            );
+                        }
+                    );
+            }
+
+            document.addEventListener(
+                "keydown",
+                function (event) {
+                    if (
+                        event.key ===
+                        "Escape" &&
+                        isMobileOrTablet()
+                    ) {
+                        closeSidebar();
+                    }
                 }
-            });
+            );
 
-            window.addEventListener("resize", function () {
-                syncSidebarForViewport();
-            });
+            if (
+                typeof mobileMedia
+                    .addEventListener ===
+                "function"
+            ) {
+                mobileMedia.addEventListener(
+                    "change",
+                    synchronizeViewport
+                );
+            } else {
+                /*
+                 * Safari قدیمی
+                 */
+                mobileMedia.addListener(
+                    synchronizeViewport
+                );
+            }
+
+            synchronizeViewport();
         })();
     </script>
-    @RenderSection("Scripts", required: false)
+
+    @RenderSection(
+    "Scripts",
+        required: false
+        )
 
 </body>
+
 </html>
