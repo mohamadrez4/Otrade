@@ -437,7 +437,7 @@ public class TwoFactorAuthenticationService
          */
         user.LastAcceptedTotpStep =
             matchedStep;
-
+        user.LastWithdrawalTotpStep = null;
         user.UpdatedAt =
             DateTime.UtcNow;
 
@@ -652,7 +652,8 @@ public class TwoFactorAuthenticationService
 
         user.LastAcceptedTotpStep =
             null;
-
+        user.LastWithdrawalTotpStep =
+            null;
         user.UpdatedAt =
             DateTime.UtcNow;
 
@@ -1084,8 +1085,103 @@ public class TwoFactorAuthenticationService
             challenge.UserId,
             "Two-factor authentication verified.");
     }
-    private async Task<bool>
-    TryUseRecoveryCodeForLoginAsync(User user,string? suppliedCode,DateTime usedAt)
+    public async Task<ApiResponse<bool>>
+     VerifyWithdrawalTotpAsync(
+         long userId,
+         string? code)
+    {
+        var normalizedCode =
+            NormalizeTotpCode(code);
+
+        if (!IsValidTotpCode(
+                normalizedCode))
+        {
+            return ResponseFactory.Fail<bool>(
+                "Enter a valid 6-digit Google Authenticator code.");
+        }
+
+        var user = await _context.Users
+            .AsNoTracking()
+            .Where(x =>
+                x.UserId == userId)
+            .Select(x => new
+            {
+                x.UserId,
+                x.IsTotpEnabled,
+                x.TotpSecretEncrypted
+            })
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            return ResponseFactory.Fail<bool>(
+                "User not found.");
+        }
+
+        if (
+            !user.IsTotpEnabled ||
+            string.IsNullOrWhiteSpace(
+                user.TotpSecretEncrypted)
+        )
+        {
+            return ResponseFactory.Fail<bool>(
+                "Google Authenticator is not enabled.");
+        }
+
+        if (!TryDecryptUserSecret(
+                user.UserId,
+                user.TotpSecretEncrypted,
+                out var secretKey))
+        {
+            return ResponseFactory.Fail<bool>(
+                "Two-factor authentication is unavailable. Contact support.");
+        }
+
+        var isValid =
+            VerifyTotpCode(
+                secretKey,
+                normalizedCode,
+                out var matchedStep);
+
+        if (!isValid)
+        {
+            return ResponseFactory.Fail<bool>(
+                "Invalid Google Authenticator code.");
+        }
+
+        /*
+         * Update اتمیک:
+         * اگر دو درخواست هم‌زمان همان کد را ارسال کنند،
+         * فقط یکی از آن‌ها موفق می‌شود.
+         */
+        var updatedRows =
+            await _context.Users
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.IsTotpEnabled &&
+                    (
+                        x.LastWithdrawalTotpStep == null ||
+                        x.LastWithdrawalTotpStep.Value <
+                        matchedStep
+                    ))
+                .ExecuteUpdateAsync(
+                    setters =>
+                        setters.SetProperty(
+                            x =>
+                                x.LastWithdrawalTotpStep,
+                            (long?)matchedStep));
+
+        if (updatedRows != 1)
+        {
+            return ResponseFactory.Fail<bool>(
+                "This Google Authenticator code has already been used for a withdrawal.");
+        }
+
+        return ResponseFactory.Success(
+            true,
+            "Google Authenticator code verified.");
+    }
+    private async Task<bool>TryUseRecoveryCodeForLoginAsync(User user,string? suppliedCode,DateTime usedAt)
     {
         var normalizedCode =
             NormalizeRecoveryCode(

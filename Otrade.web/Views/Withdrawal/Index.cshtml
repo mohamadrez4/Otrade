@@ -34,7 +34,7 @@
         </div>
 
         <button id="submitWithdrawalBtn" type="submit" class="panel-primary-btn">
-            Send Verification Code
+            Continue Withdrawal
         </button>
     </form>
 
@@ -43,13 +43,16 @@
          style="display:none;">
 
         <div class="withdrawal-verification-header">
-            <h4>Email Verification</h4>
-            <p>
-                A 6-digit verification code has been sent to your email.
-                Enter the code below to submit your withdrawal request.
-            </p>
-        </div>
 
+            <h4 id="withdrawalVerificationTitle">
+                Withdrawal Verification
+            </h4>
+
+            <p id="withdrawalVerificationDescription">
+                Enter the verification code to submit your withdrawal request.
+            </p>
+
+        </div>
         <div class="withdrawal-verification-summary">
             <div>
                 <span>Amount</span>
@@ -68,7 +71,10 @@
         </div>
 
         <div class="withdrawal-code-field">
-            <label for="withdrawalVerificationCode">Verification Code</label>
+            <label id="withdrawalVerificationCodeLabel"
+                   for="withdrawalVerificationCode">
+                Verification Code
+            </label>
 
             <input id="withdrawalVerificationCode"
                    type="text"
@@ -152,7 +158,7 @@
         let withdrawalVerificationId = null;
         let withdrawalVerificationLocked = false;
         let withdrawalVerifiedAmount = 0;
-
+        let withdrawalVerificationMethod = "Email";
         let withdrawalsCurrentPage = 1;
         const withdrawalsPageSize = 5;
         let withdrawalsTotalPages = 1;
@@ -178,7 +184,19 @@
         const withdrawalsPrevBtn = document.getElementById("withdrawalsPrevBtn");
         const withdrawalsNextBtn = document.getElementById("withdrawalsNextBtn");
         const withdrawalsPageInfo = document.getElementById("withdrawalsPageInfo");
+        const withdrawalVerificationTitle = document.getElementById(
+                "withdrawalVerificationTitle"
+            );
 
+        const withdrawalVerificationDescription =
+            document.getElementById(
+                "withdrawalVerificationDescription"
+            );
+
+        const withdrawalVerificationCodeLabel =
+            document.getElementById(
+                "withdrawalVerificationCodeLabel"
+            );
         withdrawalForm.addEventListener("submit", submitWithdrawalRequest);
 
         resetWithdrawalVerificationBtn.addEventListener("click", resetWithdrawalVerification);
@@ -233,17 +251,17 @@
                 return;
             }
 
-            const confirmed = await showConfirm(
-                `Send verification code for withdrawal of ${formatMoney(amount)} USDT?`,
-                "Withdrawal Verification"
-            );
+        const confirmed = await showConfirm(
+            `Continue with verification for withdrawal of ${formatMoney(amount)} USDT?`,
+            "Withdrawal Verification"
+        );
 
             if (!confirmed) {
                 return;
             }
 
             submitWithdrawalBtn.disabled = true;
-            submitWithdrawalBtn.innerText = "Sending Code...";
+            submitWithdrawalBtn.innerText = "Creating Verification...";
 
             try {
                 const result = await api("/api/wallet/withdrawal/request", {
@@ -252,13 +270,48 @@
                 });
 
                 if (!result || !result.success) {
-                    showNotification(result?.message || "Could not send verification code.", "error");
+                    showNotification(result?.message || "Could not create withdrawal verification.", "error");
                     return;
                 }
 
                 withdrawalVerificationId = result.data.verificationId;
                 withdrawalVerifiedAmount = Number(result.data.amount || amount);
+                        withdrawalVerificationMethod =
+            String(
+                result.data.verificationMethod ||
+                "Email"
+            );
 
+        const usesTotp =
+            withdrawalVerificationMethod
+                .toLowerCase() ===
+            "totp";
+
+        if (usesTotp) {
+            withdrawalVerificationTitle.innerText =
+                "Google Authenticator Verification";
+
+            withdrawalVerificationDescription.innerText =
+                "Enter the current 6-digit code from Google Authenticator to submit your withdrawal request.";
+
+            withdrawalVerificationCodeLabel.innerText =
+                "Google Authenticator Code";
+
+            withdrawalVerificationCode.placeholder =
+                "Enter current 6-digit code";
+        } else {
+            withdrawalVerificationTitle.innerText =
+                "Email Verification";
+
+            withdrawalVerificationDescription.innerText =
+                "A 6-digit verification code has been sent to your email. Enter the code below to submit your withdrawal request.";
+
+            withdrawalVerificationCodeLabel.innerText =
+                "Email Verification Code";
+
+            withdrawalVerificationCode.placeholder =
+                "Enter emailed 6-digit code";
+        }
                 withdrawVerifyAmount.innerText =
                     formatMoney(withdrawalVerifiedAmount) + " USDT";
 
@@ -272,17 +325,21 @@
 
                 withdrawalVerificationBox.style.display = "block";
 
-                showNotification(result.message || "Verification code sent to your email.", "success");
+                        showNotification(
+            result.message ||
+            "Withdrawal verification created.",
+            "success"
+        );
 
                 setTimeout(() => {
                     withdrawalVerificationCode.focus();
                 }, 100);
 
             } catch (error) {
-                showNotification(error.message || "Could not send verification code.", "error");
+                showNotification(error.message || "Could not create withdrawal verification.", "error");
             } finally {
                 submitWithdrawalBtn.disabled = false;
-                submitWithdrawalBtn.innerText = "Send Verification Code";
+                submitWithdrawalBtn.innerText = "Continue Withdrawal";
             }
         }
 
@@ -361,7 +418,7 @@
             setWithdrawalVerificationLocked(false);
             hideWithdrawalVerificationBox();
 
-            showNotification("You can now change amount and request a new code.", "success");
+            showNotification("You can now change the amount and start a new verification.", "success");
         }
 
         function resetWithdrawalFormAfterSuccess() {
@@ -383,6 +440,20 @@
             withdrawVerifyAmount.innerText = "0.00 USDT";
             withdrawVerifyNetwork.innerText = "-";
             withdrawVerifyAddress.innerText = "-";
+                    withdrawalVerificationMethod =
+            "Email";
+
+        withdrawalVerificationTitle.innerText =
+            "Withdrawal Verification";
+
+        withdrawalVerificationDescription.innerText =
+            "Enter the verification code to submit your withdrawal request.";
+
+        withdrawalVerificationCodeLabel.innerText =
+            "Verification Code";
+
+        withdrawalVerificationCode.placeholder =
+            "Enter 6-digit code";
         }
 
         async function loadWalletBalance() {

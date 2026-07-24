@@ -3,6 +3,7 @@ using Otrade.Application.Common;
 using Otrade.Application.Common.Interfaces;
 using Otrade.Application.DTOs.Common;
 using Otrade.Application.DTOs.Wallet;
+using Otrade.Application.Services.Security;
 using Otrade.Domain.Entities;
 using Otrade.Domain.Enums;
 using Otrade.Persistence.Context;
@@ -21,6 +22,7 @@ public class WalletService
     private readonly INotificationQueue _notificationQueue;
     private readonly InvestmentCapacityService _investmentCapacityService;
     private readonly PaymentTransactionGuardService _paymentTransactionGuardService;
+    private readonly TwoFactorAuthenticationService _twoFactorAuthenticationService;
     public WalletService(
      OtradeDbContext context,
      MainInvestBonusService mainInvestBonusService,
@@ -29,7 +31,8 @@ public class WalletService
      IEmailService emailService,
      IEmailTemplateService emailTemplateService,
      INotificationQueue notificationQueue,
-     PaymentTransactionGuardService paymentTransactionGuardService)
+     PaymentTransactionGuardService paymentTransactionGuardService,
+     TwoFactorAuthenticationService twoFactorAuthenticationService)
     {
         _context = context;
         _mainInvestBonusService = mainInvestBonusService;
@@ -38,6 +41,7 @@ public class WalletService
         _emailTemplateService = emailTemplateService;
         _notificationQueue = notificationQueue;
         _paymentTransactionGuardService = paymentTransactionGuardService;
+        _twoFactorAuthenticationService = twoFactorAuthenticationService;
     }
     public async Task<ApiResponse<InternalTransferRecipientDto>> FindInternalTransferRecipientAsync(
     string query,
@@ -751,241 +755,663 @@ public class WalletService
         return ResponseFactory.Success(true, "Deposit request submitted");
     }
 
-    public async Task<ApiResponse<WithdrawalVerificationResponse>> CreateWithdrawalRequestAsync(
-        WithdrawalRequest request,
-        long userId)
+    public async Task<ApiResponse<WithdrawalVerificationResponse>>CreateWithdrawalRequestAsync(
+            WithdrawalRequest request,
+            long userId)
     {
-        var withdrawLimitValue = await _settingService.GetValueAsync("WithdrawalLimit");
-
-        if (string.IsNullOrWhiteSpace(withdrawLimitValue))
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("Withdraw limit not set from admin");
-
-        if (!decimal.TryParse(withdrawLimitValue, out var withdrawalLimit))
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("Invalid withdraw limit setting");
-
-        if (request.Amount < withdrawalLimit)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>(
-                $"Invalid amount. Amount should be {withdrawalLimit} USDT or more");
-
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.UserId == userId);
-
-        if (user == null)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("User not found");
-
-        if (user.KycStatus != KycStatus.Approved)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("KYC approval required");
-
-        var wallet = await _context.Wallets
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.UserId == userId &&
-                x.WalletType == WalletType.Main);
-
-        if (wallet == null)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("Main wallet not found");
-
-        if (wallet.IsLocked)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("Main wallet is locked");
-
-        if (wallet.Balance < request.Amount)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("Insufficient balance");
-
-        var address = await _context.UserWalletAddresses
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.UserId == userId);
-
-        if (address == null)
-            return ResponseFactory.Fail<WithdrawalVerificationResponse>("Wallet address not found");
-
-        var now = DateTime.Now;
-        var expiresInMinutes = 10;
-
-        var activeVerifications = await _context.WithdrawalVerifications
-            .Where(x =>
-                x.UserId == userId &&
-                x.Status == WithdrawalVerificationStatus.Pending)
-            .ToListAsync();
-
-        foreach (var item in activeVerifications)
+        if (
+            request == null ||
+            request.Amount <= 0
+        )
         {
-            item.Status = WithdrawalVerificationStatus.Expired;
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Invalid withdrawal amount");
         }
 
-        var code = GenerateInternalTransferCode();
+        var withdrawLimitValue =
+            await _settingService
+                .GetValueAsync(
+                    "WithdrawalLimit");
 
-        var verification = new WithdrawalVerification
+        if (string.IsNullOrWhiteSpace(
+                withdrawLimitValue))
         {
-            UserId = userId,
-            Amount = request.Amount,
-            WalletAddress = address.Address,
-            Network = address.Network,
-            CodeHash = BCrypt.Net.BCrypt.HashPassword(code),
-            Status = WithdrawalVerificationStatus.Pending,
-            Attempts = 0,
-            CreatedAt = now,
-            ExpiresAt = now.AddMinutes(expiresInMinutes)
-        };
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Withdraw limit not set from admin");
+        }
 
-        _context.WithdrawalVerifications.Add(verification);
+        if (!decimal.TryParse(
+                withdrawLimitValue,
+                out var withdrawalLimit))
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Invalid withdraw limit setting");
+        }
+
+        if (request.Amount < withdrawalLimit)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    $"Invalid amount. Amount should be " +
+                    $"{withdrawalLimit} USDT or more");
+        }
+
+        var user =
+            await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId);
+
+        if (user == null)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "User not found");
+        }
+
+        if (user.MustChangePassword)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "You must change your password before requesting a withdrawal.");
+        }
+
+        var securityNow =
+            DateTime.UtcNow;
+
+        if (
+            user.TotpRecoveryLockedUntil.HasValue &&
+            user.TotpRecoveryLockedUntil.Value >
+            securityNow
+        )
+        {
+            var lockedUntil =
+                user.TotpRecoveryLockedUntil.Value
+                    .ToString(
+                        "yyyy-MM-dd HH:mm 'UTC'");
+
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    $"Withdrawals are temporarily locked until {lockedUntil} after two-factor account recovery.");
+        }
+
+        var hasActiveRecovery =
+            await HasActiveTwoFactorRecoveryAsync(
+                userId,
+                securityNow);
+
+        if (hasActiveRecovery)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Withdrawals are unavailable while a two-factor recovery request is being verified or reviewed.");
+        }
+
+        if (user.KycStatus != KycStatus.Approved)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "KYC approval required");
+        }
+
+        var wallet =
+            await _context.Wallets
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId &&
+                    x.WalletType ==
+                    WalletType.Main);
+
+        if (wallet == null)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Main wallet not found");
+        }
+
+        if (wallet.IsLocked)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Main wallet is locked");
+        }
+
+        if (wallet.Balance < request.Amount)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Insufficient balance");
+        }
+
+        var address =
+            await _context
+                .UserWalletAddresses
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId);
+
+        if (address == null)
+        {
+            return ResponseFactory
+                .Fail<WithdrawalVerificationResponse>(
+                    "Withdrawal wallet address not found");
+        }
+
+        var now =
+            DateTime.Now;
+
+        var expiresInMinutes =
+            10;
+
+        var verificationMethod =
+            user.IsTotpEnabled
+                ? WithdrawalVerificationMethod.Totp
+                : WithdrawalVerificationMethod.Email;
+
+        var activeVerifications =
+            await _context
+                .WithdrawalVerifications
+                .Where(x =>
+                    x.UserId == userId &&
+                    x.Status ==
+                    WithdrawalVerificationStatus.Pending)
+                .ToListAsync();
+
+        foreach (
+            var activeVerification in
+            activeVerifications
+        )
+        {
+            activeVerification.Status =
+                WithdrawalVerificationStatus
+                    .Expired;
+        }
+
+        string? emailCode =
+            null;
+
+        string codeHash =
+            string.Empty;
+
+        if (
+            verificationMethod ==
+            WithdrawalVerificationMethod.Email
+        )
+        {
+            emailCode =
+                GenerateInternalTransferCode();
+
+            codeHash =
+                BCrypt.Net.BCrypt
+                    .HashPassword(
+                        emailCode);
+        }
+
+        var verification =
+            new WithdrawalVerification
+            {
+                UserId =
+                    userId,
+
+                Amount =
+                    request.Amount,
+
+                WalletAddress =
+                    address.Address,
+
+                Network =
+                    address.Network,
+
+                VerificationMethod =
+                    verificationMethod,
+
+                CodeHash =
+                    codeHash,
+
+                Status =
+                    WithdrawalVerificationStatus
+                        .Pending,
+
+                Attempts =
+                    0,
+
+                CreatedAt =
+                    now,
+
+                ExpiresAt =
+                    now.AddMinutes(
+                        expiresInMinutes)
+            };
+
+        _context.WithdrawalVerifications.Add(
+            verification);
 
         await _context.SaveChangesAsync();
 
-        var emailBody = _emailTemplateService.GetWithdrawalVerificationEmail(
-            request.Amount,
-            address.Address,
-            address.Network,
-            code,
-            expiresInMinutes);
-
-        await _notificationQueue.QueueEmailAsync(
-            user.Email,
-            "Withdrawal Verification Code",
-            emailBody);
-
-        return ResponseFactory.Success(new WithdrawalVerificationResponse
+        if (
+            verificationMethod ==
+            WithdrawalVerificationMethod.Email
+        )
         {
-            VerificationId = verification.WithdrawalVerificationId,
-            Amount = verification.Amount,
-            WalletAddress = verification.WalletAddress,
-            Network = verification.Network,
-            ExpiresInMinutes = expiresInMinutes
-        }, "Verification code sent to your email");
+            var emailBody =
+                _emailTemplateService
+                    .GetWithdrawalVerificationEmail(
+                        request.Amount,
+                        address.Address,
+                        address.Network,
+                        emailCode!,
+                        expiresInMinutes);
+
+            await _notificationQueue.QueueEmailAsync(
+                user.Email,
+                "Withdrawal Verification Code",
+                emailBody);
+        }
+
+        var response =
+            new WithdrawalVerificationResponse
+            {
+                VerificationId =
+                    verification
+                        .WithdrawalVerificationId,
+
+                Amount =
+                    verification.Amount,
+
+                WalletAddress =
+                    verification.WalletAddress,
+
+                Network =
+                    verification.Network,
+
+                ExpiresInMinutes =
+                    expiresInMinutes,
+
+                VerificationMethod =
+                    verificationMethod.ToString(),
+
+                RequiresEmailCode =
+                    verificationMethod ==
+                    WithdrawalVerificationMethod.Email
+            };
+
+        var message =
+            verificationMethod ==
+            WithdrawalVerificationMethod.Totp
+                ? "Enter the current code from Google Authenticator."
+                : "Verification code sent to your email.";
+
+        return ResponseFactory.Success(
+            response,
+            message);
     }
-    public async Task<ApiResponse<bool>> ConfirmWithdrawalRequestAsync(
-    ConfirmWithdrawalRequest request,
-    long userId)
+    public async Task<ApiResponse<bool>>
+        ConfirmWithdrawalRequestAsync(
+            ConfirmWithdrawalRequest request,
+            long userId)
     {
-        var code = request.Code?.Trim();
+        var code =
+            request?.Code?.Trim()
+            ?? string.Empty;
 
-        if (request.VerificationId <= 0)
-            return ResponseFactory.Fail<bool>("Verification is required");
+        if (
+            request == null ||
+            request.VerificationId <= 0
+        )
+        {
+            return ResponseFactory.Fail<bool>(
+                "Verification is required");
+        }
 
-        if (string.IsNullOrWhiteSpace(code))
-            return ResponseFactory.Fail<bool>("Verification code is required");
+        if (
+            code.Length != 6 ||
+            !code.All(char.IsDigit)
+        )
+        {
+            return ResponseFactory.Fail<bool>(
+                "Verification code must be 6 digits");
+        }
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(
-            IsolationLevel.Serializable);
+        await using var transaction =
+            await _context.Database
+                .BeginTransactionAsync(
+                    IsolationLevel.Serializable);
 
-        var verification = await _context.WithdrawalVerifications
-            .Include(x => x.User)
-            .FirstOrDefaultAsync(x =>
-                x.WithdrawalVerificationId == request.VerificationId &&
-                x.UserId == userId);
+        var verification =
+            await _context
+                .WithdrawalVerifications
+                .Include(x =>
+                    x.User)
+                .FirstOrDefaultAsync(x =>
+                    x.WithdrawalVerificationId ==
+                    request.VerificationId &&
+                    x.UserId == userId);
 
         if (verification == null)
-            return ResponseFactory.Fail<bool>("Verification request not found");
-
-        if (verification.Status != WithdrawalVerificationStatus.Pending)
-            return ResponseFactory.Fail<bool>("Verification request is not pending");
-
-        var now = DateTime.Now;
-
-        if (verification.ExpiresAt < now)
         {
-            verification.Status = WithdrawalVerificationStatus.Expired;
+            return ResponseFactory.Fail<bool>(
+                "Verification request not found");
+        }
+
+        if (
+            verification.Status !=
+            WithdrawalVerificationStatus.Pending
+        )
+        {
+            return ResponseFactory.Fail<bool>(
+                "Verification request is not pending");
+        }
+
+        var now =
+            DateTime.Now;
+
+        var securityNow =
+            DateTime.UtcNow;
+
+        if (verification.ExpiresAt <= now)
+        {
+            verification.Status =
+                WithdrawalVerificationStatus
+                    .Expired;
 
             await _context.SaveChangesAsync();
+
             await transaction.CommitAsync();
 
-            return ResponseFactory.Fail<bool>("Verification code has expired");
+            return ResponseFactory.Fail<bool>(
+                "Verification request has expired");
+        }
+
+        if (verification.User.MustChangePassword)
+        {
+            verification.Status =
+                WithdrawalVerificationStatus
+                    .Expired;
+
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            return ResponseFactory.Fail<bool>(
+                "You must change your password before requesting a withdrawal.");
+        }
+
+        if (
+            verification.User
+                .TotpRecoveryLockedUntil
+                .HasValue &&
+            verification.User
+                .TotpRecoveryLockedUntil
+                .Value >
+            securityNow
+        )
+        {
+            verification.Status =
+                WithdrawalVerificationStatus
+                    .Expired;
+
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            var lockedUntil =
+                verification.User
+                    .TotpRecoveryLockedUntil
+                    .Value
+                    .ToString(
+                        "yyyy-MM-dd HH:mm 'UTC'");
+
+            return ResponseFactory.Fail<bool>(
+                $"Withdrawals are temporarily locked until {lockedUntil} after two-factor account recovery.");
+        }
+
+        var hasActiveRecovery =
+            await HasActiveTwoFactorRecoveryAsync(
+                userId,
+                securityNow);
+
+        if (hasActiveRecovery)
+        {
+            verification.Status =
+                WithdrawalVerificationStatus
+                    .Expired;
+
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            return ResponseFactory.Fail<bool>(
+                "Withdrawals are unavailable while a two-factor recovery request is being reviewed.");
         }
 
         if (verification.Attempts >= 5)
         {
-            verification.Status = WithdrawalVerificationStatus.Failed;
+            verification.Status =
+                WithdrawalVerificationStatus
+                    .Failed;
 
             await _context.SaveChangesAsync();
+
             await transaction.CommitAsync();
 
-            return ResponseFactory.Fail<bool>("Too many invalid attempts");
+            return ResponseFactory.Fail<bool>(
+                "Too many invalid attempts");
         }
 
-        var isCodeValid = BCrypt.Net.BCrypt.Verify(
-            code,
-            verification.CodeHash);
+        var isCodeValid =
+            false;
+
+        var invalidCodeMessage =
+            "Invalid verification code";
+
+        if (
+            verification.VerificationMethod ==
+            WithdrawalVerificationMethod.Totp
+        )
+        {
+            if (!verification.User.IsTotpEnabled)
+            {
+                verification.Status =
+                    WithdrawalVerificationStatus
+                        .Expired;
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return ResponseFactory.Fail<bool>(
+                    "Google Authenticator settings changed. Start a new withdrawal request.");
+            }
+
+            var totpResult =
+                await _twoFactorAuthenticationService
+                    .VerifyWithdrawalTotpAsync(
+                        userId,
+                        code);
+
+            isCodeValid =
+                totpResult.Success;
+
+            invalidCodeMessage =
+                totpResult.Message;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(
+                    verification.CodeHash))
+            {
+                verification.Status =
+                    WithdrawalVerificationStatus
+                        .Failed;
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return ResponseFactory.Fail<bool>(
+                    "Email verification is unavailable. Start a new withdrawal request.");
+            }
+
+            isCodeValid =
+                BCrypt.Net.BCrypt.Verify(
+                    code,
+                    verification.CodeHash);
+        }
 
         if (!isCodeValid)
         {
-            verification.Attempts += 1;
+            verification.Attempts +=
+                1;
 
             if (verification.Attempts >= 5)
-                verification.Status = WithdrawalVerificationStatus.Failed;
+            {
+                verification.Status =
+                    WithdrawalVerificationStatus
+                        .Failed;
+            }
 
             await _context.SaveChangesAsync();
+
             await transaction.CommitAsync();
 
-            return ResponseFactory.Fail<bool>("Invalid verification code");
+            return ResponseFactory.Fail<bool>(
+                invalidCodeMessage);
         }
 
-        var wallet = await _context.Wallets
-            .FirstOrDefaultAsync(x =>
-                x.UserId == userId &&
-                x.WalletType == WalletType.Main);
+        var wallet =
+            await _context.Wallets
+                .FirstOrDefaultAsync(x =>
+                    x.UserId == userId &&
+                    x.WalletType ==
+                    WalletType.Main);
 
         if (wallet == null)
-            return ResponseFactory.Fail<bool>("Main wallet not found");
+        {
+            return ResponseFactory.Fail<bool>(
+                "Main wallet not found");
+        }
 
         if (wallet.IsLocked)
-            return ResponseFactory.Fail<bool>("Main wallet is locked");
-
-        if (wallet.Balance < verification.Amount)
-            return ResponseFactory.Fail<bool>("Insufficient balance");
-
-        var before = wallet.Balance;
-        var after = before - verification.Amount;
-
-        wallet.Balance = after;
-
-        verification.Status = WithdrawalVerificationStatus.Confirmed;
-        verification.ConfirmedAt = now;
-
-        var withdrawal = new Withdrawal
         {
-            UserId = userId,
-            Amount = verification.Amount,
-            WalletAddress = verification.WalletAddress,
-            Network = verification.Network,
-            Status = DepositStatus.Pending,
-            CreatedAt = now
-        };
+            return ResponseFactory.Fail<bool>(
+                "Main wallet is locked");
+        }
 
-        _context.Withdrawals.Add(withdrawal);
-
-        _context.WalletTransactions.Add(new WalletTransaction
+        if (wallet.Balance <
+            verification.Amount)
         {
-            UserId = userId,
-            WalletId = wallet.WalletId,
-            Amount = -verification.Amount,
-            BalanceBefore = before,
-            BalanceAfter = after,
-            Type = TransactionType.Withdrawal,
-            Description = "Withdrawal request reserved after email verification",
-            CreatedAt = now
-        });
+            return ResponseFactory.Fail<bool>(
+                "Insufficient balance");
+        }
+
+        var balanceBefore =
+            wallet.Balance;
+
+        var balanceAfter =
+            balanceBefore -
+            verification.Amount;
+
+        wallet.Balance =
+            balanceAfter;
+
+        verification.Status =
+            WithdrawalVerificationStatus
+                .Confirmed;
+
+        verification.ConfirmedAt =
+            now;
+
+        var withdrawal =
+            new Withdrawal
+            {
+                UserId =
+                    userId,
+
+                Amount =
+                    verification.Amount,
+
+                WalletAddress =
+                    verification.WalletAddress,
+
+                Network =
+                    verification.Network,
+
+                Status =
+                    DepositStatus.Pending,
+
+                CreatedAt =
+                    now
+            };
+
+        _context.Withdrawals.Add(
+            withdrawal);
+
+        var verificationDescription =
+            verification.VerificationMethod ==
+            WithdrawalVerificationMethod.Totp
+                ? "Withdrawal request reserved after Google Authenticator verification"
+                : "Withdrawal request reserved after email verification";
+
+        _context.WalletTransactions.Add(
+            new WalletTransaction
+            {
+                UserId =
+                    userId,
+
+                WalletId =
+                    wallet.WalletId,
+
+                Amount =
+                    -verification.Amount,
+
+                BalanceBefore =
+                    balanceBefore,
+
+                BalanceAfter =
+                    balanceAfter,
+
+                Type =
+                    TransactionType.Withdrawal,
+
+                Description =
+                    verificationDescription,
+
+                CreatedAt =
+                    now
+            });
 
         await _context.SaveChangesAsync();
+
         await transaction.CommitAsync();
 
-        var adminEmailBody = _emailTemplateService.GetWithdrawalNotification(
-            verification.User.Email,
-            verification.Amount,
-            verification.WalletAddress);
+        var adminEmailBody =
+            _emailTemplateService
+                .GetWithdrawalNotification(
+                    verification.User.Email,
+                    verification.Amount,
+                    verification.WalletAddress);
 
         await _notificationQueue.QueueAdminAsync(
             "New Withdrawal Request",
             adminEmailBody);
 
-        var userEmailBody = _emailTemplateService.GetWithdrawalSubmittedEmail(
-            verification.Amount,
-            verification.WalletAddress);
+        var userEmailBody =
+            _emailTemplateService
+                .GetWithdrawalSubmittedEmail(
+                    verification.Amount,
+                    verification.WalletAddress);
 
         await _notificationQueue.QueueEmailAsync(
             verification.User.Email,
             "Withdrawal Request Submitted",
             userEmailBody);
 
-        return ResponseFactory.Success(true, "Withdrawal request submitted");
+        return ResponseFactory.Success(
+            true,
+            "Withdrawal request submitted");
     }
     public async Task<ApiResponse<bool>> SaveWalletAddressAsync(
         string address,
@@ -1453,6 +1879,34 @@ public class WalletService
         };
 
         return ResponseFactory.Success(response);
+    }
+    private async Task<bool>
+    HasActiveTwoFactorRecoveryAsync(
+        long userId,
+        DateTime utcNow)
+    {
+        return await _context
+            .TwoFactorRecoveryRequests
+            .AsNoTracking()
+            .AnyAsync(x =>
+                x.UserId == userId &&
+                (
+                    (
+                        x.Status ==
+                        TwoFactorRecoveryRequestStatus
+                            .PendingEmailVerification &&
+                        x.EmailCodeExpiresAt >
+                        utcNow
+                    )
+                    ||
+                    (
+                        x.Status ==
+                        TwoFactorRecoveryRequestStatus
+                            .PendingAdminReview &&
+                        x.ExpiresAt >
+                        utcNow
+                    )
+                ));
     }
     private static string GenerateInternalTransferCode()
     {

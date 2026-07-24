@@ -118,6 +118,7 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.TotpEnabledAt);
 
             entity.Property(x => x.LastAcceptedTotpStep);
+            entity.Property(x => x.LastWithdrawalTotpStep);
             entity.Property(x =>
                 x.PendingTotpSecretEncrypted)
                 .HasMaxLength(1000);

@@ -51,7 +51,7 @@ public class User
      * در همان بازه زمانی ۳۰ ثانیه‌ای.
      */
     public long? LastAcceptedTotpStep { get; set; }
-
+    public long? LastWithdrawalTotpStep { get; set; }
     /*
  * Secret جدید هنگام Replace Authenticator ابتدا
  * اینجا ذخیره می‌شود و تا زمان تأیید فعال نمی‌شود.

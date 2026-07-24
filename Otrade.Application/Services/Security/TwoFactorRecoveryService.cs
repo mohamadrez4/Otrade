@@ -285,7 +285,8 @@ public class TwoFactorRecoveryService
 
         user.LastAcceptedTotpStep =
             matchedStep;
-
+        user.LastWithdrawalTotpStep =
+            null;       
         user.AuthTokenVersion =
             Math.Max(
                 1,
@@ -943,7 +944,8 @@ public class TwoFactorRecoveryService
 
         user.LastAcceptedTotpStep =
             null;
-
+        user.LastWithdrawalTotpStep =
+            null;
         user.PendingTotpSecretEncrypted =
             null;
 
