@@ -398,7 +398,7 @@ public class AuthService
 
         // تغییر رمز
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-
+        user.AuthTokenVersion =Math.Max(1,user.AuthTokenVersion + 1);
         // Mark code used
         verification.IsUsed = true;
         user.EmailConfirmed = true;

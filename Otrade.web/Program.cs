@@ -14,11 +14,49 @@ using Otrade.web.BackgroundServices;
 using Otrade.web.Security;
 using Otrade.Web.Services;
 using System.Text;
+using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
+builder.Services.AddRateLimiter(
+    options =>
+    {
+        options.RejectionStatusCode =
+            StatusCodes
+                .Status429TooManyRequests;
+
+        options.AddPolicy(
+            "auth-refresh",
+            httpContext =>
+                RateLimitPartition
+                    .GetFixedWindowLimiter(
+                        partitionKey:
+                            httpContext
+                                .Connection
+                                .RemoteIpAddress?
+                                .ToString()
+                            ?? "unknown",
+
+                        factory:
+                            _ =>
+                                new FixedWindowRateLimiterOptions
+                                {
+                                    PermitLimit =
+                                        20,
+
+                                    Window =
+                                        TimeSpan
+                                            .FromMinutes(1),
+
+                                    QueueLimit =
+                                        0,
+
+                                    AutoReplenishment =
+                                        true
+                                }));
+    });
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 
 builder.Services
@@ -35,7 +73,8 @@ builder.Services
             ValidIssuer = jwtSettings["Issuer"],
             ValidAudience = jwtSettings["Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings["Key"]!))
+                Encoding.UTF8.GetBytes(jwtSettings["Key"]!)),
+            ClockSkew = TimeSpan.FromSeconds(15)
         };
         options.Events = new JwtBearerEvents
         {
@@ -161,6 +200,7 @@ builder.Services.AddScoped<CurrentUserService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<PreRegistrationService>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<RefreshTokenService>();
 builder.Services.AddScoped<WalletService>();
 builder.Services.AddScoped<PaymentTransactionGuardService>();
 builder.Services.AddScoped<JobLockservice>();
@@ -205,6 +245,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.Use(
     async (

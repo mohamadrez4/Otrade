@@ -93,4 +93,8 @@ public class User
         TwoFactorRecoveryRequests
     { get; set; }
             = new List<TwoFactorRecoveryRequest>();
+    public ICollection<RefreshToken>
+    RefreshTokens
+    { get; set; }
+        = new List<RefreshToken>();
 }

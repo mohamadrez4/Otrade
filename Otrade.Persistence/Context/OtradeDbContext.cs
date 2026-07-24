@@ -69,6 +69,7 @@ public class OtradeDbContext : DbContext
     public DbSet<TwoFactorLoginChallenge> TwoFactorLoginChallenges => Set<TwoFactorLoginChallenge>();
     public DbSet<UserRecoveryCode> UserRecoveryCodes => Set<UserRecoveryCode>();
     public DbSet<TwoFactorRecoveryRequest> TwoFactorRecoveryRequests => Set<TwoFactorRecoveryRequest>();
+    public DbSet<RefreshToken>RefreshTokens => Set<RefreshToken>();
     public DbSet<UserWalletAddress> UserWalletAddresses { get; set; }
     public DbSet<WalletBalanceSnapshot> WalletBalanceSnapshots { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -610,6 +611,64 @@ public class OtradeDbContext : DbContext
                     x.CreatedAt
                 });
             });
+        modelBuilder.Entity<RefreshToken>(
+    entity =>
+    {
+        entity.ToTable(
+            "RefreshTokens");
+
+        entity.HasKey(x =>
+            x.RefreshTokenId);
+
+        entity.Property(x =>
+                x.TokenHash)
+            .IsRequired()
+            .IsUnicode(false)
+            .HasMaxLength(64);
+
+        entity.Property(x =>
+                x.TokenVersion)
+            .IsRequired();
+
+        entity.Property(x =>
+                x.CreatedByIp)
+            .IsRequired()
+            .HasMaxLength(64);
+
+        entity.Property(x =>
+                x.LastUsedByIp)
+            .HasMaxLength(64);
+
+        entity.Property(x =>
+                x.UserAgent)
+            .IsRequired()
+            .HasMaxLength(500);
+
+        entity.HasOne(x =>
+                x.User)
+            .WithMany(x =>
+                x.RefreshTokens)
+            .HasForeignKey(x =>
+                x.UserId)
+            .OnDelete(
+                DeleteBehavior.Restrict);
+
+        entity.HasIndex(x =>
+                x.TokenHash)
+            .IsUnique();
+
+        entity.HasIndex(x => new
+        {
+            x.UserId,
+            x.ExpiresAt
+        });
+
+        entity.HasIndex(x => new
+        {
+            x.UserId,
+            x.RevokedAt
+        });
+    });
         modelBuilder.Entity<SystemSetting>(entity =>
         {
             entity.ToTable("SystemSettings");

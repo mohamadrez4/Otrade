@@ -20,12 +20,23 @@
     <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
     <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
     <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
-    <script src="~/js/common.js"></script>
-    <script src="~/js/auth.js"></script>
+ 
     <script src="~/js/flatpickr.js"></script>
-    <script>
-        checkAuth();
-    </script>
+<script src="~/js/common.js"
+        asp-append-version="true">
+</script>
+
+<script src="~/js/auth.js"
+        asp-append-version="true">
+</script>
+
+<script>
+    checkAuth();
+</script>
+
+<script src="~/js/api.js"
+        asp-append-version="true">
+</script>
 </head>
 <body class="panel-body">
     <div id="notificationContainer" class="notification-container"></div>
@@ -121,7 +132,6 @@
 
     </div>
 
-    <script src="~/js/api.js"></script>
     <script>
         const currentPath = window.location.pathname.toLowerCase();
 
