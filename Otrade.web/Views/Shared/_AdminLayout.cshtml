@@ -6,9 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="~/css/flatpickr.min.css" />
     <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="~/css/panel.css" rel="stylesheet" />
-    <link href="~/css/admin.css" rel="stylesheet" />
-    <link href="~/css/common.css" rel="stylesheet" />
+<link href="~/css/panel.css"
+      rel="stylesheet"
+      asp-append-version="true" />
+
+<link href="~/css/admin.css"
+      rel="stylesheet"
+      asp-append-version="true" />
+
+<link href="~/css/common.css"
+      rel="stylesheet"
+      asp-append-version="true" />
     <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
     <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
     <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
@@ -199,83 +207,206 @@
 
         </script>
     <script>
-        (function () {
-            if (window.__otradeSidebarInitialized) {
+    (function () {
+        if (window.__otradeAdminSidebarInitialized) {
+            return;
+        }
+
+        window.__otradeAdminSidebarInitialized =
+            true;
+
+        const body =
+            document.body;
+
+        const sidebar =
+            document.querySelector(
+                ".sidebar"
+            );
+
+        const menuButton =
+            document.getElementById(
+                "mobileMenuBtn"
+            );
+
+        const overlay =
+            document.getElementById(
+                "sidebarMobileOverlay"
+            );
+
+        const mobileMedia =
+            window.matchMedia(
+                "(max-width: 992px)"
+            );
+
+        function isMobileOrTablet() {
+            return mobileMedia.matches;
+        }
+
+        function updateMenuState(isOpen) {
+            if (menuButton) {
+                menuButton.setAttribute(
+                    "aria-expanded",
+                    String(isOpen)
+                );
+
+                menuButton.setAttribute(
+                    "aria-label",
+                    isOpen
+                        ? "Close menu"
+                        : "Open menu"
+                );
+            }
+
+            if (overlay) {
+                overlay.setAttribute(
+                    "aria-hidden",
+                    String(!isOpen)
+                );
+            }
+
+            if (sidebar) {
+                sidebar.setAttribute(
+                    "aria-hidden",
+                    String(
+                        isMobileOrTablet() &&
+                        !isOpen
+                    )
+                );
+            }
+        }
+
+        function openSidebar() {
+            if (!isMobileOrTablet()) {
                 return;
             }
 
-            window.__otradeSidebarInitialized = true;
+            body.classList.add(
+                "sidebar-open"
+            );
 
-            const desktopMedia = window.matchMedia("(min-width: 993px)");
+            updateMenuState(true);
+        }
 
-            function isDesktop() {
-                return desktopMedia.matches;
+        function closeSidebar() {
+            body.classList.remove(
+                "sidebar-open"
+            );
+
+            updateMenuState(false);
+        }
+
+        function toggleSidebar() {
+            if (!isMobileOrTablet()) {
+                return;
             }
 
-            function syncSidebarForViewport() {
-                document.body.classList.remove("sidebar-open");
+            const isOpen =
+                body.classList.contains(
+                    "sidebar-open"
+                );
 
-                if (isDesktop()) {
-                    document.body.classList.add("sidebar-collapsed");
-                } else {
-                    document.body.classList.remove("sidebar-collapsed");
-                }
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function synchronizeSidebar() {
+            /*
+             * کلاس قدیمی دیگر نباید در Desktop
+             * منو را مخفی کند.
+             */
+            body.classList.remove(
+                "sidebar-collapsed"
+            );
+
+            if (isMobileOrTablet()) {
+                closeSidebar();
+                return;
             }
 
-            function toggleSidebar() {
-                if (isDesktop()) {
-                    document.body.classList.toggle("sidebar-collapsed");
-                    document.body.classList.remove("sidebar-open");
-                    return;
-                }
+            /*
+             * در Desktop منو همیشه ثابت و باز است.
+             */
+            body.classList.remove(
+                "sidebar-open"
+            );
 
-                document.body.classList.add("sidebar-open");
-            }
+            updateMenuState(true);
+        }
 
-            function closeSidebar() {
-                document.body.classList.remove("sidebar-open");
-            }
+        if (menuButton) {
+            menuButton.addEventListener(
+                "click",
+                function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
 
-            syncSidebarForViewport();
-
-            document.addEventListener("pointerdown", function (e) {
-                const menuBtn = e.target.closest("#mobileMenuBtn");
-
-                if (menuBtn) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     toggleSidebar();
-                    return;
                 }
+            );
+        }
 
-                const overlay = e.target.closest("#sidebarMobileOverlay");
+        if (overlay) {
+            overlay.addEventListener(
+                "click",
+                function (event) {
+                    event.preventDefault();
 
-                if (overlay) {
-                    e.preventDefault();
-                    e.stopPropagation();
                     closeSidebar();
                 }
-            }, true);
+            );
+        }
 
-            document.addEventListener("click", function (e) {
-                const sidebarLink = e.target.closest(".sidebar-nav a");
+        if (sidebar) {
+            sidebar
+                .querySelectorAll("a")
+                .forEach(
+                    function (link) {
+                        link.addEventListener(
+                            "click",
+                            function () {
+                                if (
+                                    isMobileOrTablet()
+                                ) {
+                                    closeSidebar();
+                                }
+                            }
+                        );
+                    }
+                );
+        }
 
-                if (sidebarLink && !isDesktop()) {
+        document.addEventListener(
+            "keydown",
+            function (event) {
+                if (
+                    event.key === "Escape" &&
+                    isMobileOrTablet()
+                ) {
                     closeSidebar();
                 }
-            }, true);
+            }
+        );
 
-            document.addEventListener("keydown", function (e) {
-                if (e.key === "Escape") {
-                    closeSidebar();
-                }
-            });
+        if (
+            typeof mobileMedia.addEventListener ===
+            "function"
+        ) {
+            mobileMedia.addEventListener(
+                "change",
+                synchronizeSidebar
+            );
+        } else {
+            mobileMedia.addListener(
+                synchronizeSidebar
+            );
+        }
 
-            window.addEventListener("resize", function () {
-                syncSidebarForViewport();
-            });
-        })();
-    </script>
+        synchronizeSidebar();
+    })();
+</script>
     @RenderSection("Scripts", required: false)
 
 </body>

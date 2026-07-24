@@ -34,273 +34,7 @@
     <link rel="apple-touch-icon"
           href="~/apple-touch-icon.png?v=1" />
 
-    <!--
-        این Style بعد از panel.css و common.css بارگذاری می‌شود.
-        بنابراین قوانین نهایی Sidebar فقط از همین‌جا اعمال می‌شوند.
-    -->
-    <style>
-        :root {
-            --panel-sidebar-width: 260px;
-        }
 
-        html,
-        body {
-            min-height: 100%;
-        }
-
-            body.panel-body {
-                margin: 0;
-                overflow-x: hidden;
-            }
-
-                body.panel-body .panel-layout {
-                    display: block !important;
-                    width: 100% !important;
-                    min-height: 100vh !important;
-                }
-
-                body.panel-body .sidebar {
-                    box-sizing: border-box !important;
-                }
-
-                body.panel-body .sidebar-nav {
-                    flex: 1 1 auto !important;
-                    min-height: 0 !important;
-                    overflow-x: hidden !important;
-                    overflow-y: auto !important;
-                }
-
-                body.panel-body .logout-btn {
-                    flex: 0 0 auto !important;
-                }
-
-                body.panel-body .sidebar-mobile-overlay {
-                    display: none;
-                }
-
-        /* =====================================================
-                   Desktop
-                   Sidebar همیشه باز و ثابت
-                   ===================================================== */
-
-        @@media (min-width: 993px) {
-
-            body.panel-body .sidebar {
-                display: flex !important;
-                flex-direction: column !important;
-                position: fixed !important;
-                top: 0 !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: auto !important;
-                width: var(--panel-sidebar-width) !important;
-                min-width: var(--panel-sidebar-width) !important;
-                max-width: var(--panel-sidebar-width) !important;
-                height: 100vh !important;
-                max-height: 100vh !important;
-                padding: 24px !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-                pointer-events: auto !important;
-                transform: none !important;
-                translate: none !important;
-                overflow-x: hidden !important;
-                overflow-y: hidden !important;
-                z-index: 2000 !important;
-                background: linear-gradient( 125deg, #1C2532, #0B0F14 ) !important;
-                border-right: 1px solid #1C2532 !important;
-                box-shadow: 14px 0 38px rgba(0, 0, 0, 0.20) !important;
-            }
-
-            body.panel-body .sidebar-logo {
-                flex: 0 0 auto !important;
-            }
-
-            body.panel-body .sidebar-uid-chip {
-                flex: 0 0 auto !important;
-            }
-
-            body.panel-body .sidebar-nav {
-                padding-right: 3px !important;
-            }
-
-            body.panel-body .panel-main {
-                display: block !important;
-                width: calc( 100% - var(--panel-sidebar-width) ) !important;
-                min-width: 0 !important;
-                max-width: none !important;
-                min-height: 100vh !important;
-                margin-left: var(--panel-sidebar-width) !important;
-                margin-right: 0 !important;
-                transform: none !important;
-            }
-
-            body.panel-body .topbar {
-                position: sticky !important;
-                top: 0 !important;
-                z-index: 900 !important;
-            }
-
-            body.panel-body .mobile-menu-btn {
-                display: none !important;
-            }
-
-            body.panel-body .sidebar-mobile-overlay {
-                display: none !important;
-            }
-            /*
-                     * خنثی‌کردن کامل کلاس‌های قدیمی
-                     */
-            body.panel-body.sidebar-open {
-                overflow: auto !important;
-            }
-
-                body.panel-body.sidebar-open .sidebar,
-                body.panel-body.sidebar-collapsed .sidebar {
-                    display: flex !important;
-                    width: var(--panel-sidebar-width) !important;
-                    min-width: var(--panel-sidebar-width) !important;
-                    max-width: var(--panel-sidebar-width) !important;
-                    opacity: 1 !important;
-                    visibility: visible !important;
-                    transform: none !important;
-                    translate: none !important;
-                }
-
-                body.panel-body.sidebar-open .panel-main,
-                body.panel-body.sidebar-collapsed .panel-main {
-                    width: calc( 100% - var(--panel-sidebar-width) ) !important;
-                    margin-left: var(--panel-sidebar-width) !important;
-                }
-        }
-
-        /* =====================================================
-                   Tablet و Mobile
-                   Sidebar مخفی و Off-Canvas
-                   ===================================================== */
-
-        @@media (max-width: 992px) {
-
-            body.panel-body .panel-main {
-                display: block !important;
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100% !important;
-                min-height: 100vh !important;
-                margin-left: 0 !important;
-                margin-right: 0 !important;
-                transform: none !important;
-            }
-
-            body.panel-body .sidebar {
-                display: flex !important;
-                flex-direction: column !important;
-                position: fixed !important;
-                top: 0 !important;
-                bottom: auto !important;
-                left: 0 !important;
-                right: auto !important;
-                width: min( 286px, 86vw ) !important;
-                min-width: 0 !important;
-                max-width: min( 286px, 86vw ) !important;
-                height: 100vh !important;
-                height: 100dvh !important;
-                max-height: 100dvh !important;
-                padding: 18px !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-                pointer-events: auto !important;
-                transform: translate3d( -110%, 0, 0 ) !important;
-                translate: none !important;
-                transition: transform 0.24s ease !important;
-                overflow-x: hidden !important;
-                overflow-y: hidden !important;
-                z-index: 5001 !important;
-                background: radial-gradient( circle at top left, rgba(17, 233, 161, 0.12), transparent 36% ), #0B0F14 !important;
-                border-right: 1px solid rgba(17, 233, 161, 0.18) !important;
-                box-shadow: 28px 0 70px rgba(0, 0, 0, 0.55) !important;
-            }
-
-            body.panel-body.sidebar-open {
-                overflow: hidden !important;
-            }
-
-                body.panel-body.sidebar-open .sidebar {
-                    transform: translate3d( 0, 0, 0 ) !important;
-                }
-
-            body.panel-body .sidebar-mobile-overlay {
-                display: none !important;
-                position: fixed !important;
-                inset: 0 !important;
-                z-index: 5000 !important;
-                background: rgba( 0, 0, 0, 0.58 ) !important;
-                backdrop-filter: blur(3px);
-            }
-
-            body.panel-body.sidebar-open
-            .sidebar-mobile-overlay {
-                display: block !important;
-            }
-
-            body.panel-body .topbar {
-                position: sticky !important;
-                top: 0 !important;
-                display: flex !important;
-                align-items: center !important;
-                gap: 12px !important;
-                height: 64px !important;
-                padding: 0 16px !important;
-                z-index: 3000 !important;
-                background: rgba( 11, 15, 20, 0.96 ) !important;
-                backdrop-filter: blur(14px);
-            }
-
-            body.panel-body .mobile-menu-btn {
-                display: inline-flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                width: 42px !important;
-                height: 42px !important;
-                min-width: 42px !important;
-                flex: 0 0 42px !important;
-                position: relative !important;
-                padding: 0 !important;
-                color: #11E9A1 !important;
-                background: rgba( 17, 233, 161, 0.08 ) !important;
-                border: 1px solid rgba( 17, 233, 161, 0.24 ) !important;
-                border-radius: 14px !important;
-                font-size: 22px !important;
-                font-weight: 900 !important;
-                line-height: 1 !important;
-                cursor: pointer !important;
-                pointer-events: auto !important;
-                z-index: 3001 !important;
-            }
-
-                body.panel-body .mobile-menu-btn:hover {
-                    color: #18F5AC !important;
-                    background: rgba( 17, 233, 161, 0.14 ) !important;
-                    border-color: rgba( 17, 233, 161, 0.48 ) !important;
-                }
-
-            body.panel-body .content {
-                width: 100% !important;
-                min-width: 0 !important;
-            }
-            /*
-                     * کلاس collapsed قدیمی در موبایل اثری نداشته باشد.
-                     */
-            body.panel-body.sidebar-collapsed .sidebar {
-                transform: translate3d( -110%, 0, 0 ) !important;
-            }
-
-            body.panel-body.sidebar-collapsed.sidebar-open
-            .sidebar {
-                transform: translate3d( 0, 0, 0 ) !important;
-            }
-        }
-    </style>
 </head>
 
 <body class="panel-body">
@@ -542,226 +276,207 @@
         loadPanelUserUid();
     </script>
 
-    <script>
-        (function () {
-            if (
-                window
-                    .__otradePanelSidebarReady
-            ) {
-                return;
-            }
+  <script>
+    (function () {
+        if (window.__otradeAdminSidebarInitialized) {
+            return;
+        }
 
-            window.__otradePanelSidebarReady =
-                true;
+        window.__otradeAdminSidebarInitialized =
+            true;
 
-            const body =
-                document.body;
+        const body =
+            document.body;
 
-            const sidebar =
-                document.getElementById(
-                    "panelSidebar"
-                );
+        const sidebar =
+            document.querySelector(
+                ".sidebar"
+            );
 
-            const menuButton =
-                document.getElementById(
-                    "mobileMenuBtn"
-                );
+        const menuButton =
+            document.getElementById(
+                "mobileMenuBtn"
+            );
 
-            const overlay =
-                document.getElementById(
-                    "sidebarMobileOverlay"
-                );
+        const overlay =
+            document.getElementById(
+                "sidebarMobileOverlay"
+            );
 
-            const mobileMedia =
-                window.matchMedia(
-                    "(max-width: 992px)"
-                );
+        const mobileMedia =
+            window.matchMedia(
+                "(max-width: 992px)"
+            );
 
-            function isMobileOrTablet() {
-                return mobileMedia.matches;
-            }
+        function isMobileOrTablet() {
+            return mobileMedia.matches;
+        }
 
-            function updateAccessibilityState(
-                isOpen
-            ) {
-                if (menuButton) {
-                    menuButton.setAttribute(
-                        "aria-expanded",
-                        String(isOpen)
-                    );
-
-                    menuButton.setAttribute(
-                        "aria-label",
-                        isOpen
-                            ? "Close menu"
-                            : "Open menu"
-                    );
-                }
-
-                if (overlay) {
-                    overlay.setAttribute(
-                        "aria-hidden",
-                        String(!isOpen)
-                    );
-                }
-
-                if (sidebar) {
-                    sidebar.setAttribute(
-                        "aria-hidden",
-                        String(
-                            isMobileOrTablet() &&
-                            !isOpen
-                        )
-                    );
-                }
-            }
-
-            function openSidebar() {
-                if (!isMobileOrTablet()) {
-                    return;
-                }
-
-                body.classList.add(
-                    "sidebar-open"
-                );
-
-                updateAccessibilityState(
-                    true
-                );
-            }
-
-            function closeSidebar() {
-                body.classList.remove(
-                    "sidebar-open"
-                );
-
-                updateAccessibilityState(
-                    false
-                );
-            }
-
-            function toggleSidebar() {
-                if (!isMobileOrTablet()) {
-                    return;
-                }
-
-                const isOpen =
-                    body.classList.contains(
-                        "sidebar-open"
-                    );
-
-                if (isOpen) {
-                    closeSidebar();
-                } else {
-                    openSidebar();
-                }
-            }
-
-            function synchronizeViewport() {
-                /*
-                 * کلاس قدیمی دیگر استفاده نمی‌شود.
-                 */
-                body.classList.remove(
-                    "sidebar-collapsed"
-                );
-
-                if (
-                    isMobileOrTablet()
-                ) {
-                    closeSidebar();
-                    return;
-                }
-
-                /*
-                 * در Desktop Sidebar همیشه باز است.
-                 */
-                body.classList.remove(
-                    "sidebar-open"
-                );
-
-                updateAccessibilityState(
-                    true
-                );
-            }
-
+        function updateMenuState(isOpen) {
             if (menuButton) {
-                menuButton.addEventListener(
-                    "click",
-                    function (event) {
-                        event.preventDefault();
-                        event.stopPropagation();
+                menuButton.setAttribute(
+                    "aria-expanded",
+                    String(isOpen)
+                );
 
-                        toggleSidebar();
-                    }
+                menuButton.setAttribute(
+                    "aria-label",
+                    isOpen
+                        ? "Close menu"
+                        : "Open menu"
                 );
             }
 
             if (overlay) {
-                overlay.addEventListener(
-                    "click",
-                    function (event) {
-                        event.preventDefault();
-
-                        closeSidebar();
-                    }
+                overlay.setAttribute(
+                    "aria-hidden",
+                    String(!isOpen)
                 );
             }
 
             if (sidebar) {
-                sidebar
-                    .querySelectorAll(
-                        "a"
+                sidebar.setAttribute(
+                    "aria-hidden",
+                    String(
+                        isMobileOrTablet() &&
+                        !isOpen
                     )
-                    .forEach(
-                        function (link) {
-                            link.addEventListener(
-                                "click",
-                                function () {
-                                    if (
-                                        isMobileOrTablet()
-                                    ) {
-                                        closeSidebar();
-                                    }
-                                }
-                            );
-                        }
-                    );
+                );
+            }
+        }
+
+        function openSidebar() {
+            if (!isMobileOrTablet()) {
+                return;
             }
 
-            document.addEventListener(
-                "keydown",
-                function (event) {
-                    if (
-                        event.key ===
-                        "Escape" &&
-                        isMobileOrTablet()
-                    ) {
-                        closeSidebar();
-                    }
-                }
+            body.classList.add(
+                "sidebar-open"
             );
 
-            if (
-                typeof mobileMedia
-                    .addEventListener ===
-                "function"
-            ) {
-                mobileMedia.addEventListener(
-                    "change",
-                    synchronizeViewport
-                );
-            } else {
-                /*
-                 * Safari قدیمی
-                 */
-                mobileMedia.addListener(
-                    synchronizeViewport
-                );
+            updateMenuState(true);
+        }
+
+        function closeSidebar() {
+            body.classList.remove(
+                "sidebar-open"
+            );
+
+            updateMenuState(false);
+        }
+
+        function toggleSidebar() {
+            if (!isMobileOrTablet()) {
+                return;
             }
 
-            synchronizeViewport();
-        })();
-    </script>
+            const isOpen =
+                body.classList.contains(
+                    "sidebar-open"
+                );
+
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        }
+
+        function synchronizeSidebar() {
+            /*
+             * کلاس قدیمی دیگر نباید در Desktop
+             * منو را مخفی کند.
+             */
+            body.classList.remove(
+                "sidebar-collapsed"
+            );
+
+            if (isMobileOrTablet()) {
+                closeSidebar();
+                return;
+            }
+
+            /*
+             * در Desktop منو همیشه ثابت و باز است.
+             */
+            body.classList.remove(
+                "sidebar-open"
+            );
+
+            updateMenuState(true);
+        }
+
+        if (menuButton) {
+            menuButton.addEventListener(
+                "click",
+                function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    toggleSidebar();
+                }
+            );
+        }
+
+        if (overlay) {
+            overlay.addEventListener(
+                "click",
+                function (event) {
+                    event.preventDefault();
+
+                    closeSidebar();
+                }
+            );
+        }
+
+        if (sidebar) {
+            sidebar
+                .querySelectorAll("a")
+                .forEach(
+                    function (link) {
+                        link.addEventListener(
+                            "click",
+                            function () {
+                                if (
+                                    isMobileOrTablet()
+                                ) {
+                                    closeSidebar();
+                                }
+                            }
+                        );
+                    }
+                );
+        }
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+                if (
+                    event.key === "Escape" &&
+                    isMobileOrTablet()
+                ) {
+                    closeSidebar();
+                }
+            }
+        );
+
+        if (
+            typeof mobileMedia.addEventListener ===
+            "function"
+        ) {
+            mobileMedia.addEventListener(
+                "change",
+                synchronizeSidebar
+            );
+        } else {
+            mobileMedia.addListener(
+                synchronizeSidebar
+            );
+        }
+
+        synchronizeSidebar();
+    })();
+</script>
 
     @RenderSection(
     "Scripts",

@@ -5171,3 +5171,422 @@ span.flatpickr-weekday {
         }
 }
 
+/* =========================================================
+   Otrade V14 - Compact Admin Desktop
+   ========================================================= */
+
+@media (min-width: 993px) {
+
+    /* =====================================================
+       Neutralize old collapsed-sidebar rules
+       ===================================================== */
+
+    body.panel-body.sidebar-collapsed .sidebar {
+        display: flex !important;
+        position: fixed !important;
+        width: var(--otrade-sidebar-width) !important;
+        min-width: var(--otrade-sidebar-width) !important;
+        max-width: var(--otrade-sidebar-width) !important;
+        padding: 17px 15px !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: none !important;
+        border-right: 1px solid #1c2532 !important;
+    }
+
+    body.panel-body.sidebar-collapsed .panel-main {
+        width: calc( 100% - var(--otrade-sidebar-width) ) !important;
+        max-width: none !important;
+        margin-left: var(--otrade-sidebar-width) !important;
+        padding-left: 0 !important;
+    }
+
+    body.panel-body.sidebar-collapsed .content {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* =====================================================
+       General admin density
+       ===================================================== */
+
+    body.panel-body .admin-page {
+        gap: 14px !important;
+    }
+
+        body.panel-body
+        .admin-page > .panel-card,
+        body.panel-body
+        .admin-page .admin-kpi-card,
+        body.panel-body
+        .admin-page .admin-wallet-summary-card,
+        body.panel-body
+        .admin-page .wallet-overview-hero,
+        body.panel-body
+        .admin-page .wallet-overview-filters,
+        body.panel-body
+        .admin-page .wallet-overview-kpi,
+        body.panel-body
+        .admin-page .wallet-overview-table-card,
+        body.panel-body
+        .admin-page .admin-tickets-v2-header,
+        body.panel-body
+        .admin-page .admin-tickets-v2-filter-card,
+        body.panel-body
+        .admin-page .admin-tickets-v2-list-card,
+        body.panel-body
+        .admin-page .pre-admin-card,
+        body.panel-body
+        .admin-page .deposit-review-page-card {
+            padding: 15px !important;
+            border-radius: 16px !important;
+        }
+
+    body.panel-body .admin-kpi-grid {
+        gap: 12px !important;
+    }
+
+    body.panel-body .admin-kpi-card {
+        gap: 5px !important;
+    }
+
+        body.panel-body
+        .admin-kpi-card span {
+            font-size: 11px !important;
+        }
+
+        body.panel-body
+        .admin-kpi-card strong {
+            font-size: 21px !important;
+        }
+
+    body.panel-body
+    .admin-section-header {
+        margin-bottom: 14px !important;
+    }
+
+        body.panel-body
+        .admin-section-header h3,
+        body.panel-body
+        .pre-admin-header h3,
+        body.panel-body
+        .admin-wallet-summary-header h3,
+        body.panel-body
+        .admin-tickets-v2-header h2,
+        body.panel-body
+        .deposit-review-page-header h2,
+        body.panel-body
+        .wallet-overview-hero h2 {
+            font-size: 20px !important;
+            line-height: 1.25 !important;
+        }
+
+        body.panel-body
+        .admin-section-header p,
+        body.panel-body
+        .pre-admin-header p,
+        body.panel-body
+        .admin-wallet-summary-header p,
+        body.panel-body
+        .admin-tickets-v2-header p,
+        body.panel-body
+        .deposit-review-page-header p,
+        body.panel-body
+        .wallet-overview-hero p {
+            font-size: 12px !important;
+            line-height: 1.6 !important;
+        }
+
+    body.panel-body
+    .pre-admin-header,
+    body.panel-body
+    .admin-wallet-summary-header,
+    body.panel-body
+    .admin-tickets-v2-header,
+    body.panel-body
+    .deposit-review-page-header {
+        gap: 15px !important;
+        margin-bottom: 16px !important;
+    }
+
+    /* =====================================================
+       Admin form controls
+       ===================================================== */
+
+    body.panel-body .admin-input,
+    body.panel-body
+    .admin-setting-group .panel-input,
+    body.panel-body
+    .admin-filter-row .panel-input,
+    body.panel-body
+    .admin-filter-row select {
+        height: 40px !important;
+        min-height: 40px !important;
+        border-radius: 11px !important;
+        font-size: 12px !important;
+    }
+
+    body.panel-body
+    textarea.admin-input,
+    body.panel-body
+    textarea.panel-input {
+        height: auto !important;
+        min-height: 90px !important;
+    }
+
+    body.panel-body
+    .admin-filter-row {
+        gap: 10px !important;
+        margin-bottom: 13px !important;
+    }
+
+    /* =====================================================
+       Admin tables
+       ===================================================== */
+
+    body.panel-body
+    .admin-table th,
+    body.panel-body
+    .admin-table td,
+    body.panel-body
+    .pre-admin-table th,
+    body.panel-body
+    .pre-admin-table td,
+    body.panel-body
+    .admin-users-table th,
+    body.panel-body
+    .admin-users-table td,
+    body.panel-body
+    .admin-deposits-table th,
+    body.panel-body
+    .admin-deposits-table td,
+    body.panel-body
+    .admin-withdrawals-table th,
+    body.panel-body
+    .admin-withdrawals-table td,
+    body.panel-body
+    .wallet-overview-table th,
+    body.panel-body
+    .wallet-overview-table td,
+    body.panel-body
+    .bonus-admin-table th,
+    body.panel-body
+    .bonus-admin-table td {
+        padding: 9px 10px !important;
+        font-size: 11px !important;
+    }
+
+    body.panel-body
+    .admin-table th,
+    body.panel-body
+    .pre-admin-table th,
+    body.panel-body
+    .admin-users-table th,
+    body.panel-body
+    .admin-deposits-table th,
+    body.panel-body
+    .admin-withdrawals-table th,
+    body.panel-body
+    .wallet-overview-table th,
+    body.panel-body
+    .bonus-admin-table th {
+        font-size: 10px !important;
+    }
+
+    body.panel-body
+    .admin-action-btn {
+        min-height: 31px !important;
+        padding: 5px 10px !important;
+        border-radius: 999px !important;
+        font-size: 10px !important;
+    }
+
+    body.panel-body
+    .admin-status {
+        min-height: 27px !important;
+        padding: 4px 9px !important;
+        font-size: 10px !important;
+    }
+
+    /* =====================================================
+       Pre-registration
+       ===================================================== */
+
+    body.panel-body
+    .pre-admin-eyebrow {
+        padding: 5px 10px !important;
+        margin-bottom: 8px !important;
+        font-size: 10px !important;
+    }
+
+    body.panel-body
+    .pre-admin-table-wrapper {
+        border-radius: 14px !important;
+    }
+
+    body.panel-body
+    .pre-user-avatar {
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 10px !important;
+    }
+
+    body.panel-body
+    .pre-user-cell strong,
+    body.panel-body
+    .pre-muted-cell strong,
+    body.panel-body
+    .pre-date-cell strong {
+        font-size: 12px !important;
+    }
+
+    body.panel-body
+    .pre-user-cell span,
+    body.panel-body
+    .pre-muted-cell span,
+    body.panel-body
+    .pre-date-cell span {
+        font-size: 10px !important;
+    }
+
+    body.panel-body
+    .pre-action-approve,
+    body.panel-body
+    .pre-action-reject {
+        min-height: 31px !important;
+        padding: 0 10px !important;
+        font-size: 10px !important;
+    }
+
+    /* =====================================================
+       Admin tickets
+       ===================================================== */
+
+    body.panel-body
+    .admin-tickets-v2-page {
+        gap: 14px !important;
+    }
+
+    body.panel-body
+    .admin-tickets-v2-header {
+        min-height: 86px !important;
+        padding: 15px 17px !important;
+    }
+
+    body.panel-body
+    .admin-ticket-card {
+        padding: 14px !important;
+        border-radius: 14px !important;
+    }
+
+    body.panel-body
+    .admin-ticket-header {
+        margin-bottom: 13px !important;
+    }
+
+        body.panel-body
+        .admin-ticket-header h4 {
+            font-size: 15px !important;
+        }
+
+    body.panel-body
+    .admin-ticket-message {
+        padding: 11px !important;
+        border-radius: 11px !important;
+    }
+
+        body.panel-body
+        .admin-ticket-message p {
+            font-size: 12px !important;
+        }
+
+    /* =====================================================
+       Wallet overview
+       ===================================================== */
+
+    body.panel-body
+    .admin-wallet-summary-grid,
+    body.panel-body
+    .wallet-overview-kpi-grid {
+        gap: 10px !important;
+    }
+
+    body.panel-body
+    .admin-wallet-summary-card,
+    body.panel-body
+    .wallet-overview-kpi {
+        border-radius: 14px !important;
+    }
+
+    /* =====================================================
+       Deposit review
+       ===================================================== */
+
+    body.panel-body
+    .deposit-review-page-header {
+        gap: 15px !important;
+        margin-bottom: 16px !important;
+    }
+
+    body.panel-body
+    .deposit-review-table th,
+    body.panel-body
+    .deposit-review-table td {
+        padding: 9px 10px !important;
+        font-size: 11px !important;
+    }
+
+    body.panel-body
+    .deposit-review-dialog {
+        width: min( 570px, calc(100vw - 36px) ) !important;
+    }
+
+    body.panel-body
+    .deposit-review-dialog-header {
+        padding: 16px 18px 13px !important;
+    }
+
+    body.panel-body
+    .deposit-review-dialog-body {
+        padding: 14px 18px !important;
+    }
+
+    body.panel-body
+    .deposit-review-dialog-footer {
+        padding: 12px 18px 15px !important;
+    }
+
+    /* =====================================================
+       Admin modals
+       ===================================================== */
+
+    body.panel-body
+    .admin-modal,
+    body.panel-body
+    .pre-modal,
+    body.panel-body
+    .ow-modal,
+    body.panel-body
+    .tfr-modal-dialog {
+        border-radius: 16px !important;
+    }
+
+    body.panel-body
+    .admin-modal-header,
+    body.panel-body
+    .pre-modal-header,
+    body.panel-body
+    .ow-modal-header {
+        padding: 15px 17px !important;
+    }
+
+    body.panel-body
+    .admin-modal-body,
+    body.panel-body
+    .pre-modal-body,
+    body.panel-body
+    .ow-modal-body {
+        padding: 15px 17px !important;
+    }
+}
