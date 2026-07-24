@@ -1,4 +1,6 @@
-﻿
+﻿@{
+    ViewData["Title"] = "Profile";
+}
 <div class="profile-page">
 
     <!-- Profile Info -->
@@ -40,6 +42,331 @@
                 <strong id="kycStatus" class="profile-status">-</strong>
             </div>
         </div>
+    </div>
+
+
+    <!-- Google Authenticator -->
+    <div class="panel-card profile-2fa-card">
+
+        <div class="profile-header profile-2fa-header">
+
+            <div>
+                <h3>Google Authenticator</h3>
+
+                <p>
+                    Protect login and withdrawal operations with a
+                    time-based 6-digit security code.
+                </p>
+            </div>
+
+            <span id="twoFactorHeaderStatus"
+                  class="profile-2fa-badge loading">
+                Checking...
+            </span>
+
+        </div>
+
+        <div id="twoFactorLoading"
+             class="profile-2fa-loading">
+            Checking Google Authenticator status...
+        </div>
+
+        <!-- Disabled State -->
+        <section id="twoFactorDisabledState"
+                 class="profile-2fa-state"
+                 hidden>
+
+            <div class="profile-2fa-disabled-hero">
+
+                <div class="profile-2fa-shield">
+                    2FA
+                </div>
+
+                <div class="profile-2fa-disabled-copy">
+
+                    <span>Account Protection</span>
+
+                    <h4>Google Authenticator is disabled</h4>
+
+                    <p id="twoFactorDisabledDescription">
+                        Add an extra security layer to your account.
+                        After activation, a code from your phone will be
+                        required for login and withdrawal.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="profile-2fa-benefits">
+
+                <div>
+                    <strong>Login Protection</strong>
+
+                    <span>
+                        A password alone will not be enough to access
+                        your account.
+                    </span>
+                </div>
+
+                <div>
+                    <strong>Withdrawal Protection</strong>
+
+                    <span>
+                        Sensitive withdrawal requests require a code
+                        from your authenticator app.
+                    </span>
+                </div>
+
+                <div>
+                    <strong>Offline Codes</strong>
+
+                    <span>
+                        Google Authenticator generates codes even when
+                        your phone has no internet connection.
+                    </span>
+                </div>
+
+            </div>
+
+            <button id="startTwoFactorSetupBtn"
+                    type="button"
+                    class="panel-primary-btn profile-2fa-main-btn">
+                Enable Google Authenticator
+            </button>
+
+        </section>
+
+        <!-- Setup State -->
+        <section id="twoFactorSetupState"
+                 class="profile-2fa-state"
+                 hidden>
+
+            <div class="profile-2fa-setup-notice">
+
+                <span>!</span>
+
+                <p>
+                    Do not share the QR code or manual setup key.
+                    Anyone with this information can generate your
+                    authentication codes.
+                </p>
+
+            </div>
+
+            <div class="profile-2fa-setup-grid">
+
+                <div class="profile-2fa-qr-column">
+
+                    <span class="profile-2fa-step-label">
+                        Step 1
+                    </span>
+
+                    <h4>Scan the QR code</h4>
+
+                    <div class="profile-2fa-qr-box">
+
+                        <img id="twoFactorQrImage"
+                             alt="Google Authenticator setup QR code" />
+
+                    </div>
+
+                    <p>
+                        Open Google Authenticator, select
+                        <strong>Add a code</strong>, and scan this QR code.
+                    </p>
+
+                </div>
+
+                <div class="profile-2fa-verify-column">
+
+                    <span class="profile-2fa-step-label">
+                        Step 2
+                    </span>
+
+                    <h4>Confirm the setup</h4>
+
+                    <div class="profile-2fa-account-info">
+
+                        <div>
+                            <span>Issuer</span>
+
+                            <strong id="twoFactorIssuer">
+                                Otrade
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Account</span>
+
+                            <strong id="twoFactorAccountName">
+                                -
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div class="profile-2fa-manual-key">
+
+                        <div>
+                            <span>Manual setup key</span>
+
+                            <code id="twoFactorManualKey">
+                                -
+                            </code>
+                        </div>
+
+                        <button id="copyTwoFactorKeyBtn"
+                                type="button">
+                            Copy
+                        </button>
+
+                    </div>
+
+                    <div class="profile-2fa-expiry">
+
+                        <span>Setup expires in</span>
+
+                        <strong id="twoFactorSetupCountdown">
+                            15:00
+                        </strong>
+
+                    </div>
+
+                    <div class="profile-form-group">
+
+                        <label for="twoFactorSetupCode">
+                            6-digit authentication code
+                        </label>
+
+                        <input id="twoFactorSetupCode"
+                               class="panel-input profile-2fa-code-input"
+                               type="text"
+                               maxlength="6"
+                               inputmode="numeric"
+                               autocomplete="one-time-code"
+                               placeholder="000000" />
+
+                        <small>
+                            Enter the current code shown in Google
+                            Authenticator.
+                        </small>
+
+                    </div>
+
+                    <div class="profile-2fa-setup-actions">
+
+                        <button id="confirmTwoFactorBtn"
+                                type="button"
+                                class="panel-primary-btn">
+                            Verify and Enable
+                        </button>
+
+                        <button id="restartTwoFactorSetupBtn"
+                                type="button"
+                                class="profile-2fa-secondary-btn">
+                            Generate New QR
+                        </button>
+
+                        <button id="cancelTwoFactorSetupBtn"
+                                type="button"
+                                class="profile-2fa-link-btn">
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <!-- Enabled State -->
+        <section id="twoFactorEnabledState"
+                 class="profile-2fa-state"
+                 hidden>
+
+            <div class="profile-2fa-enabled-hero">
+
+                <div class="profile-2fa-shield enabled">
+                    ✓
+                </div>
+
+                <div>
+
+                    <span>Account Protection</span>
+
+                    <h4>Google Authenticator is enabled</h4>
+
+                    <p>
+                        Your account now requires a time-based security
+                        code for protected operations.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="profile-2fa-enabled-metrics">
+
+                <div>
+                    <span>Enabled At</span>
+
+                    <strong id="twoFactorEnabledAt">
+                        -
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Recovery Codes Remaining</span>
+
+                    <strong id="twoFactorRecoveryCount">
+                        0
+                    </strong>
+                </div>
+
+                <div>
+                    <span>Code Refresh</span>
+
+                    <strong>
+                        Every 30 Seconds
+                    </strong>
+                </div>
+
+            </div>
+
+            <div id="twoFactorRecoveryWarning"
+                 class="profile-2fa-recovery-warning"
+                 hidden>
+
+                <span>!</span>
+
+                <p>
+                    You have very few recovery codes remaining.
+                    Generate a new set and store it securely.
+                </p>
+
+            </div>
+
+            <div class="profile-2fa-enabled-actions">
+
+                <button id="regenerateRecoveryCodesBtn"
+                        type="button"
+                        class="profile-2fa-secondary-btn">
+                    Generate New Recovery Codes
+                </button>
+
+                <button id="disableTwoFactorBtn"
+                        type="button"
+                        class="profile-2fa-danger-btn">
+                    Disable Google Authenticator
+                </button>
+
+            </div>
+
+        </section>
+
     </div>
 
     <!-- USDT BEP20 Withdrawal Address -->
@@ -307,6 +634,213 @@
         </form>
     </div>
 
+
+    <!-- Two-Factor Security Action Modal -->
+    <div id="twoFactorActionModal"
+         class="profile-2fa-modal"
+         hidden>
+
+        <div class="profile-2fa-modal-backdrop"
+             data-close-two-factor-action>
+        </div>
+
+        <div class="profile-2fa-modal-dialog"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="twoFactorActionTitle">
+
+            <div class="profile-2fa-modal-header">
+
+                <div>
+                    <span class="profile-2fa-step-label">
+                        Security Verification
+                    </span>
+
+                    <h4 id="twoFactorActionTitle">
+                        Confirm Action
+                    </h4>
+                </div>
+
+                <button type="button"
+                        class="profile-2fa-modal-close"
+                        data-close-two-factor-action
+                        aria-label="Close">
+                    ×
+                </button>
+
+            </div>
+
+            <p id="twoFactorActionDescription"
+               class="profile-2fa-modal-description">
+            </p>
+
+            <form id="twoFactorActionForm"
+                  class="profile-2fa-action-form"
+                  autocomplete="off">
+
+                <div id="twoFactorActionPasswordGroup"
+                     class="profile-form-group"
+                     hidden>
+
+                    <label for="twoFactorActionPassword">
+                        Current Password
+                    </label>
+
+                    <div class="pre-password-wrap">
+
+                        <input id="twoFactorActionPassword"
+                               type="password"
+                               class="form-control auth-input"
+                               autocomplete="current-password"
+                               placeholder="Enter your current password" />
+
+                        <button type="button"
+                                class="pre-eye-btn"
+                                onclick="togglePassword('twoFactorActionPassword', this)"
+                                aria-label="Show password">
+
+                            <span class="eye-open">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 5C7 5 2.7 8.1 1 12c1.7 3.9 6 7 11 7s9.3-3.1 11-7c-1.7-3.9-6-7-11-7Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm0-2A2.5 2.5 0 1 0 12 9.5a2.5 2.5 0 0 0 0 5Z" />
+                                </svg>
+                            </span>
+
+                            <span class="eye-closed">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M3.3 2 2 3.3l3 3C3.2 7.6 1.8 9.6 1 12c1.7 3.9 6 7 11 7 2 0 3.9-.5 5.5-1.3l3.2 3.2 1.3-1.3L3.3 2Zm8.7 15c-3.8 0-7.1-2.1-8.8-5 .7-1.3 1.8-2.5 3.1-3.4l2.2 2.2A4.4 4.4 0 0 0 7.5 12 4.5 4.5 0 0 0 12 16.5c.4 0 .8-.1 1.2-.2l2 2A10.2 10.2 0 0 1 12 17Zm2.4-3.8c.1-.4.1-.8.1-1.2A4.5 4.5 0 0 0 10 7.5c-.4 0-.8.1-1.2.2L7.2 6.1C8.7 5.4 10.3 5 12 5c5 0 9.3 3.1 11 7a12.5 12.5 0 0 1-3.2 4.1l-2.1-2.1c.5-.6.8-1.3.8-2.1a2.5 2.5 0 0 0-2.5-2.5c-.8 0-1.5.3-2.1.8l-1.9-1.9c.1 0 .2-.1.3-.1A2.5 2.5 0 0 1 14.5 12c0 .1 0 .2-.1.3Z" />
+                                </svg>
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <div class="profile-form-group">
+
+                    <label id="twoFactorActionCodeLabel"
+                           for="twoFactorActionCode">
+                        Authentication Code
+                    </label>
+
+                    <input id="twoFactorActionCode"
+                           class="panel-input profile-2fa-code-input"
+                           type="text"
+                           maxlength="14"
+                           inputmode="text"
+                           autocomplete="one-time-code"
+                           placeholder="Enter your code" />
+
+                    <small id="twoFactorActionCodeHelp">
+                    </small>
+
+                </div>
+
+                <div class="profile-2fa-modal-actions">
+
+                    <button type="button"
+                            class="profile-2fa-secondary-btn"
+                            data-close-two-factor-action>
+                        Cancel
+                    </button>
+
+                    <button id="twoFactorActionSubmitBtn"
+                            type="submit"
+                            class="panel-primary-btn">
+                        Confirm
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- Recovery Codes Modal -->
+    <div id="recoveryCodesModal"
+         class="profile-2fa-modal"
+         hidden>
+
+        <div class="profile-2fa-modal-backdrop">
+        </div>
+
+        <div class="profile-2fa-modal-dialog recovery"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="recoveryCodesTitle">
+
+            <div class="profile-2fa-modal-header">
+
+                <div>
+                    <span class="profile-2fa-step-label">
+                        One-Time Display
+                    </span>
+
+                    <h4 id="recoveryCodesTitle">
+                        Save Your Recovery Codes
+                    </h4>
+                </div>
+
+            </div>
+
+            <div class="profile-2fa-recovery-alert">
+
+                <span>!</span>
+
+                <p>
+                    Each recovery code can be used only once.
+                    Store these codes somewhere safe. They will not be
+                    shown again after you close this window.
+                </p>
+
+            </div>
+
+            <div id="recoveryCodesList"
+                 class="profile-2fa-recovery-grid">
+            </div>
+
+            <div class="profile-2fa-recovery-tools">
+
+                <button id="copyRecoveryCodesBtn"
+                        type="button"
+                        class="profile-2fa-secondary-btn">
+                    Copy All
+                </button>
+
+                <button id="downloadRecoveryCodesBtn"
+                        type="button"
+                        class="profile-2fa-secondary-btn">
+                    Download TXT
+                </button>
+
+            </div>
+
+            <label class="profile-2fa-saved-check">
+
+                <input id="recoveryCodesSavedCheck"
+                       type="checkbox" />
+
+                <span>
+                    I have saved these recovery codes in a secure place.
+                </span>
+
+            </label>
+
+            <button id="closeRecoveryCodesBtn"
+                    type="button"
+                    class="panel-primary-btn profile-2fa-full-btn"
+                    disabled>
+                Finish
+            </button>
+
+        </div>
+
+    </div>
+
+
 </div>
 
 @section Scripts {
@@ -355,6 +889,126 @@
         const newPassword = document.getElementById("newPassword");
         const changePasswordBtn = document.getElementById("changePasswordBtn");
         const passwordMessage = document.getElementById("passwordMessage");
+
+        // Google Authenticator Elements
+        const twoFactorHeaderStatus =
+            document.getElementById("twoFactorHeaderStatus");
+
+        const twoFactorLoading =
+            document.getElementById("twoFactorLoading");
+
+        const twoFactorDisabledState =
+            document.getElementById("twoFactorDisabledState");
+
+        const twoFactorSetupState =
+            document.getElementById("twoFactorSetupState");
+
+        const twoFactorEnabledState =
+            document.getElementById("twoFactorEnabledState");
+
+        const twoFactorDisabledDescription =
+            document.getElementById("twoFactorDisabledDescription");
+
+        const startTwoFactorSetupBtn =
+            document.getElementById("startTwoFactorSetupBtn");
+
+        const twoFactorQrImage =
+            document.getElementById("twoFactorQrImage");
+
+        const twoFactorIssuer =
+            document.getElementById("twoFactorIssuer");
+
+        const twoFactorAccountName =
+            document.getElementById("twoFactorAccountName");
+
+        const twoFactorManualKey =
+            document.getElementById("twoFactorManualKey");
+
+        const copyTwoFactorKeyBtn =
+            document.getElementById("copyTwoFactorKeyBtn");
+
+        const twoFactorSetupCountdown =
+            document.getElementById("twoFactorSetupCountdown");
+
+        const twoFactorSetupCode =
+            document.getElementById("twoFactorSetupCode");
+
+        const confirmTwoFactorBtn =
+            document.getElementById("confirmTwoFactorBtn");
+
+        const restartTwoFactorSetupBtn =
+            document.getElementById("restartTwoFactorSetupBtn");
+
+        const cancelTwoFactorSetupBtn =
+            document.getElementById("cancelTwoFactorSetupBtn");
+
+        const twoFactorEnabledAt =
+            document.getElementById("twoFactorEnabledAt");
+
+        const twoFactorRecoveryCount =
+            document.getElementById("twoFactorRecoveryCount");
+
+        const twoFactorRecoveryWarning =
+            document.getElementById("twoFactorRecoveryWarning");
+
+        const regenerateRecoveryCodesBtn =
+            document.getElementById("regenerateRecoveryCodesBtn");
+
+        const disableTwoFactorBtn =
+            document.getElementById("disableTwoFactorBtn");
+
+        const twoFactorActionModal =
+            document.getElementById("twoFactorActionModal");
+
+        const twoFactorActionForm =
+            document.getElementById("twoFactorActionForm");
+
+        const twoFactorActionTitle =
+            document.getElementById("twoFactorActionTitle");
+
+        const twoFactorActionDescription =
+            document.getElementById("twoFactorActionDescription");
+
+        const twoFactorActionPasswordGroup =
+            document.getElementById("twoFactorActionPasswordGroup");
+
+        const twoFactorActionPassword =
+            document.getElementById("twoFactorActionPassword");
+
+        const twoFactorActionCodeLabel =
+            document.getElementById("twoFactorActionCodeLabel");
+
+        const twoFactorActionCode =
+            document.getElementById("twoFactorActionCode");
+
+        const twoFactorActionCodeHelp =
+            document.getElementById("twoFactorActionCodeHelp");
+
+        const twoFactorActionSubmitBtn =
+            document.getElementById("twoFactorActionSubmitBtn");
+
+        const recoveryCodesModal =
+            document.getElementById("recoveryCodesModal");
+
+        const recoveryCodesList =
+            document.getElementById("recoveryCodesList");
+
+        const copyRecoveryCodesBtn =
+            document.getElementById("copyRecoveryCodesBtn");
+
+        const downloadRecoveryCodesBtn =
+            document.getElementById("downloadRecoveryCodesBtn");
+
+        const recoveryCodesSavedCheck =
+            document.getElementById("recoveryCodesSavedCheck");
+
+        const closeRecoveryCodesBtn =
+            document.getElementById("closeRecoveryCodesBtn");
+
+        let twoFactorSetupExpiresAt = null;
+        let twoFactorSetupTimer = null;
+        let twoFactorActionMode = null;
+        let currentRecoveryCodes = [];
 
         // ---------------------
         // Helpers
@@ -611,6 +1265,944 @@
             element.style.display = "none";
         }
 
+        // ---------------------
+        // Google Authenticator Helpers
+        // ---------------------
+        function hideTwoFactorStates() {
+            twoFactorDisabledState.hidden = true;
+            twoFactorSetupState.hidden = true;
+            twoFactorEnabledState.hidden = true;
+        }
+
+        function setTwoFactorHeaderStatus(status, text) {
+            twoFactorHeaderStatus.className =
+                `profile-2fa-badge ${status}`;
+
+            twoFactorHeaderStatus.innerText =
+                text;
+        }
+
+        function formatTwoFactorDate(value) {
+            if (!value) {
+                return "-";
+            }
+
+            const date =
+                new Date(value);
+
+            if (Number.isNaN(date.getTime())) {
+                return "-";
+            }
+
+            return date.toLocaleString(
+                "en-US",
+                {
+                    year: "numeric",
+                    month: "short",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+        }
+
+        function normalizeSixDigitCode(value) {
+            return String(value || "")
+                .replace(/\D/g, "")
+                .slice(0, 6);
+        }
+
+        function isValidSixDigitCode(value) {
+            return /^\d{6}$/.test(
+                String(value || "")
+            );
+        }
+
+        function sanitizeTwoFactorSetupCode() {
+            const cleaned =
+                normalizeSixDigitCode(
+                    twoFactorSetupCode.value
+                );
+
+            if (
+                twoFactorSetupCode.value !==
+                cleaned
+            ) {
+                twoFactorSetupCode.value =
+                    cleaned;
+            }
+        }
+
+        function isSafeQrCodeDataUrl(value) {
+            const dataUrl =
+                String(value || "");
+
+            return dataUrl.startsWith(
+                "data:image/svg+xml;base64,"
+            );
+        }
+
+        function clearTwoFactorSetupTimer() {
+            if (twoFactorSetupTimer) {
+                window.clearInterval(
+                    twoFactorSetupTimer
+                );
+
+                twoFactorSetupTimer = null;
+            }
+        }
+
+        function updateTwoFactorSetupCountdown() {
+            if (!twoFactorSetupExpiresAt) {
+                twoFactorSetupCountdown.innerText =
+                    "--:--";
+
+                return;
+            }
+
+            const remainingMilliseconds =
+                twoFactorSetupExpiresAt.getTime() -
+                Date.now();
+
+            if (remainingMilliseconds <= 0) {
+                clearTwoFactorSetupTimer();
+
+                twoFactorSetupCountdown.innerText =
+                    "Expired";
+
+                confirmTwoFactorBtn.disabled =
+                    true;
+
+                twoFactorSetupCode.disabled =
+                    true;
+
+                return;
+            }
+
+            const totalSeconds =
+                Math.floor(
+                    remainingMilliseconds / 1000
+                );
+
+            const minutes =
+                Math.floor(totalSeconds / 60);
+
+            const seconds =
+                totalSeconds % 60;
+
+            twoFactorSetupCountdown.innerText =
+                `${String(minutes).padStart(2, "0")}:` +
+                `${String(seconds).padStart(2, "0")}`;
+        }
+
+        function startTwoFactorSetupCountdown(expiresAt) {
+            clearTwoFactorSetupTimer();
+
+            const parsedDate =
+                new Date(expiresAt);
+
+            if (Number.isNaN(parsedDate.getTime())) {
+                twoFactorSetupExpiresAt =
+                    null;
+
+                twoFactorSetupCountdown.innerText =
+                    "--:--";
+
+                return;
+            }
+
+            twoFactorSetupExpiresAt =
+                parsedDate;
+
+            confirmTwoFactorBtn.disabled =
+                false;
+
+            twoFactorSetupCode.disabled =
+                false;
+
+            updateTwoFactorSetupCountdown();
+
+            twoFactorSetupTimer =
+                window.setInterval(
+                    updateTwoFactorSetupCountdown,
+                    1000
+                );
+        }
+
+        async function copyTextToClipboard(
+            value,
+            successMessage
+        ) {
+            const text =
+                String(value || "").trim();
+
+            if (!text) {
+                showNotification(
+                    "There is nothing to copy.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            try {
+                if (
+                    navigator.clipboard &&
+                    window.isSecureContext
+                ) {
+                    await navigator.clipboard
+                        .writeText(text);
+                } else {
+                    const temporaryInput =
+                        document.createElement(
+                            "textarea"
+                        );
+
+                    temporaryInput.value =
+                        text;
+
+                    temporaryInput.style.position =
+                        "fixed";
+
+                    temporaryInput.style.opacity =
+                        "0";
+
+                    document.body.appendChild(
+                        temporaryInput
+                    );
+
+                    temporaryInput.focus();
+                    temporaryInput.select();
+
+                    const copied =
+                        document.execCommand(
+                            "copy"
+                        );
+
+                    temporaryInput.remove();
+
+                    if (!copied) {
+                        throw new Error(
+                            "Clipboard copy failed."
+                        );
+                    }
+                }
+
+                showNotification(
+                    successMessage ||
+                    "Copied successfully.",
+                    "success"
+                );
+
+            } catch {
+                showNotification(
+                    "Could not copy automatically. Please copy it manually.",
+                    "error"
+                );
+            }
+        }
+
+        function syncTwoFactorModalBodyState() {
+            const hasOpenModal =
+                !twoFactorActionModal.hidden ||
+                !recoveryCodesModal.hidden;
+
+            document.body.classList.toggle(
+                "profile-2fa-modal-open",
+                hasOpenModal
+            );
+        }
+
+        function closeTwoFactorActionModal() {
+            twoFactorActionModal.hidden =
+                true;
+
+            twoFactorActionMode =
+                null;
+
+            twoFactorActionPassword.value =
+                "";
+
+            twoFactorActionCode.value =
+                "";
+
+            twoFactorActionSubmitBtn.disabled =
+                false;
+
+            twoFactorActionSubmitBtn.innerText =
+                "Confirm";
+
+            syncTwoFactorModalBodyState();
+        }
+
+        function openTwoFactorActionModal(mode) {
+            twoFactorActionMode =
+                mode;
+
+            twoFactorActionPassword.value =
+                "";
+
+            twoFactorActionCode.value =
+                "";
+
+            if (mode === "disable") {
+                twoFactorActionTitle.innerText =
+                    "Disable Google Authenticator";
+
+                twoFactorActionDescription.innerText =
+                    "Enter your current password and either a current 6-digit code or an unused recovery code.";
+
+                twoFactorActionPasswordGroup.hidden =
+                    false;
+
+                twoFactorActionCodeLabel.innerText =
+                    "Authentication or Recovery Code";
+
+                twoFactorActionCodeHelp.innerText =
+                    "A recovery code can be used if you no longer have access to the authenticator app.";
+
+                twoFactorActionSubmitBtn.innerText =
+                    "Disable Google Authenticator";
+
+                twoFactorActionSubmitBtn.classList.add(
+                    "danger"
+                );
+            } else {
+                twoFactorActionTitle.innerText =
+                    "Generate New Recovery Codes";
+
+                twoFactorActionDescription.innerText =
+                    "Enter the current 6-digit Google Authenticator code. All existing recovery codes will be invalidated.";
+
+                twoFactorActionPasswordGroup.hidden =
+                    true;
+
+                twoFactorActionCodeLabel.innerText =
+                    "6-digit Authentication Code";
+
+                twoFactorActionCodeHelp.innerText =
+                    "Enter the current code shown in Google Authenticator.";
+
+                twoFactorActionSubmitBtn.innerText =
+                    "Generate New Codes";
+
+                twoFactorActionSubmitBtn.classList.remove(
+                    "danger"
+                );
+            }
+
+            twoFactorActionModal.hidden =
+                false;
+
+            syncTwoFactorModalBodyState();
+
+            window.setTimeout(
+                () => {
+                    if (mode === "disable") {
+                        twoFactorActionPassword.focus();
+                    } else {
+                        twoFactorActionCode.focus();
+                    }
+                },
+                50
+            );
+        }
+
+        function renderRecoveryCodes(codes) {
+            currentRecoveryCodes =
+                Array.isArray(codes)
+                    ? codes
+                        .map(code =>
+                            String(code || "").trim()
+                        )
+                        .filter(Boolean)
+                    : [];
+
+            recoveryCodesList.innerHTML =
+                "";
+
+            currentRecoveryCodes.forEach(
+                (code, index) => {
+                    const item =
+                        document.createElement(
+                            "div"
+                        );
+
+                    item.className =
+                        "profile-2fa-recovery-code";
+
+                    const number =
+                        document.createElement(
+                            "span"
+                        );
+
+                    number.innerText =
+                        String(index + 1)
+                            .padStart(2, "0");
+
+                    const codeElement =
+                        document.createElement(
+                            "code"
+                        );
+
+                    codeElement.innerText =
+                        code;
+
+                    item.append(
+                        number,
+                        codeElement
+                    );
+
+                    recoveryCodesList.appendChild(
+                        item
+                    );
+                }
+            );
+
+            recoveryCodesSavedCheck.checked =
+                false;
+
+            closeRecoveryCodesBtn.disabled =
+                true;
+
+            recoveryCodesModal.hidden =
+                false;
+
+            syncTwoFactorModalBodyState();
+        }
+
+        function closeRecoveryCodesModal() {
+            if (
+                !recoveryCodesSavedCheck.checked
+            ) {
+                showNotification(
+                    "Confirm that you saved the recovery codes first.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            recoveryCodesModal.hidden =
+                true;
+
+            currentRecoveryCodes =
+                [];
+
+            recoveryCodesList.innerHTML =
+                "";
+
+            recoveryCodesSavedCheck.checked =
+                false;
+
+            closeRecoveryCodesBtn.disabled =
+                true;
+
+            syncTwoFactorModalBodyState();
+        }
+
+        function downloadRecoveryCodes() {
+            if (!currentRecoveryCodes.length) {
+                showNotification(
+                    "No recovery codes are available.",
+                    "warning"
+                );
+
+                return;
+            }
+
+            const content = [
+                "Otrade Google Authenticator Recovery Codes",
+                "Generated: " +
+                    new Date().toLocaleString("en-US"),
+                "",
+                ...currentRecoveryCodes,
+                "",
+                "Each code can be used only once.",
+                "Store this file in a secure location."
+            ].join("\r\n");
+
+            const blob =
+                new Blob(
+                    [content],
+                    {
+                        type:
+                            "text/plain;charset=utf-8"
+                    }
+                );
+
+            const url =
+                URL.createObjectURL(blob);
+
+            const link =
+                document.createElement("a");
+
+            link.href =
+                url;
+
+            link.download =
+                "otrade-recovery-codes.txt";
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            URL.revokeObjectURL(url);
+
+            showNotification(
+                "Recovery codes downloaded.",
+                "success"
+            );
+        }
+
+        // ---------------------
+        // Google Authenticator API
+        // ---------------------
+        async function loadTwoFactorStatus() {
+            hideTwoFactorStates();
+
+            twoFactorLoading.hidden =
+                false;
+
+            setTwoFactorHeaderStatus(
+                "loading",
+                "Checking..."
+            );
+
+            try {
+                const result = await api(
+                    "/api/security/two-factor/status",
+                    {
+                        method: "GET"
+                    }
+                );
+
+                if (!result || !result.success) {
+                    throw new Error(
+                        result?.message ||
+                        "Could not load Google Authenticator status."
+                    );
+                }
+
+                const data =
+                    result.data || {};
+
+                twoFactorLoading.hidden =
+                    true;
+
+                if (data.isEnabled) {
+                    setTwoFactorHeaderStatus(
+                        "enabled",
+                        "Enabled"
+                    );
+
+                    twoFactorEnabledState.hidden =
+                        false;
+
+                    twoFactorEnabledAt.innerText =
+                        formatTwoFactorDate(
+                            data.enabledAt
+                        );
+
+                    const recoveryCount =
+                        Number(
+                            data.recoveryCodesRemaining ||
+                            0
+                        );
+
+                    twoFactorRecoveryCount.innerText =
+                        recoveryCount.toLocaleString(
+                            "en-US"
+                        );
+
+                    twoFactorRecoveryCount.classList.toggle(
+                        "low",
+                        recoveryCount <= 2
+                    );
+
+                    twoFactorRecoveryWarning.hidden =
+                        recoveryCount > 2;
+
+                    return;
+                }
+
+                setTwoFactorHeaderStatus(
+                    data.hasPendingSetup
+                        ? "pending"
+                        : "disabled",
+                    data.hasPendingSetup
+                        ? "Setup Pending"
+                        : "Disabled"
+                );
+
+                twoFactorDisabledState.hidden =
+                    false;
+
+                if (data.hasPendingSetup) {
+                    twoFactorDisabledDescription.innerText =
+                        "A previous setup is still pending. For security, generate a new QR code to continue activation.";
+
+                    startTwoFactorSetupBtn.innerText =
+                        "Generate New Setup";
+                } else {
+                    twoFactorDisabledDescription.innerText =
+                        "Add an extra security layer to your account. After activation, a code from your phone will be required for login and withdrawal.";
+
+                    startTwoFactorSetupBtn.innerText =
+                        "Enable Google Authenticator";
+                }
+
+            } catch (error) {
+                twoFactorLoading.hidden =
+                    false;
+
+                twoFactorLoading.innerText =
+                    error.message ||
+                    "Could not load Google Authenticator status.";
+
+                setTwoFactorHeaderStatus(
+                    "error",
+                    "Unavailable"
+                );
+            }
+        }
+
+        async function createTwoFactorSetup(
+            triggerButton
+        ) {
+            const button =
+                triggerButton ||
+                startTwoFactorSetupBtn;
+
+            const originalText =
+                button.innerText;
+
+            button.disabled =
+                true;
+
+            button.innerText =
+                "Creating Setup...";
+
+            try {
+                const result = await api(
+                    "/api/security/two-factor/setup",
+                    {
+                        method: "POST"
+                    }
+                );
+
+                if (!result || !result.success) {
+                    showNotification(
+                        result?.message ||
+                        "Could not create the Google Authenticator setup.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                const data =
+                    result.data || {};
+
+                if (
+                    !isSafeQrCodeDataUrl(
+                        data.qrCodeDataUrl
+                    )
+                ) {
+                    showNotification(
+                        "The QR code returned by the server is invalid.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                hideTwoFactorStates();
+
+                setTwoFactorHeaderStatus(
+                    "pending",
+                    "Setup Pending"
+                );
+
+                twoFactorSetupState.hidden =
+                    false;
+
+                twoFactorQrImage.src =
+                    data.qrCodeDataUrl;
+
+                twoFactorIssuer.innerText =
+                    data.issuer || "Otrade";
+
+                twoFactorAccountName.innerText =
+                    data.accountName || "-";
+
+                twoFactorManualKey.innerText =
+                    data.manualEntryKey || "-";
+
+                twoFactorSetupCode.value =
+                    "";
+
+                startTwoFactorSetupCountdown(
+                    data.expiresAt
+                );
+
+                twoFactorSetupCode.focus();
+
+                showNotification(
+                    result.message ||
+                    "Google Authenticator setup created.",
+                    "success"
+                );
+
+            } catch (error) {
+                showNotification(
+                    error.message ||
+                    "Could not create the Google Authenticator setup.",
+                    "error"
+                );
+
+            } finally {
+                button.disabled =
+                    false;
+
+                button.innerText =
+                    originalText;
+            }
+        }
+
+        async function enableTwoFactor() {
+            sanitizeTwoFactorSetupCode();
+
+            const code =
+                twoFactorSetupCode.value;
+
+            if (!isValidSixDigitCode(code)) {
+                showNotification(
+                    "Enter the current 6-digit Google Authenticator code.",
+                    "warning"
+                );
+
+                twoFactorSetupCode.focus();
+                return;
+            }
+
+            confirmTwoFactorBtn.disabled =
+                true;
+
+            confirmTwoFactorBtn.innerText =
+                "Verifying...";
+
+            try {
+                const result = await api(
+                    "/api/security/two-factor/enable",
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            code: code
+                        })
+                    }
+                );
+
+                if (!result || !result.success) {
+                    showNotification(
+                        result?.message ||
+                        "Could not enable Google Authenticator.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                clearTwoFactorSetupTimer();
+
+                showNotification(
+                    result.message ||
+                    "Google Authenticator enabled successfully.",
+                    "success"
+                );
+
+                await loadTwoFactorStatus();
+
+                const codes =
+                    result.data?.recoveryCodes ||
+                    [];
+
+                if (codes.length) {
+                    renderRecoveryCodes(codes);
+                }
+
+            } catch (error) {
+                showNotification(
+                    error.message ||
+                    "Could not enable Google Authenticator.",
+                    "error"
+                );
+
+            } finally {
+                confirmTwoFactorBtn.disabled =
+                    false;
+
+                confirmTwoFactorBtn.innerText =
+                    "Verify and Enable";
+            }
+        }
+
+        async function submitTwoFactorAction(
+            event
+        ) {
+            event.preventDefault();
+
+            const code =
+                String(
+                    twoFactorActionCode.value ||
+                    ""
+                ).trim();
+
+            if (!code) {
+                showNotification(
+                    "Authentication code is required.",
+                    "warning"
+                );
+
+                twoFactorActionCode.focus();
+                return;
+            }
+
+            if (
+                twoFactorActionMode ===
+                "regenerate" &&
+                !isValidSixDigitCode(code)
+            ) {
+                showNotification(
+                    "Enter a valid 6-digit Google Authenticator code.",
+                    "warning"
+                );
+
+                twoFactorActionCode.focus();
+                return;
+            }
+
+            const originalText =
+                twoFactorActionSubmitBtn.innerText;
+
+            twoFactorActionSubmitBtn.disabled =
+                true;
+
+            twoFactorActionSubmitBtn.innerText =
+                "Processing...";
+
+            try {
+                if (
+                    twoFactorActionMode ===
+                    "disable"
+                ) {
+                    const password =
+                        twoFactorActionPassword.value;
+
+                    if (!password) {
+                        showNotification(
+                            "Current password is required.",
+                            "warning"
+                        );
+
+                        twoFactorActionPassword.focus();
+                        return;
+                    }
+
+                    const result = await api(
+                        "/api/security/two-factor/disable",
+                        {
+                            method: "POST",
+                            body: JSON.stringify({
+                                password: password,
+                                code: code
+                            })
+                        }
+                    );
+
+                    if (
+                        !result ||
+                        !result.success
+                    ) {
+                        showNotification(
+                            result?.message ||
+                            "Could not disable Google Authenticator.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    closeTwoFactorActionModal();
+
+                    showNotification(
+                        result.message ||
+                        "Google Authenticator disabled successfully.",
+                        "success"
+                    );
+
+                    await loadTwoFactorStatus();
+
+                    return;
+                }
+
+                const result = await api(
+                    "/api/security/two-factor/recovery-codes/regenerate",
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            code: code
+                        })
+                    }
+                );
+
+                if (
+                    !result ||
+                    !result.success
+                ) {
+                    showNotification(
+                        result?.message ||
+                        "Could not generate new recovery codes.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                closeTwoFactorActionModal();
+
+                showNotification(
+                    result.message ||
+                    "New recovery codes generated successfully.",
+                    "success"
+                );
+
+                await loadTwoFactorStatus();
+
+                const codes =
+                    result.data?.recoveryCodes ||
+                    [];
+
+                if (codes.length) {
+                    renderRecoveryCodes(codes);
+                }
+
+            } catch (error) {
+                showNotification(
+                    error.message ||
+                    "Could not complete the security operation.",
+                    "error"
+                );
+
+            } finally {
+                twoFactorActionSubmitBtn.disabled =
+                    false;
+
+                twoFactorActionSubmitBtn.innerText =
+                    originalText;
+            }
+        }
+
         function isValidUsdtBep20Address(value) {
             const address = String(value || "").trim();
 
@@ -738,6 +2330,194 @@
                 profileMessage.style.display = "block";
             }
         }
+
+        // ---------------------
+        // Google Authenticator Events
+        // ---------------------
+        startTwoFactorSetupBtn.addEventListener(
+            "click",
+            function () {
+                createTwoFactorSetup(
+                    startTwoFactorSetupBtn
+                );
+            }
+        );
+
+        restartTwoFactorSetupBtn.addEventListener(
+            "click",
+            function () {
+                createTwoFactorSetup(
+                    restartTwoFactorSetupBtn
+                );
+            }
+        );
+
+        cancelTwoFactorSetupBtn.addEventListener(
+            "click",
+            async function () {
+                clearTwoFactorSetupTimer();
+
+                twoFactorQrImage.removeAttribute(
+                    "src"
+                );
+
+                twoFactorSetupCode.value =
+                    "";
+
+                await loadTwoFactorStatus();
+            }
+        );
+
+        copyTwoFactorKeyBtn.addEventListener(
+            "click",
+            function () {
+                copyTextToClipboard(
+                    twoFactorManualKey.innerText,
+                    "Manual setup key copied."
+                );
+            }
+        );
+
+        twoFactorSetupCode.addEventListener(
+            "input",
+            sanitizeTwoFactorSetupCode
+        );
+
+        twoFactorSetupCode.addEventListener(
+            "keydown",
+            function (event) {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    enableTwoFactor();
+                }
+            }
+        );
+
+        confirmTwoFactorBtn.addEventListener(
+            "click",
+            enableTwoFactor
+        );
+
+        regenerateRecoveryCodesBtn.addEventListener(
+            "click",
+            async function () {
+                const confirmed =
+                    await showConfirm(
+                        "Generating new recovery codes will permanently invalidate every existing recovery code.",
+                        "Generate New Recovery Codes"
+                    );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                openTwoFactorActionModal(
+                    "regenerate"
+                );
+            }
+        );
+
+        disableTwoFactorBtn.addEventListener(
+            "click",
+            async function () {
+                const confirmed =
+                    await showConfirm(
+                        "Disabling Google Authenticator will remove the extra protection from login and withdrawal.",
+                        "Disable Google Authenticator"
+                    );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                openTwoFactorActionModal(
+                    "disable"
+                );
+            }
+        );
+
+        document
+            .querySelectorAll(
+                "[data-close-two-factor-action]"
+            )
+            .forEach(element => {
+                element.addEventListener(
+                    "click",
+                    closeTwoFactorActionModal
+                );
+            });
+
+        twoFactorActionForm.addEventListener(
+            "submit",
+            submitTwoFactorAction
+        );
+
+        twoFactorActionCode.addEventListener(
+            "input",
+            function () {
+                if (
+                    twoFactorActionMode !==
+                    "regenerate"
+                ) {
+                    twoFactorActionCode.value =
+                        String(
+                            twoFactorActionCode.value ||
+                            ""
+                        )
+                        .replace(/\s+/g, "")
+                        .slice(0, 14);
+
+                    return;
+                }
+
+                twoFactorActionCode.value =
+                    normalizeSixDigitCode(
+                        twoFactorActionCode.value
+                    );
+            }
+        );
+
+        recoveryCodesSavedCheck.addEventListener(
+            "change",
+            function () {
+                closeRecoveryCodesBtn.disabled =
+                    !recoveryCodesSavedCheck.checked;
+            }
+        );
+
+        copyRecoveryCodesBtn.addEventListener(
+            "click",
+            function () {
+                copyTextToClipboard(
+                    currentRecoveryCodes.join(
+                        "\n"
+                    ),
+                    "Recovery codes copied."
+                );
+            }
+        );
+
+        downloadRecoveryCodesBtn.addEventListener(
+            "click",
+            downloadRecoveryCodes
+        );
+
+        closeRecoveryCodesBtn.addEventListener(
+            "click",
+            closeRecoveryCodesModal
+        );
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+                if (
+                    event.key === "Escape" &&
+                    !twoFactorActionModal.hidden
+                ) {
+                    closeTwoFactorActionModal();
+                }
+            }
+        );
 
         // ---------------------
         // USDT BEP20 Wallet Address
@@ -965,6 +2745,8 @@
         updateWalletAddressState();
 
         setSubmitKycVisible(false);
+
         loadProfile();
+        loadTwoFactorStatus();
     </script>
 }   

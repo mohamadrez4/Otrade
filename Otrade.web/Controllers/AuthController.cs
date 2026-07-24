@@ -184,7 +184,29 @@ public class AuthController : Controller
 
         return Ok(result);
     }
+    [HttpPost]
+    [Route("api/auth/verify-two-factor")]
+    [ResponseCache(NoStore = true,Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult>VerifyTwoFactorLogin([FromBody] VerifyLoginTwoFactorRequest request)
+    {
+        var result =
+            await _authService
+                .VerifyLoginTwoFactorAsync(
+                    request);
 
+        if (!result.Success)
+        {
+            return BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+    [HttpGet("/auth/two-factor")]
+    [ResponseCache(NoStore = true,Location = ResponseCacheLocation.None)]
+    public IActionResult TwoFactor()
+    {
+        return View();
+    }
     [HttpPost]
     [Route("api/auth/forgot-password")]
     public async Task<IActionResult> ForgetPassword([FromBody] ResendVerificationRequest request)

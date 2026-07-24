@@ -15,19 +15,20 @@ public class AuthService
     private readonly JwtService _jwtService;
     private readonly IEmailTemplateService _emailTemplateService;
     private readonly INotificationQueue _notificationQueue;
-
+    private readonly TwoFactorAuthenticationService _twoFactorAuthenticationService;
     public AuthService(
         OtradeDbContext context,
         JwtService jwtService,
         IEmailTemplateService emailTemplateService,
-        INotificationQueue notificationQueue)
+        INotificationQueue notificationQueue,
+        TwoFactorAuthenticationService twoFactorAuthenticationService)
     {
         _context = context;
         _jwtService = jwtService;
         _emailTemplateService = emailTemplateService;
         _notificationQueue = notificationQueue;
+        _twoFactorAuthenticationService = twoFactorAuthenticationService;
     }
-    // REGISTER
     public async Task<ApiResponse<bool>> RegisterAsync(RegisterRequest request)
     {
         if (request.FirstName == null || request.FirstName == string.Empty)
@@ -96,45 +97,162 @@ public class AuthService
             verificationEmailBody);
         return ResponseFactory.Success(true, "verification code send");
     }
-    // LOGIN
-    public async Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest request)
+    public async Task<ApiResponse<LoginResponse>>LoginAsync(LoginRequest request)
     {
-        var user = await _context.Users
-            .FirstOrDefaultAsync(x => x.Email == request.Email);
+        if (
+            request == null ||
+            string.IsNullOrWhiteSpace(
+                request.Email) ||
+            string.IsNullOrWhiteSpace(
+                request.Password)
+        )
+        {
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    "Invalid credentials");
+        }
+
+        var normalizedEmail =
+            request.Email.Trim();
+
+        var user =
+            await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Email ==
+                    normalizedEmail);
 
         if (user == null)
-            return ResponseFactory.Fail<LoginResponse>("Invalid credentials");
+        {
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    "Invalid credentials");
+        }
 
-        var isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+        var isValid =
+            BCrypt.Net.BCrypt.Verify(
+                request.Password,
+                user.PasswordHash);
 
         if (!isValid)
-            return ResponseFactory.Fail<LoginResponse>("Invalid credentials");
+        {
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    "Invalid credentials");
+        }
 
         if (!user.EmailConfirmed)
-            return ResponseFactory.Fail<LoginResponse>("Email not verified");
-        var token = _jwtService.GenerateToken(
-                   user.UserId,
-                   user.Email,
-                   user.IsAdmin,
-                   user.IsOwner);
-
-        var response = new LoginResponse
         {
-            UserId = user.UserId,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            ReferralCode = user.ReferralCode,
-            IsAdmin = user.IsAdmin,
-            IsOwner = user.IsOwner,
-            EmailConfirmed = user.EmailConfirmed,
-            KycStatus = user.KycStatus.ToString(),
-            Token = token
-        };
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    "Email not verified");
+        }
 
-        return ResponseFactory.Success(response,"Login successful.");
+        if (user.IsTotpEnabled)
+        {
+            var challenge =
+                await _twoFactorAuthenticationService
+                    .CreateLoginChallengeAsync(
+                        user.UserId);
+
+            if (
+                !challenge.Success ||
+                challenge.Data == null
+            )
+            {
+                return ResponseFactory
+                    .Fail<LoginResponse>(
+                        challenge.Message);
+            }
+
+            var challengeResponse =
+                new LoginResponse
+                {
+                    RequiresTwoFactor =
+                        true,
+
+                    ChallengeToken =
+                        challenge.Data
+                            .ChallengeToken,
+
+                    ChallengeExpiresAt =
+                        challenge.Data
+                            .ExpiresAt,
+
+                    Token =
+                        string.Empty
+                };
+
+            return ResponseFactory.Success(
+                challengeResponse,
+                "Two-factor authentication is required.");
+        }
+
+        var response =
+            CreateSuccessfulLoginResponse(
+                user);
+
+        return ResponseFactory.Success(
+            response,
+            "Login successful.");
     }
+    public async Task<ApiResponse<LoginResponse>>VerifyLoginTwoFactorAsync(VerifyLoginTwoFactorRequest request)
+    {
+        if (
+            request == null ||
+            string.IsNullOrWhiteSpace(
+                request.ChallengeToken) ||
+            string.IsNullOrWhiteSpace(
+                request.Code)
+        )
+        {
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    "Invalid authentication request.");
+        }
 
+        var verification =
+            await _twoFactorAuthenticationService
+                .VerifyLoginChallengeAsync(
+                    request.ChallengeToken,
+                    request.Code);
+
+        if (
+            !verification.Success ||
+            verification.Data <= 0
+        )
+        {
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    verification.Message);
+        }
+
+        var user =
+            await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.UserId ==
+                    verification.Data);
+
+        if (
+            user == null ||
+            !user.EmailConfirmed ||
+            !user.IsTotpEnabled
+        )
+        {
+            return ResponseFactory
+                .Fail<LoginResponse>(
+                    "The login verification request is invalid or expired.");
+        }
+
+        var response =
+            CreateSuccessfulLoginResponse(
+                user);
+
+        return ResponseFactory.Success(
+            response,
+            "Login successful.");
+    }
     public async Task<ApiResponse<bool>> VerifyEmailAsync(VerifyEmailRequest request)
     {
         var user = await _context.Users
@@ -230,7 +348,6 @@ public class AuthService
             true,
             "Email verified successfully.");
     }
-
     public async Task<ApiResponse<bool>> ForgotPasswordAsync(ResendVerificationRequest request)
     {
         var user = await _context.Users
@@ -333,7 +450,56 @@ public class AuthService
 
         return ResponseFactory.Success(true, "Password changed successfully");
     }
+    private LoginResponse CreateSuccessfulLoginResponse(User user)
+    {           var token =
+                _jwtService.GenerateToken(
+                user.UserId,
+                user.Email,
+                user.IsAdmin,
+                user.IsOwner);
 
+        return new LoginResponse
+        {
+            UserId =
+                user.UserId,
+
+            FirstName =
+                user.FirstName,
+
+            LastName =
+                user.LastName,
+
+            Email =
+                user.Email,
+
+            ReferralCode =
+                user.ReferralCode,
+
+            IsAdmin =
+                user.IsAdmin,
+
+            IsOwner =
+                user.IsOwner,
+
+            EmailConfirmed =
+                user.EmailConfirmed,
+
+            KycStatus =
+                user.KycStatus.ToString(),
+
+            Token =
+                token,
+
+            RequiresTwoFactor =
+                false,
+
+            ChallengeToken =
+                string.Empty,
+
+            ChallengeExpiresAt =
+                null
+        };
+    }
     private async Task AddReferralRelationsAsync(long newUserId, long? sponsorId)
     {
         if (sponsorId == null)

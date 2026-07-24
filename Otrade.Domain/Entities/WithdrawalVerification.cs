@@ -13,7 +13,7 @@ public class WithdrawalVerification
     public string WalletAddress { get; set; } = string.Empty;
 
     public string Network { get; set; } = string.Empty;
-
+    public WithdrawalVerificationMethod VerificationMethod { get; set; }
     public string CodeHash { get; set; } = string.Empty;
 
     public WithdrawalVerificationStatus Status { get; set; }

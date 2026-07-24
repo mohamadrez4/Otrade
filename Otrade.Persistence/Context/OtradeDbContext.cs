@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Otrade.Domain.Entities;
+using Otrade.Domain.Enums;
 using System.Diagnostics.Contracts;
 using System.Net.Sockets;
 
@@ -65,6 +66,8 @@ public class OtradeDbContext : DbContext
     public DbSet<EmailVerificationCode> EmailVerificationCodes { get; set; }
     public DbSet<InternalTransferVerification> InternalTransferVerifications => Set<InternalTransferVerification>();
     public DbSet<WithdrawalVerification> WithdrawalVerifications => Set<WithdrawalVerification>();
+    public DbSet<TwoFactorLoginChallenge> TwoFactorLoginChallenges => Set<TwoFactorLoginChallenge>();
+    public DbSet<UserRecoveryCode> UserRecoveryCodes => Set<UserRecoveryCode>();
     public DbSet<UserWalletAddress> UserWalletAddresses { get; set; }
     public DbSet<WalletBalanceSnapshot> WalletBalanceSnapshots { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -102,6 +105,18 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.AdminRole)
                 .HasConversion<string>()
                 .HasMaxLength(30);
+            entity.Property(x => x.IsTotpEnabled)
+                    .HasDefaultValue(false)
+                .IsRequired();
+
+            entity.Property(x => x.TotpSecretEncrypted)
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.TotpSetupCreatedAt);
+
+            entity.Property(x => x.TotpEnabledAt);
+
+            entity.Property(x => x.LastAcceptedTotpStep);
             // Sponsor FK
             entity.HasOne(x => x.Sponsor)
                 .WithMany()
@@ -419,7 +434,11 @@ public class OtradeDbContext : DbContext
             entity.Property(x => x.Network)
                 .IsRequired()
                 .HasMaxLength(50);
-
+            entity.Property(x => x.VerificationMethod)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(WithdrawalVerificationMethod.Email)
+                .IsRequired();
             entity.Property(x => x.CodeHash)
                 .IsRequired()
                 .HasMaxLength(300);
@@ -438,6 +457,62 @@ public class OtradeDbContext : DbContext
                 x.UserId,
                 x.Status,
                 x.CreatedAt
+            });
+        });
+        modelBuilder.Entity<TwoFactorLoginChallenge>(entity =>
+        {
+            entity.ToTable("TwoFactorLoginChallenges");
+
+            entity.HasKey(x => x.ChallengeId);
+
+            entity.Property(x => x.TokenHash)
+                .IsRequired()
+                .HasMaxLength(64)
+                .IsUnicode(false);
+
+            entity.Property(x => x.Attempts)
+                .HasDefaultValue(0)
+                .IsRequired();
+
+            entity.Property(x => x.IsUsed)
+                .HasDefaultValue(false)
+                .IsRequired();
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.TwoFactorLoginChallenges)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => x.TokenHash)
+                .IsUnique();
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.IsUsed,
+                x.ExpiresAt
+            });
+        });
+
+        modelBuilder.Entity<UserRecoveryCode>(entity =>
+        {
+            entity.ToTable("UserRecoveryCodes");
+
+            entity.HasKey(x => x.UserRecoveryCodeId);
+
+            entity.Property(x => x.CodeHash)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.RecoveryCodes)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.UsedAt
             });
         });
         modelBuilder.Entity<SystemSetting>(entity =>

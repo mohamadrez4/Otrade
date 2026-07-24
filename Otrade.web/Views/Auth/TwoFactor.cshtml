@@ -1,0 +1,691 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+
+    <title>Security Verification | Otrade</title>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+
+    <link rel="icon"
+          type="image/x-icon"
+          href="~/favicon.ico?v=1" />
+
+    <link rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="~/favicon-32x32.png?v=1" />
+
+    <link rel="apple-touch-icon"
+          href="~/apple-touch-icon.png?v=1" />
+
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css"
+          rel="stylesheet" />
+
+    <link href="~/css/auth.css"
+          rel="stylesheet" />
+
+    <link href="~/css/common.css"
+          rel="stylesheet" />
+
+    <script src="~/js/common.js"></script>
+
+    
+</head>
+
+<body class="auth-body">
+
+    <div class="auth-wrapper">
+
+        <div class="auth-left">
+
+            <div class="brand-glow"></div>
+
+            <img class="hero-logo"
+                 src="~/images/Logo4.png"
+                 alt="Otrade Logo" />
+
+            <div class="hero-content">
+
+                <h1>
+                    Secure Access.<br />
+                    Protected Account.
+                </h1>
+
+                <p>
+                    Complete the security verification to continue to
+                    your Otrade account.
+                </p>
+
+                <div class="stat-card">
+                    <span>Authentication Method</span>
+                    <strong>Google Authenticator</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Security Code</span>
+                    <strong>6 Digits</strong>
+                </div>
+
+                <div class="stat-card">
+                    <span>Code Refresh</span>
+                    <strong>30 Seconds</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="auth-right">
+
+            <div class="login-card two-factor-card">
+
+                <div class="logo-box">
+
+                    <img src="~/images/logo.png"
+                         alt="Otrade Logo" />
+
+                    <span>Online Trading Room</span>
+
+                </div>
+
+                <h2>Security Verification</h2>
+
+                <p class="subtitle">
+                    Enter the code generated on your phone.
+                </p>
+
+                <div class="two-factor-security-box">
+
+                    <div class="two-factor-security-icon">
+                        2FA
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            Google Authenticator
+                        </strong>
+
+                        <span>
+                            The access token will be issued only after
+                            this security step is completed.
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <div class="two-factor-account">
+
+                    <span>Signing in as</span>
+
+                    <strong id="twoFactorEmail">
+                        Your Otrade account
+                    </strong>
+
+                </div>
+
+                <form id="twoFactorLoginForm"
+                      autocomplete="off">
+
+                    <div class="mb-3">
+
+                        <label id="twoFactorCodeLabel"
+                               for="twoFactorCode">
+                            6-digit authentication code
+                        </label>
+
+                        <input id="twoFactorCode"
+                               type="text"
+                               class="form-control auth-input two-factor-code-input"
+                               maxlength="6"
+                               inputmode="numeric"
+                               autocomplete="one-time-code"
+                               placeholder="000000" />
+
+                        <small id="twoFactorCodeHelp"
+                               class="two-factor-input-help">
+                            Enter the current code shown in Google
+                            Authenticator.
+                        </small>
+
+                    </div>
+
+                    <div class="two-factor-expiry">
+
+                        <span>Login challenge expires in</span>
+
+                        <strong id="twoFactorCountdown">
+                            05:00
+                        </strong>
+
+                    </div>
+
+                    <button id="verifyTwoFactorBtn"
+                            type="submit"
+                            class="btn login-btn w-100">
+                        Verify and Login
+                    </button>
+
+                    <button id="switchTwoFactorModeBtn"
+                            type="button"
+                            class="two-factor-switch-btn">
+                        Use a recovery code instead
+                    </button>
+
+                </form>
+
+                <a id="backToLoginLink"
+                   href="/auth/login"
+                   class="two-factor-back">
+                    Back to Login
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const CHALLENGE_KEY =
+            "otrade_2fa_challenge";
+
+        const EXPIRES_KEY =
+            "otrade_2fa_expires_at";
+
+        const EMAIL_KEY =
+            "otrade_2fa_email";
+
+        const challengeToken =
+            sessionStorage.getItem(
+                CHALLENGE_KEY
+            );
+
+        const challengeExpiresAtValue =
+            sessionStorage.getItem(
+                EXPIRES_KEY
+            );
+
+        const loginEmail =
+            sessionStorage.getItem(
+                EMAIL_KEY
+            );
+
+        const twoFactorLoginForm =
+            document.getElementById(
+                "twoFactorLoginForm"
+            );
+
+        const twoFactorCode =
+            document.getElementById(
+                "twoFactorCode"
+            );
+
+        const twoFactorCodeLabel =
+            document.getElementById(
+                "twoFactorCodeLabel"
+            );
+
+        const twoFactorCodeHelp =
+            document.getElementById(
+                "twoFactorCodeHelp"
+            );
+
+        const twoFactorCountdown =
+            document.getElementById(
+                "twoFactorCountdown"
+            );
+
+        const verifyTwoFactorBtn =
+            document.getElementById(
+                "verifyTwoFactorBtn"
+            );
+
+        const switchTwoFactorModeBtn =
+            document.getElementById(
+                "switchTwoFactorModeBtn"
+            );
+
+        const twoFactorEmail =
+            document.getElementById(
+                "twoFactorEmail"
+            );
+
+        const backToLoginLink =
+            document.getElementById(
+                "backToLoginLink"
+            );
+
+        let useRecoveryCode =
+            false;
+
+        let countdownTimer =
+            null;
+
+        function clearChallenge() {
+            sessionStorage.removeItem(
+                CHALLENGE_KEY
+            );
+
+            sessionStorage.removeItem(
+                EXPIRES_KEY
+            );
+
+            sessionStorage.removeItem(
+                EMAIL_KEY
+            );
+        }
+
+        function returnToLogin(message) {
+            clearChallenge();
+
+            if (message) {
+                sessionStorage.setItem(
+                    "otrade_login_message",
+                    message
+                );
+            }
+
+            window.location.href =
+                "/auth/login";
+        }
+
+        function getTokenPayload(token) {
+            try {
+                const payloadPart =
+                    token.split(".")[1];
+
+                const normalizedPayload =
+                    payloadPart
+                        .replace(/-/g, "+")
+                        .replace(/_/g, "/");
+
+                const paddedPayload =
+                    normalizedPayload.padEnd(
+                        Math.ceil(
+                            normalizedPayload.length / 4
+                        ) * 4,
+                        "="
+                    );
+
+                return JSON.parse(
+                    atob(paddedPayload)
+                );
+
+            } catch {
+                return null;
+            }
+        }
+
+        function redirectAuthenticatedUser(data) {
+            localStorage.setItem(
+                "token",
+                data.token
+            );
+
+            localStorage.setItem(
+                "userId",
+                data.userId
+            );
+
+            clearChallenge();
+
+            if (
+                String(data.isAdmin)
+                    .toLowerCase() === "true"
+            ) {
+                window.location.href =
+                    "/admin/dashboard";
+
+                return;
+            }
+
+            window.location.href =
+                "/dashboard";
+        }
+
+        const existingToken =
+            localStorage.getItem("token");
+
+        if (existingToken) {
+            const payload =
+                getTokenPayload(
+                    existingToken
+                );
+
+            if (
+                payload &&
+                payload.exp * 1000 >
+                Date.now()
+            ) {
+                window.location.href =
+                    String(payload.isAdmin)
+                        .toLowerCase() === "true"
+                        ? "/admin/dashboard"
+                        : "/dashboard";
+            } else {
+                localStorage.removeItem(
+                    "token"
+                );
+
+                localStorage.removeItem(
+                    "userId"
+                );
+            }
+        }
+
+        if (
+            !challengeToken ||
+            !challengeExpiresAtValue
+        ) {
+            returnToLogin(
+                "Start the login process again."
+            );
+        }
+
+        if (loginEmail) {
+            twoFactorEmail.innerText =
+                loginEmail;
+        }
+
+        function normalizeAuthenticatorCode(
+            value
+        ) {
+            return String(value || "")
+                .replace(/\D/g, "")
+                .slice(0, 6);
+        }
+
+        function normalizeRecoveryCode(
+            value
+        ) {
+            return String(value || "")
+                .toUpperCase()
+                .replace(/[^A-Z0-9-]/g, "")
+                .slice(0, 14);
+        }
+
+        function updateCountdown() {
+            const expiresAt =
+                new Date(
+                    challengeExpiresAtValue
+                );
+
+            const remainingMilliseconds =
+                expiresAt.getTime() -
+                Date.now();
+
+            if (
+                Number.isNaN(
+                    expiresAt.getTime()
+                ) ||
+                remainingMilliseconds <= 0
+            ) {
+                window.clearInterval(
+                    countdownTimer
+                );
+
+                twoFactorCountdown.innerText =
+                    "Expired";
+
+                twoFactorCountdown.classList.add(
+                    "two-factor-expired"
+                );
+
+                verifyTwoFactorBtn.disabled =
+                    true;
+
+                twoFactorCode.disabled =
+                    true;
+
+                showNotification(
+                    "The login verification request has expired. Please login again.",
+                    "warning"
+                );
+
+                window.setTimeout(
+                    function () {
+                        returnToLogin();
+                    },
+                    1800
+                );
+
+                return;
+            }
+
+            const totalSeconds =
+                Math.floor(
+                    remainingMilliseconds / 1000
+                );
+
+            const minutes =
+                Math.floor(
+                    totalSeconds / 60
+                );
+
+            const seconds =
+                totalSeconds % 60;
+
+            twoFactorCountdown.innerText =
+                `${String(minutes).padStart(2, "0")}:` +
+                `${String(seconds).padStart(2, "0")}`;
+        }
+
+        updateCountdown();
+
+        countdownTimer =
+            window.setInterval(
+                updateCountdown,
+                1000
+            );
+
+        twoFactorCode.addEventListener(
+            "input",
+            function () {
+                twoFactorCode.value =
+                    useRecoveryCode
+                        ? normalizeRecoveryCode(
+                            twoFactorCode.value
+                        )
+                        : normalizeAuthenticatorCode(
+                            twoFactorCode.value
+                        );
+            }
+        );
+
+        switchTwoFactorModeBtn.addEventListener(
+            "click",
+            function () {
+                useRecoveryCode =
+                    !useRecoveryCode;
+
+                twoFactorCode.value =
+                    "";
+
+                twoFactorCode.classList.toggle(
+                    "recovery",
+                    useRecoveryCode
+                );
+
+                if (useRecoveryCode) {
+                    twoFactorCodeLabel.innerText =
+                        "Recovery code";
+
+                    twoFactorCodeHelp.innerText =
+                        "Enter one unused recovery code saved when Google Authenticator was enabled.";
+
+                    twoFactorCode.placeholder =
+                        "ABCD-EFGH-JKMP";
+
+                    twoFactorCode.maxLength =
+                        14;
+
+                    twoFactorCode.inputMode =
+                        "text";
+
+                    switchTwoFactorModeBtn.innerText =
+                        "Use Google Authenticator code";
+
+                } else {
+                    twoFactorCodeLabel.innerText =
+                        "6-digit authentication code";
+
+                    twoFactorCodeHelp.innerText =
+                        "Enter the current code shown in Google Authenticator.";
+
+                    twoFactorCode.placeholder =
+                        "000000";
+
+                    twoFactorCode.maxLength =
+                        6;
+
+                    twoFactorCode.inputMode =
+                        "numeric";
+
+                    switchTwoFactorModeBtn.innerText =
+                        "Use a recovery code instead";
+                }
+
+                twoFactorCode.focus();
+            }
+        );
+
+        backToLoginLink.addEventListener(
+            "click",
+            function () {
+                clearChallenge();
+            }
+        );
+
+        twoFactorLoginForm.addEventListener(
+            "submit",
+            async function (event) {
+                event.preventDefault();
+
+                const code =
+                    twoFactorCode.value.trim();
+
+                if (
+                    !useRecoveryCode &&
+                    !/^\d{6}$/.test(code)
+                ) {
+                    showNotification(
+                        "Enter a valid 6-digit Google Authenticator code.",
+                        "warning"
+                    );
+
+                    twoFactorCode.focus();
+                    return;
+                }
+
+                if (
+                    useRecoveryCode &&
+                    code.replace(/-/g, "")
+                        .length !== 12
+                ) {
+                    showNotification(
+                        "Enter a valid recovery code.",
+                        "warning"
+                    );
+
+                    twoFactorCode.focus();
+                    return;
+                }
+
+                const originalButtonText =
+                    verifyTwoFactorBtn.innerText;
+
+                verifyTwoFactorBtn.disabled =
+                    true;
+
+                verifyTwoFactorBtn.innerText =
+                    "Verifying...";
+
+                try {
+                    const response =
+                        await fetch(
+                            "/api/auth/verify-two-factor",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    challengeToken:
+                                        challengeToken,
+                                    code: code
+                                })
+                            }
+                        );
+
+                    const result =
+                        await response.json();
+
+                    if (
+                        !response.ok ||
+                        !result.success
+                    ) {
+                        showNotification(
+                            result.message ||
+                            "Security verification failed.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    const data =
+                        result.data || {};
+
+                    if (!data.token) {
+                        showNotification(
+                            "The server did not return an access token.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    showNotification(
+                        result.message ||
+                        "Security verification completed.",
+                        "success"
+                    );
+
+                    redirectAuthenticatedUser(
+                        data
+                    );
+
+                } catch (error) {
+                    console.error(error);
+
+                    showNotification(
+                        "Unable to connect to server.",
+                        "error"
+                    );
+
+                } finally {
+                    verifyTwoFactorBtn.disabled =
+                        false;
+
+                    verifyTwoFactorBtn.innerText =
+                        originalButtonText;
+                }
+            }
+        );
+    </script>
+
+    <div id="notificationContainer"
+         class="notification-container">
+    </div>
+
+</body>
+</html>

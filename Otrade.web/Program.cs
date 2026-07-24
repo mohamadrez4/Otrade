@@ -93,6 +93,8 @@ builder.Services.AddScoped<SystemSettingService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<EncryptionService>();
+builder.Services.AddSingleton<TotpSecretProtector>();
+builder.Services.AddScoped<TwoFactorAuthenticationService>();
 builder.Services.AddSingleton<INotificationQueue, NotificationQueue>();
 builder.Services.AddHostedService<NotificationBackgroundWorker>();
 builder.Services.AddScoped<AdminPermissionService>();

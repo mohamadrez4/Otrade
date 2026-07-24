@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <title>Login | Otrade</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico?v=1" />
     <link rel="icon" type="image/png" sizes="32x32" href="~/favicon-32x32.png?v=1" />
     <link rel="apple-touch-icon" href="~/apple-touch-icon.png?v=1" />
     <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -108,104 +108,336 @@
     </div>
 
     <script>
+        const TWO_FACTOR_CHALLENGE_KEY =
+            "otrade_2fa_challenge";
+
+        const TWO_FACTOR_EXPIRES_KEY =
+            "otrade_2fa_expires_at";
+
+        const TWO_FACTOR_EMAIL_KEY =
+            "otrade_2fa_email";
+
         function getTokenPayload(token) {
             try {
-                return JSON.parse(atob(token.split('.')[1]));
+                const payloadPart =
+                    token.split(".")[1];
+
+                const normalizedPayload =
+                    payloadPart
+                        .replace(/-/g, "+")
+                        .replace(/_/g, "/");
+
+                const paddedPayload =
+                    normalizedPayload.padEnd(
+                        Math.ceil(
+                            normalizedPayload.length / 4
+                        ) * 4,
+                        "="
+                    );
+
+                return JSON.parse(
+                    atob(paddedPayload)
+                );
             } catch {
                 return null;
             }
         }
 
         function getIsAdmin(payload) {
-            if (!payload) return false;
-                  
+            if (!payload) {
+                return false;
+            }
 
-            return     payload.isAdmin
-               
+            return String(
+                payload.isAdmin || "false"
+            ).toLowerCase() === "true";
         }
 
-        const token = localStorage.getItem("token");
-        if (token) {
-            const payload = getTokenPayload(token);
+        function redirectAuthenticatedUser(data) {
+            localStorage.setItem(
+                "token",
+                data.token
+            );
 
-            if (payload && payload.exp * 1000 > Date.now()) {
-                const isAdmin = getIsAdmin(payload);
+            localStorage.setItem(
+                "userId",
+                data.userId
+            );
 
-                if (isAdmin.toString().toLowerCase()=="true") {
-                    window.location.href = "/admin/dashboard";
-                } else {
-                    window.location.href = "/dashboard";
-                }
+            sessionStorage.removeItem(
+                TWO_FACTOR_CHALLENGE_KEY
+            );
+
+            sessionStorage.removeItem(
+                TWO_FACTOR_EXPIRES_KEY
+            );
+
+            sessionStorage.removeItem(
+                TWO_FACTOR_EMAIL_KEY
+            );
+
+            if (
+                String(data.isAdmin)
+                    .toLowerCase() === "true"
+            ) {
+                window.location.href =
+                    "/admin/dashboard";
+
+                return;
+            }
+
+            window.location.href =
+                "/dashboard";
+        }
+
+        const existingToken =
+            localStorage.getItem("token");
+
+        if (existingToken) {
+            const payload =
+                getTokenPayload(
+                    existingToken
+                );
+
+            if (
+                payload &&
+                payload.exp * 1000 >
+                Date.now()
+            ) {
+                window.location.href =
+                    getIsAdmin(payload)
+                        ? "/admin/dashboard"
+                        : "/dashboard";
             } else {
-                localStorage.removeItem("token");
+                localStorage.removeItem(
+                    "token"
+                );
+
+                localStorage.removeItem(
+                    "userId"
+                );
             }
         }
 
-        document.getElementById("loginForm")
-            .addEventListener("submit", async function (e) {
-                e.preventDefault();
+        const pendingLoginMessage =
+            sessionStorage.getItem(
+                "otrade_login_message"
+            );
 
-                const email = document.getElementById("email").value;
-                const password = document.getElementById("password").value;
+        if (pendingLoginMessage) {
+            sessionStorage.removeItem(
+                "otrade_login_message"
+            );
+
+            window.setTimeout(
+                function () {
+                    showNotification(
+                        pendingLoginMessage,
+                        "warning"
+                    );
+                },
+                100
+            );
+        }
+
+        const loginForm =
+            document.getElementById(
+                "loginForm"
+            );
+
+        const loginButton =
+            loginForm.querySelector(
+                'button[type="submit"]'
+            );
+
+        loginForm.addEventListener(
+            "submit",
+            async function (event) {
+                event.preventDefault();
+
+                const email =
+                    document.getElementById(
+                        "email"
+                    ).value.trim();
+
+                const password =
+                    document.getElementById(
+                        "password"
+                    ).value;
+
                 if (!isValidEmail(email)) {
-                    showNotification("Please enter a valid email address.", "error");
-                     return;
-                }
-                if (!email || !password) {
-                    showNotification("Please enter email and password","error");
-                    
+                    showNotification(
+                        "Please enter a valid email address.",
+                        "error"
+                    );
+
                     return;
                 }
 
+                if (!password) {
+                    showNotification(
+                        "Please enter your password.",
+                        "error"
+                    );
+
+                    return;
+                }
+
+                const originalButtonText =
+                    loginButton.innerText;
+
+                loginButton.disabled =
+                    true;
+
+                loginButton.innerText =
+                    "Signing In...";
+
+                /*
+                 * هر Login جدید، Challenge قبلی مرورگر را
+                 * کنار می‌گذارد.
+                 */
+                sessionStorage.removeItem(
+                    TWO_FACTOR_CHALLENGE_KEY
+                );
+
+                sessionStorage.removeItem(
+                    TWO_FACTOR_EXPIRES_KEY
+                );
+
+                sessionStorage.removeItem(
+                    TWO_FACTOR_EMAIL_KEY
+                );
+
                 try {
-                    const response = await fetch("/api/auth/login", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            email: email,
-                            password: password
-                        })
-                    });
+                    const response =
+                        await fetch(
+                            "/api/auth/login",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    email: email,
+                                    password: password
+                                })
+                            }
+                        );
 
-                    const result = await response.json();
+                    const result =
+                        await response.json();
 
-                    if (!result.success) {
-                        showNotification(result.message,"error");
-                      
+                    if (
+                        !response.ok ||
+                        !result.success
+                    ) {
+                        showNotification(
+                            result.message ||
+                            "Login failed.",
+                            "error"
+                        );
+
                         return;
                     }
 
-                    localStorage.setItem("token", result.data.token);
-                    localStorage.setItem("userId", result.data.userId);
+                    const data =
+                        result.data || {};
 
-                    const isAdmin = result.data.isAdmin;
-                      debugger;
-                    if (isAdmin.toString().toLowerCase()=="true") {
-                        window.location.href = "/admin/dashboard";
-                    } else {
-                        window.location.href = "/dashboard";
+                    if (
+                        data.requiresTwoFactor
+                    ) {
+                        if (
+                            !data.challengeToken ||
+                            !data.challengeExpiresAt
+                        ) {
+                            showNotification(
+                                "Two-factor authentication could not be started.",
+                                "error"
+                            );
+
+                            return;
+                        }
+
+                        sessionStorage.setItem(
+                            TWO_FACTOR_CHALLENGE_KEY,
+                            data.challengeToken
+                        );
+
+                        sessionStorage.setItem(
+                            TWO_FACTOR_EXPIRES_KEY,
+                            data.challengeExpiresAt
+                        );
+
+                        sessionStorage.setItem(
+                            TWO_FACTOR_EMAIL_KEY,
+                            email
+                        );
+
+                        window.location.href =
+                            "/auth/two-factor";
+
+                        return;
                     }
-                }
-                catch (error) {
+
+                    if (!data.token) {
+                        showNotification(
+                            "The server did not return an access token.",
+                            "error"
+                        );
+
+                        return;
+                    }
+
+                    redirectAuthenticatedUser(
+                        data
+                    );
+
+                } catch (error) {
                     console.error(error);
-                    showNotification("Unable to connect to server","error");
-                   
+
+                    showNotification(
+                        "Unable to connect to server.",
+                        "error"
+                    );
+
+                } finally {
+                    loginButton.disabled =
+                        false;
+
+                    loginButton.innerText =
+                        originalButtonText;
                 }
-            });
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
+            }
+        );
 
-            const isHidden = input.type === "password";
+        function togglePassword(
+            inputId,
+            button
+        ) {
+            const input =
+                document.getElementById(
+                    inputId
+                );
 
-            input.type = isHidden ? "text" : "password";
+            const isHidden =
+                input.type === "password";
 
-            btn.classList.toggle("is-visible", isHidden);
+            input.type =
+                isHidden
+                    ? "text"
+                    : "password";
 
-            btn.setAttribute(
+            button.classList.toggle(
+                "is-visible",
+                isHidden
+            );
+
+            button.setAttribute(
                 "aria-label",
-                isHidden ? "Hide password" : "Show password"
+                isHidden
+                    ? "Hide password"
+                    : "Show password"
             );
         }
     </script>

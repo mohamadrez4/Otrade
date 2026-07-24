@@ -521,3 +521,170 @@ body.auth-body {
     .pre-eye-btn.is-visible .eye-closed {
         display: block;
     }
+
+.two-factor-card {
+    max-width: 430px;
+}
+
+.two-factor-security-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 22px;
+    padding: 14px;
+    color: #c8d4df;
+    background: rgba(17, 233, 161, 0.055);
+    border: 1px solid rgba(17, 233, 161, 0.18);
+    border-radius: 15px;
+}
+
+.two-factor-security-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #11e9a1;
+    background: rgba(17, 233, 161, 0.08);
+    border: 1px solid rgba(17, 233, 161, 0.24);
+    border-radius: 13px;
+    font-size: 12px;
+    font-weight: 950;
+}
+
+.two-factor-security-box strong,
+.two-factor-security-box span {
+    display: block;
+}
+
+.two-factor-security-box strong {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.two-factor-security-box span {
+    margin-top: 5px;
+    color: #94a3b8;
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.two-factor-account {
+    margin-bottom: 18px;
+    padding: 12px 13px;
+    background: #0b1118;
+    border: 1px solid #1c2532;
+    border-radius: 13px;
+}
+
+    .two-factor-account span,
+    .two-factor-account strong {
+        display: block;
+    }
+
+    .two-factor-account span {
+        color: #94a3b8;
+        font-size: 10px;
+    }
+
+    .two-factor-account strong {
+        margin-top: 5px;
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 900;
+        overflow-wrap: anywhere;
+    }
+
+.two-factor-code-input {
+    height: 56px;
+    direction: ltr;
+    text-align: center;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.28em;
+}
+
+    .two-factor-code-input.recovery {
+        font-size: 16px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+.two-factor-input-help {
+    display: block;
+    margin-top: 8px;
+    color: #94a3b8;
+    font-size: 10px;
+    line-height: 1.55;
+}
+
+.two-factor-expiry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 15px 0 18px;
+    padding: 12px 13px;
+    background: rgba(125, 211, 252, 0.05);
+    border: 1px solid rgba(125, 211, 252, 0.18);
+    border-radius: 13px;
+}
+
+    .two-factor-expiry span {
+        color: #94a3b8;
+        font-size: 10px;
+    }
+
+    .two-factor-expiry strong {
+        color: #7dd3fc;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 14px;
+        font-weight: 900;
+    }
+
+.two-factor-switch-btn {
+    width: 100%;
+    margin-top: 13px;
+    padding: 0;
+    color: #11e9a1;
+    background: transparent;
+    border: 0;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+}
+
+    .two-factor-switch-btn:hover {
+        color: #18f5ac;
+    }
+
+.two-factor-back {
+    display: block;
+    margin-top: 18px;
+    color: #94a3b8;
+    font-size: 11px;
+    text-align: center;
+    text-decoration: none;
+}
+
+    .two-factor-back:hover {
+        color: #11e9a1;
+    }
+
+.two-factor-expired {
+    color: #ff7b7b !important;
+}
+
+@media (max-width: 520px) {
+    .login-card {
+        padding: 27px 22px;
+    }
+
+    .two-factor-code-input {
+        font-size: 19px;
+        letter-spacing: 0.2em;
+    }
+}

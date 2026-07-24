@@ -21,4 +21,10 @@ public class LoginResponse
     public string KycStatus { get; set; } = string.Empty;
 
     public string Token { get; set; } = string.Empty;
+    public bool RequiresTwoFactor { get; set; }
+
+    public string ChallengeToken { get; set; }
+        = string.Empty;
+
+    public DateTime? ChallengeExpiresAt { get; set; }
 }
