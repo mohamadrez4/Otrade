@@ -3,36 +3,60 @@
     ViewData["Title"] = "Users Management";
 }
 
-<div class="admin-page">
+<div class="admin-page admin-users-page">
 
-    <div class="panel-card">
-        <div class="admin-section-header">
-            <h3>Users</h3>
-            <p>View and manage platform users, ranks, wallets, sponsors, referral codes, and KYC status.</p>
-        </div>
+    <section class="panel-card admin-users-card">
 
-        <div class="admin-filter-row">
+        <header class="admin-section-header admin-users-header">
+
+            <div>
+                <span class="admin-users-eyebrow">
+                    User Management
+                </span>
+
+                <h3>Users</h3>
+
+                <p>
+                    View and manage platform users, ranks, wallets,
+                    sponsors, referral codes and KYC status.
+                </p>
+            </div>
+
+        </header>
+
+        <div class="admin-filter-row admin-users-filter-row">
+
             <input id="searchInput"
-                   class="panel-input"
+                   class="panel-input admin-users-search-input"
                    type="text"
                    autocomplete="off"
                    placeholder="Search by email, name, referral code, or sponsor" />
 
-            <button id="searchBtn" class="panel-primary-btn" type="button">
+            <button id="searchBtn"
+                    class="panel-primary-btn admin-users-search-btn"
+                    type="button">
                 Search
             </button>
 
-            <button id="clearSearchBtn" class="admin-secondary-btn" type="button">
+            <button id="clearSearchBtn"
+                    class="admin-secondary-btn admin-users-clear-btn"
+                    type="button">
                 Clear
             </button>
+
         </div>
 
-        <div id="usersMessage" class="admin-message">
+        <div id="usersMessage"
+             class="admin-message admin-users-message">
             Loading users...
         </div>
 
-        <div id="usersTableWrapper" class="admin-table-wrapper" style="display:none;">
+        <div id="usersTableWrapper"
+             class="admin-table-wrapper admin-users-table-wrapper"
+             style="display:none;">
+
             <table class="admin-table admin-users-table">
+
                 <thead>
                     <tr>
                         <th>Email</th>
@@ -49,29 +73,37 @@
                     </tr>
                 </thead>
 
-                <tbody id="usersTableBody"></tbody>
+                <tbody id="usersTableBody">
+                </tbody>
+
             </table>
+
         </div>
 
-        <div id="usersPagination" class="admin-pagination" style="display:none;">
+        <div id="usersPagination"
+             class="admin-pagination admin-users-pagination"
+             style="display:none;">
+
             <button id="usersPrevBtn"
                     class="reports-filter-clear"
                     type="button">
                 Previous
             </button>
 
-            <span id="usersPageInfo"></span>
+            <span id="usersPageInfo">
+            </span>
 
             <button id="usersNextBtn"
                     class="reports-filter-clear"
                     type="button">
                 Next
             </button>
+
         </div>
-    </div>
+
+    </section>
 
 </div>
-
 @section Scripts {
     <script>
         const usersMessage = document.getElementById("usersMessage");

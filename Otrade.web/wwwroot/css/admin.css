@@ -5590,3 +5590,1200 @@ span.flatpickr-weekday {
         padding: 15px 17px !important;
     }
 }
+/* =========================================================
+   Admin Reports - Final Responsive Layout Fix
+   Prevents page overflow and keeps table scroll internal
+   ========================================================= */
+
+.admin-reports-page,
+.admin-reports-page *,
+.admin-reports-card,
+.admin-reports-card * {
+    box-sizing: border-box;
+}
+
+.admin-reports-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: grid;
+    gap: 14px;
+    overflow: hidden;
+}
+
+    /* =========================================================
+   KPI cards
+   ========================================================= */
+
+    .admin-reports-page > .admin-kpi-grid {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: repeat( 4, minmax(0, 1fr) );
+        gap: 10px;
+    }
+
+    .admin-reports-page .admin-kpi-card {
+        min-width: 0;
+        min-height: 82px;
+        padding: 14px !important;
+        border-radius: 15px !important;
+        overflow: hidden;
+    }
+
+        .admin-reports-page .admin-kpi-card span {
+            display: block;
+            overflow: hidden;
+            color: #94A3B8;
+            font-size: 10px !important;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .admin-reports-page .admin-kpi-card strong {
+            display: block;
+            max-width: 100%;
+            margin-top: 5px;
+            overflow: hidden;
+            color: #FFFFFF;
+            font-size: 18px !important;
+            font-weight: 950;
+            line-height: 1.3;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            direction: ltr;
+        }
+
+/* =========================================================
+   Main report card
+   ========================================================= */
+
+.admin-reports-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 16px !important;
+    overflow: hidden !important;
+    border-radius: 17px !important;
+}
+
+    .admin-reports-card .admin-section-header {
+        width: 100%;
+        min-width: 0;
+        margin-bottom: 14px !important;
+    }
+
+        .admin-reports-card .admin-section-header h3 {
+            margin: 0;
+            color: #FFFFFF;
+            font-size: 18px !important;
+            font-weight: 950;
+        }
+
+        .admin-reports-card .admin-section-header p {
+            max-width: 760px;
+            margin: 5px 0 0;
+            color: #94A3B8;
+            font-size: 11px !important;
+            line-height: 1.6;
+        }
+
+/* =========================================================
+   Filters
+   ========================================================= */
+
+.admin-reports-page .reports-filter-card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin-bottom: 14px;
+    padding: 14px;
+    overflow: hidden;
+    background: radial-gradient( circle at 100% 0%, rgba(17, 233, 161, 0.06), transparent 28% ), #0B1118;
+    border: 1px solid #1C2532;
+    border-radius: 15px;
+}
+
+.admin-reports-page .reports-filter-grid {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat( 3, minmax(0, 1fr) );
+    gap: 12px;
+}
+
+.admin-reports-page .reports-filter-field {
+    min-width: 0;
+    max-width: 100%;
+}
+
+    .admin-reports-page .reports-filter-field label {
+        display: block;
+        margin-bottom: 6px;
+        overflow: hidden;
+        color: #FFFFFF;
+        font-size: 11px;
+        font-weight: 850;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .admin-reports-page .reports-filter-field .panel-input {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        padding: 0 12px !important;
+        color: #FFFFFF;
+        background: #080E15;
+        border: 1px solid #1C2532;
+        border-radius: 11px !important;
+        outline: none;
+        font-size: 11px !important;
+    }
+
+        .admin-reports-page
+        .reports-filter-field
+        .panel-input:focus {
+            border-color: rgba( 17, 233, 161, 0.55 );
+            box-shadow: 0 0 0 3px rgba( 17, 233, 161, 0.07 );
+        }
+
+        .admin-reports-page
+        .reports-filter-field
+        .panel-input::placeholder {
+            color: #64748B;
+            opacity: 1;
+        }
+
+    .admin-reports-page
+    .reports-filter-field
+    select.panel-input {
+        padding-right: 32px !important;
+        cursor: pointer;
+    }
+
+.admin-reports-page .reports-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 13px;
+}
+
+.admin-reports-page .reports-filter-apply,
+.admin-reports-page .reports-filter-clear {
+    min-width: 105px;
+    height: 39px;
+    padding: 0 14px;
+    border-radius: 11px;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.admin-reports-page .reports-filter-apply {
+    color: #06110D;
+    background: #11E9A1;
+    border: 1px solid #11E9A1;
+}
+
+    .admin-reports-page
+    .reports-filter-apply:hover {
+        background: #18F5AC;
+        border-color: #18F5AC;
+    }
+
+.admin-reports-page .reports-filter-clear {
+    color: #FFFFFF;
+    background: #121821;
+    border: 1px solid #1C2532;
+}
+
+    .admin-reports-page
+    .reports-filter-clear:hover {
+        color: #11E9A1;
+        border-color: rgba( 17, 233, 161, 0.45 );
+    }
+
+/* =========================================================
+   Report tabs
+   ========================================================= */
+
+.admin-reports-page .reports-tabs {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 13px;
+    padding-bottom: 3px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+}
+
+    .admin-reports-page
+    .reports-tabs::-webkit-scrollbar {
+        height: 5px;
+    }
+
+    .admin-reports-page
+    .reports-tabs::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 999px;
+    }
+
+.admin-reports-page .report-tab {
+    min-width: max-content;
+    height: 36px;
+    flex: 0 0 auto;
+    padding: 0 13px;
+    color: #94A3B8;
+    background: #0B0F14;
+    border: 1px solid #1C2532;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+    .admin-reports-page .report-tab:hover,
+    .admin-reports-page .report-tab.active {
+        color: #11E9A1;
+        background: rgba( 17, 233, 161, 0.08 );
+        border-color: rgba( 17, 233, 161, 0.45 );
+    }
+
+/* =========================================================
+   Table wrapper
+   Important: horizontal scroll remains inside the card
+   ========================================================= */
+
+.admin-reports-table-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    background: rgba( 11, 15, 20, 0.42 );
+    border: 1px solid #1C2532;
+    border-radius: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #0B0F14;
+}
+
+    .admin-reports-table-wrapper::-webkit-scrollbar {
+        height: 7px;
+    }
+
+    .admin-reports-table-wrapper::-webkit-scrollbar-track {
+        background: #0B0F14;
+        border-radius: 999px;
+    }
+
+    .admin-reports-table-wrapper::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 999px;
+    }
+
+.admin-reports-table {
+    /*
+     * جدول حداقل به اندازه کارت است.
+     * در صورت ستون‌های زیاد فقط همین Wrapper اسکرول می‌خورد.
+     */
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    margin: 0;
+    border-collapse: collapse;
+    table-layout: auto;
+    white-space: nowrap;
+}
+
+    .admin-reports-table th {
+        height: 40px;
+        padding: 8px 10px !important;
+        color: #94A3B8 !important;
+        background: #0B1118;
+        border-bottom: 1px solid #1C2532;
+        font-size: 9px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .admin-reports-table td {
+        height: 48px;
+        max-width: 270px;
+        padding: 8px 10px !important;
+        color: #FFFFFF;
+        border-bottom: 1px solid rgba( 28, 37, 50, 0.84 );
+        font-size: 10px !important;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .admin-reports-table
+    tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .admin-reports-table
+    tbody tr:hover td {
+        background: rgba( 17, 233, 161, 0.025 );
+    }
+
+/* =========================================================
+   User cells
+   ========================================================= */
+
+.admin-reports-page .report-user-cell {
+    width: 205px;
+    min-width: 205px;
+    max-width: 205px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+    .admin-reports-page
+    .report-user-cell strong,
+    .admin-reports-page
+    .report-user-cell span,
+    .admin-reports-page
+    .report-user-cell small {
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        direction: ltr;
+    }
+
+    .admin-reports-page
+    .report-user-cell strong {
+        color: #11E9A1;
+        font-size: 10px;
+        font-weight: 950;
+    }
+
+    .admin-reports-page
+    .report-user-cell span {
+        color: #FFFFFF;
+        font-size: 10px;
+    }
+
+    .admin-reports-page
+    .report-user-cell small {
+        color: #94A3B8;
+        font-size: 9px;
+    }
+
+/* =========================================================
+   Tx hash and wallet cells
+   ========================================================= */
+
+.admin-reports-page .admin-tx-cell,
+.admin-reports-page .admin-tx-cell.wide {
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .admin-reports-page
+    .admin-tx-cell span {
+        min-width: 0;
+        max-width: 178px;
+        flex: 1;
+        overflow: hidden;
+        color: #FFFFFF;
+        font-size: 10px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        direction: ltr;
+    }
+
+    .admin-reports-page
+    .admin-tx-cell small {
+        min-width: 0;
+        max-width: 110px;
+        overflow: hidden;
+        color: #CBD5E1;
+        font-size: 9px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        direction: ltr;
+    }
+
+    .admin-reports-page
+    .admin-tx-cell button {
+        min-width: 52px;
+        height: 29px;
+        flex: 0 0 auto;
+        padding: 0 9px;
+        color: #94A3B8;
+        background: #121821;
+        border: 1px solid #1C2532;
+        border-radius: 9px;
+        font-size: 9px;
+        font-weight: 900;
+    }
+
+        .admin-reports-page
+        .admin-tx-cell button:hover {
+            color: #11E9A1;
+            border-color: #11E9A1;
+        }
+
+/* =========================================================
+   Status and notes
+   ========================================================= */
+
+.admin-reports-page .admin-status {
+    min-height: 27px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 9px !important;
+    font-weight: 900;
+}
+
+.admin-reports-page .admin-report-note {
+    display: block;
+    width: 175px;
+    min-width: 175px;
+    max-width: 175px;
+    overflow: hidden;
+    color: #94A3B8;
+    font-size: 10px;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+    .admin-reports-page
+    .admin-report-note.has-note {
+        color: #FFFFFF;
+    }
+
+/* =========================================================
+   Amount and dates
+   ========================================================= */
+
+.admin-reports-table
+td.text-end {
+    color: #FFFFFF;
+    font-weight: 900;
+    direction: ltr;
+}
+
+.admin-reports-table td {
+    font-variant-numeric: tabular-nums;
+}
+
+/* =========================================================
+   Loading message and pagination
+   ========================================================= */
+
+.admin-reports-page
+#adminReportsMessage {
+    width: 100%;
+    max-width: 100%;
+    padding: 15px;
+    color: #94A3B8;
+    background: #0B1118;
+    border: 1px solid #1C2532;
+    border-radius: 13px;
+    font-size: 11px;
+}
+
+.admin-reports-page
+.admin-pagination {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 13px;
+    color: #94A3B8;
+    font-size: 10px;
+}
+
+.admin-reports-page
+.reports-pagination-btn {
+    min-width: 78px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: 10px;
+    font-size: 10px;
+}
+
+/* =========================================================
+   Important layout overflow protection
+   ========================================================= */
+
+body.panel-body .panel-main,
+body.panel-body .content {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+body.panel-body .content {
+    overflow-x: hidden;
+}
+
+/* =========================================================
+   Medium desktop
+   ========================================================= */
+
+@media ( min-width: 993px ) and ( max-width: 1280px ) {
+    .admin-reports-page > .admin-kpi-grid {
+        grid-template-columns: repeat( 2, minmax(0, 1fr) );
+    }
+
+    .admin-reports-page
+    .reports-filter-grid {
+        grid-template-columns: repeat( 2, minmax(0, 1fr) );
+    }
+}
+
+/* =========================================================
+   Tablet
+   ========================================================= */
+
+@media (max-width: 992px) {
+    .admin-reports-page > .admin-kpi-grid {
+        grid-template-columns: repeat( 2, minmax(0, 1fr) );
+    }
+
+    .admin-reports-page
+    .reports-filter-grid {
+        grid-template-columns: repeat( 2, minmax(0, 1fr) );
+    }
+}
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 620px) {
+    .admin-reports-page {
+        gap: 11px;
+    }
+
+        .admin-reports-page > .admin-kpi-grid {
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .admin-reports-page
+        .admin-kpi-card {
+            min-height: 70px;
+        }
+
+    .admin-reports-card {
+        padding: 12px !important;
+        border-radius: 14px !important;
+    }
+
+    .admin-reports-page
+    .reports-filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-reports-page
+    .reports-filter-actions {
+        flex-direction: column;
+    }
+
+    .admin-reports-page
+    .reports-filter-apply,
+    .admin-reports-page
+    .reports-filter-clear {
+        width: 100%;
+    }
+
+    .admin-reports-page
+    .admin-pagination {
+        flex-wrap: wrap;
+    }
+}
+/* =========================================================
+   Admin Users - Final Responsive Layout
+   Prevents page overflow and keeps table scroll internal
+   ========================================================= */
+
+.admin-users-page,
+.admin-users-page *,
+.admin-users-card,
+.admin-users-card * {
+    box-sizing: border-box;
+}
+
+.admin-users-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: block;
+    overflow: hidden;
+}
+
+.admin-users-card {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 16px !important;
+    overflow: hidden !important;
+    border-radius: 17px !important;
+}
+
+/* =========================================================
+   Header
+   ========================================================= */
+
+.admin-users-header {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 14px !important;
+}
+
+    .admin-users-header > div {
+        min-width: 0;
+    }
+
+.admin-users-eyebrow {
+    display: inline-block;
+    margin-bottom: 5px;
+    color: #11E9A1;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.admin-users-header h3 {
+    margin: 0;
+    color: #FFFFFF;
+    font-size: 20px !important;
+    font-weight: 950;
+    line-height: 1.25;
+}
+
+.admin-users-header p {
+    max-width: 800px;
+    margin: 6px 0 0;
+    color: #94A3B8;
+    font-size: 11px !important;
+    line-height: 1.6;
+}
+
+/* =========================================================
+   Search filters
+   ========================================================= */
+
+.admin-users-filter-row {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 105px 90px !important;
+    align-items: center;
+    gap: 9px !important;
+    margin-bottom: 14px !important;
+}
+
+.admin-users-search-input {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 12px !important;
+    color: #FFFFFF;
+    background: #080E15 !important;
+    border: 1px solid #1C2532 !important;
+    border-radius: 11px !important;
+    outline: none;
+    font-size: 11px !important;
+}
+
+    .admin-users-search-input:focus {
+        border-color: rgba( 17, 233, 161, 0.55 ) !important;
+        box-shadow: 0 0 0 3px rgba( 17, 233, 161, 0.07 ) !important;
+    }
+
+    .admin-users-search-input::placeholder {
+        color: #64748B;
+        opacity: 1;
+    }
+
+.admin-users-search-btn,
+.admin-users-clear-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border-radius: 11px !important;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+}
+
+.admin-users-search-btn {
+    color: #06110D !important;
+    background: #11E9A1 !important;
+    border: 1px solid #11E9A1 !important;
+}
+
+    .admin-users-search-btn:hover {
+        background: #18F5AC !important;
+        border-color: #18F5AC !important;
+    }
+
+.admin-users-clear-btn {
+    color: #FFFFFF !important;
+    background: #121821 !important;
+    border: 1px solid #1C2532 !important;
+}
+
+    .admin-users-clear-btn:hover {
+        color: #11E9A1 !important;
+        border-color: rgba( 17, 233, 161, 0.45 ) !important;
+    }
+
+/* =========================================================
+   Loading and empty message
+   ========================================================= */
+
+.admin-users-message {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 14px;
+    color: #94A3B8;
+    background: #0B1118;
+    border: 1px solid #1C2532;
+    border-radius: 13px;
+    font-size: 11px !important;
+}
+
+/* =========================================================
+   Table wrapper
+   Only this section scrolls horizontally
+   ========================================================= */
+
+.admin-users-table-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    display: block;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    background: rgba( 11, 15, 20, 0.42 );
+    border: 1px solid #1C2532;
+    border-radius: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #0B0F14;
+}
+
+    .admin-users-table-wrapper::-webkit-scrollbar {
+        height: 7px;
+    }
+
+    .admin-users-table-wrapper::-webkit-scrollbar-track {
+        background: #0B0F14;
+        border-radius: 999px;
+    }
+
+    .admin-users-table-wrapper::-webkit-scrollbar-thumb {
+        background: #475569;
+        border-radius: 999px;
+    }
+
+/* =========================================================
+   Users table
+   ========================================================= */
+
+.admin-users-table {
+    width: max-content !important;
+    min-width: 1320px !important;
+    max-width: none !important;
+    margin: 0;
+    border-collapse: collapse;
+    table-layout: fixed;
+    white-space: nowrap;
+}
+
+    .admin-users-table thead th {
+        height: 40px;
+        padding: 8px 10px !important;
+        color: #94A3B8 !important;
+        background: #0B1118;
+        border-bottom: 1px solid #1C2532;
+        font-size: 9px !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.025em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .admin-users-table tbody td {
+        height: 56px;
+        padding: 8px 10px !important;
+        color: #FFFFFF;
+        border-bottom: 1px solid rgba( 28, 37, 50, 0.84 );
+        font-size: 10px !important;
+        vertical-align: middle;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .admin-users-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .admin-users-table tbody tr:hover td {
+        background: rgba( 17, 233, 161, 0.025 );
+    }
+
+    /* Email */
+
+    .admin-users-table th:nth-child(1),
+    .admin-users-table td:nth-child(1) {
+        width: 220px;
+        min-width: 220px;
+        max-width: 220px;
+    }
+
+.admin-user-email {
+    display: block !important;
+    width: 100%;
+    max-width: 200px;
+    overflow: hidden;
+    color: #FFFFFF !important;
+    font-size: 10px !important;
+    font-weight: 850 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    direction: ltr;
+}
+
+/* UID */
+
+.admin-users-table th:nth-child(2),
+.admin-users-table td:nth-child(2) {
+    width: 125px;
+    min-width: 125px;
+    max-width: 125px;
+}
+
+.admin-ref-code {
+    min-height: 27px !important;
+    padding: 0 9px !important;
+    font-size: 10px !important;
+}
+
+/* Full name */
+
+.admin-users-table th:nth-child(3),
+.admin-users-table td:nth-child(3) {
+    width: 165px;
+    min-width: 165px;
+    max-width: 165px;
+}
+
+.admin-users-table td:nth-child(3) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Rank */
+
+.admin-users-table th:nth-child(4),
+.admin-users-table td:nth-child(4) {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+}
+
+/* KYC */
+
+.admin-users-table th:nth-child(5),
+.admin-users-table td:nth-child(5) {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+}
+
+.admin-kyc-status {
+    min-height: 27px !important;
+    padding: 0 9px !important;
+    font-size: 10px !important;
+}
+
+/* Wallet balances */
+
+.admin-users-table th:nth-child(6),
+.admin-users-table td:nth-child(6),
+.admin-users-table th:nth-child(7),
+.admin-users-table td:nth-child(7),
+.admin-users-table th:nth-child(8),
+.admin-users-table td:nth-child(8),
+.admin-users-table th:nth-child(9),
+.admin-users-table td:nth-child(9) {
+    width: 98px;
+    min-width: 98px;
+    max-width: 98px;
+    text-align: right;
+    direction: ltr;
+}
+
+/* Sponsor */
+
+.admin-users-table th:nth-child(10),
+.admin-users-table td:nth-child(10) {
+    width: 210px;
+    min-width: 210px;
+    max-width: 210px;
+}
+
+.admin-sponsor-cell {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 190px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 3px !important;
+}
+
+    .admin-sponsor-cell strong,
+    .admin-sponsor-cell span {
+        display: block;
+        width: 100%;
+        max-width: 190px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        direction: ltr;
+    }
+
+    .admin-sponsor-cell strong {
+        color: #FFFFFF !important;
+        font-size: 10px !important;
+        font-weight: 850 !important;
+    }
+
+    .admin-sponsor-cell span {
+        color: #11E9A1 !important;
+        font-size: 9px !important;
+        font-weight: 850 !important;
+    }
+
+.admin-sponsor-name {
+    color: #CBD5E1 !important;
+}
+
+/* Admin role */
+
+.admin-users-table th:nth-child(11),
+.admin-users-table td:nth-child(11) {
+    width: 145px;
+    min-width: 145px;
+    max-width: 145px;
+}
+
+.admin-role-select {
+    width: 125px !important;
+    min-width: 125px !important;
+    height: 34px !important;
+    padding: 0 9px !important;
+    background: #0B0F14 !important;
+    border: 1px solid #1C2532 !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+}
+
+.admin-role-badge {
+    min-height: 28px !important;
+    padding: 0 9px !important;
+    font-size: 10px !important;
+}
+
+/* =========================================================
+   Pagination
+   ========================================================= */
+
+.admin-users-pagination {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 13px;
+    color: #94A3B8;
+    font-size: 10px;
+}
+
+    .admin-users-pagination button {
+        min-width: 78px;
+        height: 34px;
+        padding: 0 11px;
+        border-radius: 10px;
+        font-size: 10px;
+    }
+
+/* =========================================================
+   Prevent the main page from growing beyond viewport
+   ========================================================= */
+
+body.panel-body .panel-main,
+body.panel-body .content {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+body.panel-body .content {
+    overflow-x: hidden;
+}
+
+/* =========================================================
+   Tablet and Mobile
+   ========================================================= */
+
+@media (max-width: 992px) {
+
+    .admin-users-card {
+        padding: 14px !important;
+    }
+
+    .admin-users-filter-row {
+        grid-template-columns: minmax(0, 1fr) 90px 80px !important;
+    }
+}
+
+@media (max-width: 620px) {
+
+    .admin-users-card {
+        padding: 12px !important;
+        border-radius: 14px !important;
+    }
+
+    .admin-users-filter-row {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+
+    .admin-users-search-btn,
+    .admin-users-clear-btn {
+        width: 100% !important;
+    }
+
+    .admin-users-pagination {
+        flex-wrap: wrap;
+    }
+}
+/* =========================================================
+   Admin Users - Column spacing readability fix
+   ========================================================= */
+
+.admin-users-table {
+    min-width: 1460px !important;
+}
+
+    /* Profit Wallet */
+    .admin-users-table th:nth-child(8),
+    .admin-users-table td:nth-child(8) {
+        width: 110px !important;
+        min-width: 110px !important;
+        max-width: 110px !important;
+        text-align: right !important;
+        direction: ltr !important;
+    }
+
+    /* Referral Wallet */
+    .admin-users-table th:nth-child(9),
+    .admin-users-table td:nth-child(9) {
+        width: 130px !important;
+        min-width: 130px !important;
+        max-width: 130px !important;
+        text-align: right !important;
+        direction: ltr !important;
+    }
+
+    /* Sponsor */
+    .admin-users-table th:nth-child(10),
+    .admin-users-table td:nth-child(10) {
+        width: 260px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+    }
+
+    /* Admin Role */
+    .admin-users-table th:nth-child(11),
+    .admin-users-table td:nth-child(11) {
+        width: 150px !important;
+        min-width: 150px !important;
+        max-width: 150px !important;
+    }
+
+    /* spacing between Referral Wallet and Sponsor */
+    .admin-users-table th:nth-child(9),
+    .admin-users-table td:nth-child(9) {
+        padding-right: 20px !important;
+    }
+
+    .admin-users-table th:nth-child(10),
+    .admin-users-table td:nth-child(10) {
+        padding-left: 20px !important;
+        border-left: 1px solid rgba(28, 37, 50, 0.85) !important;
+    }
+
+/* make sponsor cell cleaner */
+.admin-sponsor-cell {
+    max-width: 230px !important;
+    gap: 4px !important;
+}
+
+    .admin-sponsor-cell strong,
+    .admin-sponsor-cell span {
+        max-width: 230px !important;
+    }
+
+/* header readability */
+.admin-users-table thead th {
+    letter-spacing: 0.04em !important;
+}
+
+.admin-users-table th:nth-child(9),
+.admin-users-table th:nth-child(10),
+.admin-users-table th:nth-child(11) {
+    white-space: nowrap !important;
+}
+
+/* role select spacing */
+.admin-role-select {
+    width: 132px !important;
+    min-width: 132px !important;
+}

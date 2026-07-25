@@ -3,13 +3,13 @@
     ViewData["Title"] = "Admin Reports";
 }
 
-<div class="admin-page">
+<div class="admin-page admin-reports-page">
 
     <div class="admin-kpi-grid">
 
         <div class="panel-card admin-kpi-card">
             <span>Total Deposits</span>
-            <strong id="totalDeposits">$0.00</strong>
+            <strong id="totalDeposits">$0.00</strong>   
         </div>
 
         <div class="panel-card admin-kpi-card">
@@ -49,9 +49,9 @@
 
     </div>
 
-    <div class="panel-card">
-        <div class="admin-section-header">
-            <h3>Detailed Reports</h3>
+<div class="panel-card admin-reports-card">
+    <div class="admin-section-header">
+        <h3>Detailed Reports</h3>
             <p>Review detailed financial and activity reports across the platform.</p>
         </div>
 
@@ -145,8 +145,8 @@
             Loading reports...
         </div>
 
-        <div id="adminReportsTableWrapper" class="admin-table-wrapper" style="display:none;">
-            <table class="admin-table">
+        <div id="adminReportsTableWrapper" class="admin-table-wrapper admin-reports-table-wrapper" style="display:none;">
+            <table class="admin-table admin-reports-table">
                 <thead id="adminReportsTableHead"></thead>
                 <tbody id="adminReportsTableBody"></tbody>
             </table>
